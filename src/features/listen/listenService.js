@@ -41,10 +41,35 @@ class ListenService {
 
     sendToRenderer(channel, data) {
         const { windowPool } = require('../../window/windowManager');
-        const listenWindow = windowPool?.get('listen');
-        
-        if (listenWindow && !listenWindow.isDestroyed()) {
-            listenWindow.webContents.send(channel, data);
+
+        // Deliver to BOTH the legacy 'listen' window (audio capture renderer)
+        // AND the 'annotated-overlay' window (the user-facing UI). Without
+        // delivering to the overlay, its START/STOP button can fall out of
+        // sync with the actual session state.
+        const targets = ['listen', 'annotated-overlay']
+            .map(name => windowPool?.get(name))
+            .filter(w => w && !w.isDestroyed());
+
+        if (targets.length === 0) return;
+
+        if (channel === 'change-listen-capture-state') {
+            const fs = require('fs'), os = require('os'), path = require('path');
+            const isLoading = targets[0].webContents.isLoading();
+            const line = `[${new Date().toISOString()}] [ListenService] sendToRenderer ${channel} status=${data?.status} isLoading=${isLoading}\n`;
+            process.stdout.write(line);
+            try { fs.appendFileSync(path.join(os.homedir(), 'annotated-debug.log'), line); } catch {}
+        }
+
+        for (const win of targets) {
+            const sendNow = () => {
+                if (!win.isDestroyed()) win.webContents.send(channel, data);
+            };
+            if (channel === 'change-listen-capture-state' && win.webContents.isLoading()) {
+                // Window still loading — queue until renderer is ready
+                win.webContents.once('did-finish-load', sendNow);
+            } else {
+                sendNow();
+            }
         }
     }
 
@@ -63,7 +88,7 @@ class ListenService {
                 case 'Listen':
                     console.log('[ListenService] changeSession to "Listen"');
                     internalBridge.emit('window:requestVisibility', { name: 'listen', visible: true });
-                    await this.initializeSession();
+                    await this.initializeSession(); // throws on failure — caught below
                     if (listenWindow && !listenWindow.isDestroyed()) {
                         listenWindow.webContents.send('session-state-changed', { isActive: true });
                     }
@@ -87,12 +112,14 @@ class ListenService {
                     throw new Error(`[ListenService] unknown listenButtonText: ${listenButtonText}`);
             }
             
-            header.webContents.send('listen:changeSessionResult', { success: true });
+            if (header && !header.isDestroyed()) header.webContents.send('listen:changeSessionResult', { success: true });
+            if (listenWindow && !listenWindow.isDestroyed()) listenWindow.webContents.send('listen:changeSessionResult', { success: true });
 
         } catch (error) {
             console.error('[ListenService] error in handleListenRequest:', error);
-            header.webContents.send('listen:changeSessionResult', { success: false });
-            throw error; 
+            if (header && !header.isDestroyed()) header.webContents.send('listen:changeSessionResult', { success: false });
+            if (listenWindow && !listenWindow.isDestroyed()) listenWindow.webContents.send('listen:changeSessionResult', { success: false });
+            throw error;
         }
     }
 
@@ -173,18 +200,16 @@ class ListenService {
 
             /* ---------- STT Initialization Retry Logic ---------- */
             const MAX_RETRY = 10;
-            const RETRY_DELAY_MS = 300;   // 0.3 seconds
+            const RETRY_DELAY_MS = 300;
 
             let sttReady = false;
             for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
                 try {
                     await this.sttService.initializeSttSessions(language);
                     sttReady = true;
-                    break;                         // Exit on success
+                    break;
                 } catch (err) {
-                    console.warn(
-                        `[ListenService] STT init attempt ${attempt} failed: ${err.message}`
-                    );
+                    console.warn(`[ListenService] STT init attempt ${attempt} failed: ${err.message}`);
                     if (attempt < MAX_RETRY) {
                         await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
                     }
@@ -194,18 +219,17 @@ class ListenService {
             /* ------------------------------------------- */
 
             console.log('✅ Listen service initialized successfully.');
-            
             this.sendToRenderer('update-status', 'Connected. Ready to listen.');
-            
+            // Only start capture when STT sessions are confirmed ready
+            this.sendToRenderer('change-listen-capture-state', { status: "start" });
             return true;
         } catch (error) {
             console.error('❌ Failed to initialize listen service:', error);
-            this.sendToRenderer('update-status', 'Initialization failed.');
-            return false;
+            this.sendToRenderer('update-status', `Init failed: ${error.message}`);
+            throw error;  // re-throw so handleListenRequest knows
         } finally {
             this.isInitializingSession = false;
             this.sendToRenderer('session-initializing', false);
-            this.sendToRenderer('change-listen-capture-state', { status: "start" });
         }
     }
 

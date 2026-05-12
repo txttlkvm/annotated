@@ -296,7 +296,7 @@ async function setupMicProcessing(micStream) {
 
 
     const micAudioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
-    await micAudioContext.resume(); 
+    await micAudioContext.resume();
     const micSource = micAudioContext.createMediaStreamSource(micStream);
     const micProcessor = micAudioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
 
@@ -306,7 +306,6 @@ async function setupMicProcessing(micStream) {
     micProcessor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
         audioBuffer.push(...inputData);
-        // console.log('🎤 micProcessor.onaudioprocess');
 
         // samplesPerChunk(=2400) 만큼 모이면 전송
         while (audioBuffer.length >= samplesPerChunk) {
@@ -514,12 +513,20 @@ async function startCapture(screenshotIntervalSeconds = 5, imageQuality = 'mediu
             console.log('Linux screen capture started');
         } else {
             // Windows - capture mic and system audio separately using native loopback
-            console.log('Starting Windows capture with native loopback audio...');
+            const _dbg = (m) => { try { window.api.debug.log('startCapture: ' + m); } catch(e){} };
+            _dbg('Windows path started');
 
-            // Ensure STT sessions are initialized before starting audio capture
-            const sessionActive = await window.api.listenCapture.isSessionActive();
+            // Wait for STT sessions to be ready — Speechmatics may fail on quota
+            // and fall back to Deepgram which takes ~500ms. Poll up to 5s.
+            let sessionActive = false;
+            for (let i = 0; i < 25; i++) {
+                sessionActive = await window.api.listenCapture.isSessionActive();
+                if (sessionActive) break;
+                await new Promise(r => setTimeout(r, 200));
+            }
+            _dbg(`isSessionActive=${sessionActive} (after ${sessionActive ? 'wait' : '5s timeout'})`);
             if (!sessionActive) {
-                throw new Error('STT sessions not initialized - please wait for initialization to complete');
+                _dbg('proceeding anyway — fallback may finish mid-capture');
             }
 
             // 1. Get user's microphone
@@ -534,34 +541,44 @@ async function startCapture(screenshotIntervalSeconds = 5, imageQuality = 'mediu
                     },
                     video: false,
                 });
-                console.log('Windows microphone capture started');
+                _dbg('mic getUserMedia succeeded');
                 const { context, processor } = await setupMicProcessing(micMediaStream);
                 audioContext = context;
                 audioProcessor = processor;
+                _dbg('mic processing set up');
             } catch (micErr) {
-                console.warn('Could not get microphone access on Windows:', micErr);
+                _dbg('mic getUserMedia FAILED: ' + String(micErr));
             }
 
             // 2. Get system audio using native Electron loopback
             try {
+                _dbg('calling getDisplayMedia for system audio');
+                // CRITICAL: disable browser audio processing on system loopback.
+                // Default getDisplayMedia applies noise suppression / AGC /
+                // echo cancellation which DESTROYS voice biometric features.
+                // Pyannote voiceprints enrolled from raw YouTube audio won't
+                // match processed loopback audio.
                 mediaStream = await navigator.mediaDevices.getDisplayMedia({
                     video: true,
-                    audio: true // This will now use native loopback from our handler
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false,
+                    },
                 });
-                
-                // Verify we got audio tracks
+
                 const audioTracks = mediaStream.getAudioTracks();
+                _dbg(`getDisplayMedia succeeded audioTracks=${audioTracks.length}`);
                 if (audioTracks.length === 0) {
                     throw new Error('No audio track in native loopback stream');
                 }
-                
-                console.log('Windows native loopback audio capture started');
+
                 const { context, processor } = setupSystemAudioProcessing(mediaStream);
                 systemAudioContext = context;
                 systemAudioProcessor = processor;
+                _dbg('system audio processing set up');
             } catch (sysAudioErr) {
-                console.error('Failed to start Windows native loopback audio:', sysAudioErr);
-                // Continue without system audio
+                _dbg('getDisplayMedia FAILED: ' + String(sysAudioErr));
             }
         }
     } catch (err) {

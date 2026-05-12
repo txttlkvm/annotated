@@ -65,6 +65,14 @@ const PROVIDERS = {
         { id: 'nova-3', name: 'Nova-3 (General)' },
         ],
     },
+  'speechmatics': {
+    name: 'Speechmatics',
+    handler: () => require("./providers/speechmatics"),
+    llmModels: [],
+    sttModels: [
+        { id: 'speechmatics-enhanced', name: 'Speechmatics Enhanced' },
+    ],
+  },
   'ollama': {
       name: 'Ollama (Local)',
       handler: () => require("./providers/ollama"),
@@ -158,7 +166,8 @@ function getProviderClass(providerId) {
         'gemini': 'GeminiProvider',
         'deepgram': 'DeepgramProvider',
         'ollama': 'OllamaProvider',
-        'whisper': 'WhisperProvider'
+        'whisper': 'WhisperProvider',
+        'speechmatics': 'SpeechmaticsProvider',
     };
     
     const className = classNameMap[actualProviderId];

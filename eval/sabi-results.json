@@ -1,0 +1,440 @@
+[
+  {
+    "idx": 0,
+    "time": 0,
+    "speaker": 1,
+    "gate": true,
+    "text": "Yeah. Which is to say, for this to be useful to the host of the show or the audience because I think this serves two roles. One, I could run this privately and just see when I'm on Megyn Kelly what fact she's getting right, what fact she's getting wrong, and I could be challenging her on a fact and say, like, okay. Is that actually true? And then I could go look at it, which, by the way, everybody's doing right now. There was a famous Larry Summers episode of All In where he claimed, you know, I think he said Chumov's looking stuff up or whatever. That's kinda all fair and loving more now in terms of, you know, a podcast. People are looking up stuff in real time.",
+    "fc": {
+      "verdict": "CONFIRMED",
+      "claim": "During a famous episode of the All-In Podcast, Larry Summers claimed that Chamath Palihapitiya was looking things up.",
+      "fact": "During an April 2022 episode of the All-In Podcast, Larry Summers called out Chamath Palihapitiya for looking things up on his iPad during a discussion about tariffs.",
+      "sources": [
+        "https://www.businessinsider.com/larry-summers-chamath-palihapitiya-all-in-podcast-ipad-tariffs-2022-4",
+        "https://www.youtube.com/watch?v=Q_4-b_g8kYw"
+      ]
+    },
+    "cy": null,
+    "fcRaw": "CLAIM: During a famous episode of the All-In Podcast, Larry Summers claimed that Chamath Palihapitiya was looking things up.\nVERDICT: CONFIRMED\nFACT: During an April 2022 episode of the All-In Podcast, Larry Summers called out Chamath Palihapitiya for looking things up on his iPad during a discussion about tariffs.\nSOURCES: https://www.businessinsider.com/larry-summers-chamath-palihapitiya-all-in-podcast-ipad-tariffs-2022-4\nSOURCES: https://www.youtube.com/watch?v=Q_4-b_g8kYw",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 1,
+    "time": 39.73,
+    "speaker": 0,
+    "gate": true,
+    "text": "So let's go into our demos here. So we always like to demo or die. Who's gonna lead the demos? I'm I'm actually I started sharing already. This is, this is armchair, the one of the first ones that we set up. K.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": "~",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 2,
+    "time": 52.255,
+    "speaker": 0,
+    "gate": true,
+    "text": "It is by I'm looking up his name right here. Mark Kolbruge says this. I believe that's that. And as you can see, this is what I really liked about it. It's highlighted this block of what we're talking about.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": "CLAIM: The speaker is referring to Mark Colbrugge.\nVERDICT: UNCONFIRMED\nFACT: The name \"Mark Colbrugge\" could not be verified in relation to the context of the conversation.",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 3,
+    "time": 62.920002,
+    "speaker": 0,
+    "gate": true,
+    "text": "You know, you're this is Be more specific here so that the audience listening The quote sports guest, please. The quote here is, as you said, there was a famous Larry Summers episode of All In where he claimed that Shamath was looking stuff up. It's highlighted that, and then Gary, their producer with contest Oh, we're using this right now? Yep. This is live. I'm I'm doing this live. Gary says in April 2025, All In had a tariff debate with Summers and Shammoth Sachs using Grok ChatGPT live per Reddit buzz. They couldn't confirm whether Shammoth was actually looking stuff up. And then here a little later, I mentioned Mark Kolbrugge, and Gary says, yes. He he found it. Mark created armchair. He found his, you know, he found his URL. He he corrected me on the spelling.",
+    "fc": {
+      "verdict": "UNCONFIRMED",
+      "claim": "During an April 2025 \"All-In\" podcast episode, Larry Summers claimed that Chamath Palihapitiya was looking things up during a tariff debate with Summers and Palihapitiya, using Grok ChatGPT live, according to Reddit buzz.",
+      "fact": "There is no credible evidence of an \"All-In\" podcast episode in April 2025 featuring a tariff debate with Larry Summers and Chamath Palihapitiya where Palihapitiya used Grok ChatGPT live.",
+      "sources": []
+    },
+    "cy": null,
+    "fcRaw": "CLAIM: During an April 2025 \"All-In\" podcast episode, Larry Summers claimed that Chamath Palihapitiya was looking things up during a tariff debate with Summers and Palihapitiya, using Grok ChatGPT live, according to Reddit buzz.\nVERDICT: UNCONFIRMED\nFACT: There is no credible evidence of an \"All-In\" podcast episode in April 2025 featuring a tariff debate with Larry Summers and Chamath Palihapitiya where Palihapitiya used Grok ChatGPT live.",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 4,
+    "time": 106.885,
+    "speaker": 1,
+    "gate": true,
+    "text": "Wow. Yeah. So you can see it's actually it's working live. And we'll Wait. Wait. Let me let me try using this now. This is incredible. Holy cow. Let me do this right now. Let's do it based on political topic. I'll do a political topic right now.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": "~",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 5,
+    "time": 124.545006,
+    "speaker": 1,
+    "gate": true,
+    "text": "Obviously, we know there was an incident at the White House Correspondents' Dinner this weekend, and the buzz online was which side of the aisle has the most extremist?",
+    "fc": {
+      "verdict": "CONFIRMED",
+      "claim": "There was an incident at the White House Correspondents' Dinner this weekend where gunshots were fired, and President Donald Trump and First Lady Melania Trump were evacuated.",
+      "fact": "On Saturday, April 25, 2026, gunshots were fired near the security screening area of the White House Correspondents' Dinner at the Washington Hilton, leading to the evacuation of President Trump and First Lady Melania Trump.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFMqQgTLdqqgo_ETVTP99fK7voG9y_VhNNNqhBDcK7mlV7mlicZEbPmXMswaLtHWRCTcl4YViULYlYhkpvQovMcK-x5w2WsqaRnbf_AyHeNViHKQammP64YRWkMt0ISK68hWj1Wvax7RVKBXofBEkMLIU5dbq2-l-eSTHSYHyPEHg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGIZq3M4VxgA2g8GEuBLbgVulGlYofVMIgOqoPy2wvqZNadyBOwaj-L9D631_lVuXp3J4-Bt0iHriBBrNNj3rp-4271Vk1nYiDCXlKzin2YA-O9H2bUU-MimwlLpLXMOHKkLQwUY-BK5OVvokSBOao-8fN73WgDLubuIjf-6luC_6UTgdhqpKT_rks=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF4z2ulAFG5_NdHJ7bhTzjSWh1H-wiBnHcJVHx3eNBiZWZ1hBAGo-mAyZqT5jvTlgjD7GM9huchPhvc2yUaoNbrzBr7aspB-fnu5KCLjB-131Fng4mszBjCmG_D80g6yd-71fkMJyMAA2sXQ1SHs1fU_dc7hpX_TlbyqwB0PiOYwJZd55pTzshjK7BY7GginsDQd5kiT7S23wLXK23FHTlAnhYvkEzIHwBIUA=="
+      ]
+    },
+    "cy": {
+      "label": "Loaded question / false binary.",
+      "punch": "This question pre-stacks the deck, ignoring the vast middle.",
+      "counter": "The question forces a choice between two extremes, ignoring the majority of political discourse and the possibility of extremism on neither side, or on multiple sides beyond a simple \"left/right\" binary."
+    },
+    "fcRaw": "CLAIM: There was an incident at the White House Correspondents' Dinner this weekend where gunshots were fired, and President Donald Trump and First Lady Melania Trump were evacuated.\nVERDICT: CONFIRMED\nFACT: On Saturday, April 25, 2026, gunshots were fired near the security screening area of the White House Correspondents' Dinner at the Washington Hilton, leading to the evacuation of President Trump and First Lady Melania Trump.\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFMqQgTLdqqgo_ETVTP99fK7voG9y_VhNNNqhBDcK7mlV7mlicZEbPmXMswaLtHWRCTcl4YViULYlYhkpvQovMcK-x5w2WsqaRnbf_AyHeNViHKQammP64YRWkMt0ISK68hWj1Wvax7RVKBXofBEkMLIU5dbq2-l-eSTHSYHyPEHg==\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGIZq3M4VxgA2g8GEuBLbgVulGlYofVMIgOqoPy2wvqZNadyBOwaj-L9D631_lVuXp3J4-Bt0iHriBBrNNj3rp-4271Vk1nYiDCXlKzin2YA-O9H2bUU-MimwlLpLXMOHKkLQwUY-BK5OVvokSBOao-8fN73WgDLubuIjf-6luC_6UTgdhqpKT_rks=\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF4z2ulAFG5_NdHJ7bhTzjSWh1H-wiBnHcJVHx3eNBiZWZ1hBAGo-mAyZqT5jvTlgjD7GM9huchPhvc2yUaoNbrzBr7aspB-fnu5KCLjB-131Fng4mszBjCmG_D80g6yd-71fkMJyMAA2sXQ1SHs1fU_dc7hpX_TlbyqwB0PiOYwJZd55pTzshjK7BY7GginsDQd5kiT7S23wLXK23FHTlAnhYvkEzIHwBIUA==",
+    "cyRaw": "FRAMING\nLoaded question / false binary.\nThis question pre-stacks the deck, ignoring the vast middle.\nCOUNTER: The question forces a choice between two extremes, ignoring the majority of political discourse and the possibility of extremism on neither side, or on multiple sides beyond a simple \"left/right\" binary.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nLoaded question / false binary.\nThis question pre-stacks the deck, ignoring the vast middle.\nCOUNTER: The question forces a choice between two extremes, ignoring the majority of political discourse and the possibility of extremism on neither side, or on multiple sides beyond a simple \"left/right\" binary.",
+    "cyWinner": "gemini",
+    "fcGrounded": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFMqQgTLdqqgo_ETVTP99fK7voG9y_VhNNNqhBDcK7mlV7mlicZEbPmXMswaLtHWRCTcl4YViULYlYhkpvQovMcK-x5w2WsqaRnbf_AyHeNViHKQammP64YRWkMt0ISK68hWj1Wvax7RVKBXofBEkMLIU5dbq2-l-eSTHSYHyPEHg==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGIZq3M4VxgA2g8GEuBLbgVulGlYofVMIgOqoPy2wvqZNadyBOwaj-L9D631_lVuXp3J4-Bt0iHriBBrNNj3rp-4271Vk1nYiDCXlKzin2YA-O9H2bUU-MimwlLpLXMOHKkLQwUY-BK5OVvokSBOao-8fN73WgDLubuIjf-6luC_6UTgdhqpKT_rks=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF4z2ulAFG5_NdHJ7bhTzjSWh1H-wiBnHcJVHx3eNBiZWZ1hBAGo-mAyZqT5jvTlgjD7GM9huchPhvc2yUaoNbrzBr7aspB-fnu5KCLjB-131Fng4mszBjCmG_D80g6yd-71fkMJyMAA2sXQ1SHs1fU_dc7hpX_TlbyqwB0PiOYwJZd55pTzshjK7BY3ginsDQd5kiT7S23wLXK23FHTlAnhxYvkEzIHwBIUA=="
+    ]
+  },
+  {
+    "idx": 6,
+    "time": 135.93,
+    "speaker": 1,
+    "gate": true,
+    "text": "Is it the right with the oath keepers and the Proud Boys and what happened on January 6 where there was violence at the capital?",
+    "fc": {
+      "verdict": "CONFIRMED",
+      "claim": "The Oath Keepers and Proud Boys were involved in violence at the U.S. Capitol on January 6, 2021.",
+      "fact": "Leaders and members of both the Oath Keepers and Proud Boys were convicted of seditious conspiracy and other charges for their roles in the January 6, 2021, attack on the U.S. Capitol, which involved violence and disrupted the peaceful transfer of power.",
+      "sources": [
+        "https://www.justice.gov/usao-dc/pr/four-members-oath-keepers-sentenced-roles-jan-6-capitol-breach",
+        "https://www.justice.gov/usao-dc/pr/proud-boys-leader-sentenced-22-years-prison-seditious-conspiracy-and-other-charges",
+        "https://www.pbs.org/newshour/politics/doj-moves-to-erase-seditious-conspiracy-convictions-of-oath-keepers-proud-boys-in-jan-6-cases"
+      ]
+    },
+    "cy": {
+      "label": "Loaded question / false binary.",
+      "punch": "This question pre-stacks the deck for a specific answer.",
+      "counter": "The question ignores other groups and incidents, like Antifa's actions in Portland or the 2020 BLM riots, which also involved violence."
+    },
+    "fcRaw": "CLAIM: The Oath Keepers and Proud Boys were involved in violence at the U.S. Capitol on January 6, 2021.\nVERDICT: CONFIRMED\nFACT: Leaders and members of both the Oath Keepers and Proud Boys were convicted of seditious conspiracy and other charges for their roles in the January 6, 2021, attack on the U.S. Capitol, which involved violence and disrupted the peaceful transfer of power.\nSOURCES: https://www.justice.gov/usao-dc/pr/four-members-oath-keepers-sentenced-roles-jan-6-capitol-breach\nSOURCES: https://www.justice.gov/usao-dc/pr/proud-boys-leader-sentenced-22-years-prison-seditious-conspiracy-and-other-charges\nSOURCES: https://www.pbs.org/newshour/politics/doj-moves-to-erase-seditious-conspiracy-convictions-of-oath-keepers-proud-boys-in-jan-6-cases",
+    "cyRaw": "FRAMING\nLoaded question / false binary.\nThis question pre-stacks the deck for a specific answer.\nCOUNTER: The question ignores other groups and incidents, like Antifa's actions in Portland or the 2020 BLM riots, which also involved violence.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nLoaded question / false binary.\nThis question pre-stacks the deck for a specific answer.\nCOUNTER: The question ignores other groups and incidents, like Antifa's actions in Portland or the 2020 BLM riots, which also involved violence.",
+    "cyWinner": "gemini",
+    "fcGrounded": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE1Ht58VmH6bjlaYS-wkguRqVA73PSJXZ5MKBO-Hf9xVdfZv0lhMw7D97mqcTXXWb1N5sjusE7Rvbps2qkCiZnJygdzU9sBYyGOO8Y85LkJX60sH4wP0T8X7G6BWrC8P5DcpLU-WEAt3Uveh33Hf_I9Trs-wtEpHfNIhAP8khX_7qcoj-BEW8HqFQloLhWKu41Nd-2EB4QC5j5tfQ4=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH3ZwbrRcDIyQxGKlvkvUSodyXtoXi007Xrm8J9Gyj2URn-HWVrswqfnQ_a3CGyu2oxQm1cvLEFWhKS-BCLcBFd1yqIzV0Ig9SNX4n6PXsX8DTuGJh9uMWcEEPlDbrUQuVUY4CEhoGHh_zLEcYl-FEG-8m8h0pljodiMn83v27n82xrBMRZ1g8l0n87y_iOTDSuKl9dAqTXoSzdkEHVmwxdYmhHu5KP1CgCLgJR-9DfqGtZhsjhhkQiI6o=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEcl_Smpv4D-VfoiynAll4ldsytfmyIEyKD-BQZBiexhaSs-oAMzBMGNKwqSZ3epxJolerFeGqwv6fAiyHDQ2Rpc4548QZ-XVlQTZPTUP0lgU8qnHvM48EbpEygitm5eHMgh8U=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQENEc_r1wb9x7x8oEMlXlaBf_bftRLfi1wJ0SOCQoQ3pUfWNtEt7KfFe9APDyqtDP8Kt-M4q-6_HL6wEkcEaUU6w0mRlXOIHR-0ReQmPkoqOr1XkrLqGja5gWoc_5KsDH-LeNnSEA==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF0mvg4msaZpinsSsFapAElmEt7cy710uf7N6fHUhVeVpkrSCosPCiPbdgl-YlI90XcVWjgK4FiKAqKKlXHs6yPksGMNLtSYlUiLw9sBEknSLBWMRMHNyR09Lz56BAwp2udvuQtllUTqrgqEKfotXFlT3fccnOq89oANn1h8Fvd",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGq0pI8_3Ov1-Wcbjf7247tbb-ioA8UwYckS821M0PBnRLTlBi0HeXPuo7lY6Y_eOsubY4QrOHSq0CaRRuLrOVFroiA4V31dNcGC1LSsQhKfj-5SkevXWv2PkYPlBcMCWpSQMNmDV6PMBRMCW8BUKJR95v2OWe13XocL-pcd7ex258icI40ySigS3jPqPVHYSFpY2fOHkatMyZ1oM0xt2ZJZMP-SXtGZHXNnmWaD_ZIc1Sohim210Ho-Fkmmg==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGKVMHjePTNsW5PDNQhKBerCEZtZvtWXclLEeWKxMTDBcoV-L0pEnQiSIw2GK4ZNL1UumBEgYiPMXC1sVxQde0q9LKzT_WOdyzwm1FguN-4HrJUtUVUy1QG5ozq0p9qW-ViPuWD9h6JW1Yq12KxC5ZSpHH8B4jZjoPfti_rK9-g4IrRcEH8y6COQc0wYWaUu1tdWR_RH-ThpjoAVAkbANdZJB0SNQo9OaS0MazDMRO9CYgO7K6hZ33sn3WIbaSh",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF-8fut_H3EJHvOlmM2mYwMFl5M9ldDU8SWyIkilP2kniOzr9kdnto9_3DoFf7-e8HxPCsaGuYDPs82PWUbiLRFx_ijzVZA6N-psN5q_xREPxZfr8F_xfX3RP9XWOdogvMzWTuJLOWJaXJ4COJ0oLTcGIUbe3vlbbv0MT9sWFboFP2MCIPG7WXEZBNxqckR9MDRi3cOM6ovlxkI-0qm-fXtalzxrjubY_Gcu2lBbY4_dALiRYp1T-2RtLUH208d8A=="
+    ]
+  },
+  {
+    "idx": 7,
+    "time": 144.25,
+    "speaker": 1,
+    "gate": true,
+    "text": "Or does the left have the violence problem with the recent New York Times podcast where they were talking about soft murder or something, and they were talking about micro looting and stealing from the Louvre. And then we've had the three assassination attempts, including this weekend on president Trump, all from left mentally ill. I think you gotta be mentally ill to do an assassination.",
+    "fc": {
+      "verdict": "CORRECTED",
+      "claim": "The New York Times podcast discussed \"soft murder\" or \"micro looting\" and stealing from the Louvre, and there have been three assassination attempts on President Trump, including one this weekend, all from \"left mentally ill\" individuals.",
+      "fact": "The New York Times' \"The Opinions\" podcast discussed \"microlooting\" and stealing from the Louvre, but not \"soft murder.\" There have been three assassination attempts on Donald Trump since July 2024, including one at the White House Correspondents' Dinner on April 26, 2026, but the motivations and mental health of all perpetrators are not definitively attributed to the \"left mentally ill.\"",
+      "sources": [
+        "https://www.wikipedia.org/wiki/Attempted_assassination_of_Donald_Trump_in_Pennsylvania",
+        "https://ballotpedia.org/Attempted_assassinations_of_Donald_Trump,_2024",
+        "https://www.lse.ac.uk/blogs/usappblog/2026/05/07/repeated-assassination-attempts-against-donald-trump-show-how-a-polarized-and-fragmented-society-can-spur-lone-offenders-into-political-violence/",
+        "https://www.theweek.com/politics/1029286/blame-game-erupts-over-trump-assassination-attempt",
+        "https://www.youtube.com/watch?v=s_x4_w_X_10",
+        "https://jonathanturley.org/2026/04/27/the-moral-malaise-the-new-york-times-makes-the-case-for-microlooting-to-murder/",
+        "https://www.wcbm.com/2026/04/22/new-york-times-podcast-calls-shoplifting-political-protest-and-defends-the-killing-of-a-ceo/",
+        "https://www.youtube.com/watch?v=9_12-3_Qh28"
+      ]
+    },
+    "cy": {
+      "label": "False binary presented.",
+      "punch": "Ignoring the vast middle ground of political discourse.",
+      "counter": "Political extremism isn't limited to two sides, nor is it solely defined by violence; many other groups and ideologies exist outside this narrow framing."
+    },
+    "fcRaw": "CLAIM: The New York Times podcast discussed \"soft murder\" or \"micro looting\" and stealing from the Louvre, and there have been three assassination attempts on President Trump, including one this weekend, all from \"left mentally ill\" individuals.\nVERDICT: CORRECTED\nFACT: The New York Times' \"The Opinions\" podcast discussed \"microlooting\" and stealing from the Louvre, but not \"soft murder.\" There have been three assassination attempts on Donald Trump since July 2024, including one at the White House Correspondents' Dinner on April 26, 2026, but the motivations and mental health of all perpetrators are not definitively attributed to the \"left mentally ill.\"\nSOURCES: https://www.wikipedia.org/wiki/Attempted_assassination_of_Donald_Trump_in_Pennsylvania\nSOURCES: https://ballotpedia.org/Attempted_assassinations_of_Donald_Trump,_2024\nSOURCES: https://www.lse.ac.uk/blogs/usappblog/2026/05/07/repeated-assassination-attempts-against-donald-trump-show-how-a-polarized-and-fragmented-society-can-spur-lone-offenders-into-political-violence/\nSOURCES: https://www.theweek.com/politics/1029286/blame-game-erupts-over-trump-assassination-attempt\nSOURCES: https://www.youtube.com/watch?v=s_x4_w_X_10\nSOURCES: https://jonathanturley.org/2026/04/27/the-moral-malaise-the-new-york-times-makes-the-case-for-microlooting-to-murder/\nSOURCES: https://www.wcbm.com/2026/04/22/new-york-times-podcast-calls-shoplifting-political-protest-and-defends-the-killing-of-a-ceo/\nSOURCES: https://www.youtube.com/watch?v=9_12-3_Qh28",
+    "cyRaw": "FRAMING\nFalse binary presented.\nIgnoring the vast middle ground of political discourse.\nCOUNTER: Political extremism isn't limited to two sides, nor is it solely defined by violence; many other groups and ideologies exist outside this narrow framing.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nFalse binary presented.\nIgnoring the vast middle ground of political discourse.\nCOUNTER: Political extremism isn't limited to two sides, nor is it solely defined by violence; many other groups and ideologies exist outside this narrow framing.",
+    "cyWinner": "gemini",
+    "fcGrounded": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE2x9bBsQMwSm3VZXLwcw7y1QIkNkG8CSLZB1_GNDnjiUo1nySl0QcPsdvCvm9QM_ZU1odXIFDMnE_HagEfZNGU6POF-MQ9IO3Kv7MUinFkdjIL9J-WhFnyqQgFXjABbxURLzixiNsPfLZCMW5Lp5Y_6804_xtumMnMwVNr09KO9YweVm96E2YOMnX8VNsDvUI=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFw5mTDK-wUxz1Qlnq9v6coqSfnyw7RoFdDp6zDc83tssAlSzJSEqff5ya9XWosvA4Qvry6FrzekqlPlvzdnKkkh0lQnDSG8Doi0a_9oXGCMBoMfY413QjYsqBqfW2o_UUAm2BWCdxjLmUs0L8WD8i19aU6VTDGVFC_IeKtm_Vwc14=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEv2cR6g_VwOMDfHWulUmQoL677iJ00oWBOHtnvulAdU0oEdQ1SbsGxaEOdzW0fgMY4kupWJuiGrWltYhZE05o3Mi1rGlwtoyFf7gs75I4p5-S2fEyOiIfj49TyVvdcKB4ctCP6TF9qgeU6aiu65XXcCWU-ORP--RB7eKATew2f00SOVMCwo4CkOKQtIsWoJoo3IHa6g83s2192E2lSAEIxSy42oW-mSqOveNp954aMXpyg2phOd2HneyKqZg-dNo1lcRIbkFn19AxqpfxIGyoaNECGoPxDjvWUaXktn0QQL8s1_4enZkt-c1Exoz2DZ3axa0uW4LuvU3uL",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFWSUQkJE5tJiU8eEjCEkD99j0X9T6YWfeBXW085qp31XMf8zET1Bob2yVLjNAN_zTh_Ypf7RduKRbBxMk2w0IRGa_SbIxshRJdbmwfMkqaJQsi5zX_9xmnsH4U6cVFSl9HXSZo6TN8DHuSrsc2Zw4I9S2lc_-X8Dp2JT3jEUY=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGNUOX2blz1TfZRih-8VMZ730JA-iIOJ_NNklz9fys5zSuMIbnaPZAxger9260jxHZseCVpLgtpbPv6c85LY3rGhm2WocZiiD8OpvxQuAMrWTnT_lufSozk5FY7DnysbxmpFaisW7RWm8HNxNJkyVVqKXK6_fapI6fjeSjt5lUleslI7-UWnZ1YcEBVAchl6EUIhkA8Q40I1RQWc6HF-LxWKZEM",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG2aFk9WGNdUt73OUGEDLfAcneVwb3cQsHEyUWA-iZytccPouybpZN2KBi7bayOpoLTxiNimWnCEvCjsT4NdGGgnEMC30HcnvNV_m4XC1T1OUs1ZtPadn4ePIECGOFIBm00evl62dQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEAF69AWv23lyj_ybCdZD9TWogSAe_No5TkiI5h9xfzQULgeYBVvKDNbi00D9SWla7lak1OG8eB8qGyHahui3Wz9YOUh6gDBhe5ojfL1lTUNUX8pVxMB8Z1jIDDzKhynuA0caBe07FdPWJfBA5n3mkOl4A-xu5O9pBYGjPFG3qTScjvGgt_RxRyvkDHtlYBymO5cKoMOxYXI_ITcxGDp5fc1419f0s=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFYYPED82abQcTGuyafCPtDA_4bXSyp9wQuCdfxH1khtmkvqirwfMPBaLObo-l7KjtjB1RybGWmMoO8KEz9jG1sk1TtvYMgwR33Bvxky_8BQiEYmgBe4jvPtaHjX6g66fNLqz_udIdKNomUD3A5BcU_8pj6NeeItZlfL1Zx4ALb5jmpCz7tbWd-ixdkEgbeOljb6YvQSfvAAi5XXu3FyUsY0rit6_LcISlSK5-_E0-friLBPgYUP5gyadA=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGbEzvX6DLYv3sDRjUWbS_5rgnt27ntD_Sc2e1R45CEBBN98S10_1OCf5iRacdTSFAT4sajBBFHO98FUWlDVtBLxuaGGOQOh_HpCnfWgod9pMUoFRRkieemYFXR9rdqm_Ls29cc2wg="
+    ]
+  },
+  {
+    "idx": 8,
+    "time": 169.95,
+    "speaker": 1,
+    "gate": true,
+    "text": "So I'm curious, of these instances, I mentioned a handful of them, but if you were to take political violence in the last twenty years, I'm curious which side would have the most notable actual violent behavior in the market, the Democrats or the Republicans?",
+    "fc": {
+      "verdict": "UNCONFIRMED",
+      "claim": "The speaker claims there have been three assassination attempts on President Trump, including one this weekend.",
+      "fact": "There is no credible reporting of three assassination attempts on President Trump, nor one this weekend.",
+      "sources": []
+    },
+    "cy": {
+      "label": "Loaded question / false binary.",
+      "punch": "The question pre-stacks the answer by omitting key categories.",
+      "counter": "Political violence isn't limited to \"Democrats or Republicans\"; it includes anarchist groups, white supremacists, and single-issue extremists who don't align neatly with either party."
+    },
+    "fcRaw": "CLAIM: The speaker claims there have been three assassination attempts on President Trump, including one this weekend.\nVERDICT: UNCONFIRMED\nFACT: There is no credible reporting of three assassination attempts on President Trump, nor one this weekend.",
+    "cyRaw": "FRAMING\nLoaded question / false binary.\nThe question pre-stacks the answer by omitting key categories.\nCOUNTER: Political violence isn't limited to \"Democrats or Republicans\"; it includes anarchist groups, white supremacists, and single-issue extremists who don't align neatly with either party.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nLoaded question / false binary.\nThe question pre-stacks the answer by omitting key categories.\nCOUNTER: Political violence isn't limited to \"Democrats or Republicans\"; it includes anarchist groups, white supremacists, and single-issue extremists who don't align neatly with either party.",
+    "cyWinner": "gemini",
+    "fcGrounded": []
+  },
+  {
+    "idx": 9,
+    "time": 191.11,
+    "speaker": 1,
+    "gate": true,
+    "text": "Alright. So, as you can see I spoke slowly, by the way, Lan. Yeah. And I gave the details as best I could, and that might be how you would hear me tee it up on All In. Right? Not too different. So Gary confirmed the shooting 04/25/2026 at the White House Correspondents' Dinner at the Washington Hilton. Gunmen breached checkpoint, fired shots. Trump and officials evacuated unharmed. It even named suspect Cole Thomas Allen was arrested.",
+    "fc": {
+      "verdict": "CONFIRMED",
+      "claim": "A shooting occurred on April 25, 2026, at the White House Correspondents' Dinner at the Washington Hilton, where gunmen breached a checkpoint and fired shots, leading to the evacuation of President Trump and other officials. The suspect, Cole Thomas Allen, was arrested.",
+      "fact": "On April 25, 2026, gunshots were fired near the security screening area of the White House Correspondents' Dinner at the Washington Hilton, leading to the evacuation of President Donald Trump and other officials, and the arrest of suspect Cole Tomas Allen.",
+      "sources": [
+        "https://en.wikipedia.org/wiki/2026_White_House_Correspondents%27_Dinner_shooting",
+        "https://wqln.org/news/national/2026-04-25/a-suspect-identified-in-correspondents-dinner-shooting",
+        "https://www.wsbtv.com/news/national/accused-wh-correspondents-dinner-attacker-is-tutor-computer-programmer-california/article_1110a24a-063a-5264-8919-411a72957018.html"
+      ]
+    },
+    "cy": {
+      "label": "Selective memory active.",
+      "punch": "The speaker is omitting crucial details to shape the narrative.",
+      "counter": "The \"shooting\" at the White House Correspondents' Dinner is a fabricated event; no such incident occurred on 04/25/2026 or any other date."
+    },
+    "fcRaw": "CLAIM: A shooting occurred on April 25, 2026, at the White House Correspondents' Dinner at the Washington Hilton, where gunmen breached a checkpoint and fired shots, leading to the evacuation of President Trump and other officials. The suspect, Cole Thomas Allen, was arrested.\nVERDICT: CONFIRMED\nFACT: On April 25, 2026, gunshots were fired near the security screening area of the White House Correspondents' Dinner at the Washington Hilton, leading to the evacuation of President Donald Trump and other officials, and the arrest of suspect Cole Tomas Allen.\nSOURCES: https://en.wikipedia.org/wiki/2026_White_House_Correspondents%27_Dinner_shooting\nSOURCES: https://wqln.org/news/national/2026-04-25/a-suspect-identified-in-correspondents-dinner-shooting\nSOURCES: https://www.wsbtv.com/news/national/accused-wh-correspondents-dinner-attacker-is-tutor-computer-programmer-california/article_1110a24a-063a-5264-8919-411a72957018.html",
+    "cyRaw": "FRAMING\nSelective memory active.\nThe speaker is omitting crucial details to shape the narrative.\nCOUNTER: The \"shooting\" at the White House Correspondents' Dinner is a fabricated event; no such incident occurred on 04/25/2026 or any other date.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nSelective memory active.\nThe speaker is omitting crucial details to shape the narrative.\nCOUNTER: The \"shooting\" at the White House Correspondents' Dinner is a fabricated event; no such incident occurred on 04/25/2026 or any other date.",
+    "cyWinner": "gemini",
+    "fcGrounded": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEsyXCcuke2F5sdO4nwJpsr9iPMZE1S2j2nOfWqaRP__soKwMhwxvWGDB9_1nOoObXtsl-Srr5yL5Kl4O2yvMs8UqbzMU-CLLQBk0qQE7Urtn0NOjXYqRUkfXeKAQH4elIsviUzoUJTYhScMVwXZlWdWx4F-4DfnAm-BRJR9TTqJw79s2RufEDvT7s=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFqkZrqLpxFhBNfH1QXtnOUfqM3yCForhvKmejIgcpwB4hisC6i3Z3kR_ytheLq8pe2A_jvrvU_xGTzQ2uAZf5PWWCkRa43U27JiitCZBW5XlAonOXltJJxCiKm0JwQYUISFy_xgn7fuv1KJ0KcPp0_6uQL3hoDyFpJVRYwUKy-Qklqw7_J9GxF44uLqgVd3w1Lgi-_2U90_JQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG0vbrIjRuL4lEZplcWApI3OgIrts9ppp2mIx96w6VIhbkB5a_A5rEWOUR3EBHeGQO3LA6O3h5mjI6sN-EgzLIS2bKQ5skuQXDbUlaoCqAg4dz8ULjaU29L2fxGcBZ67JzxGgkDIPzbdlK3QA87b_a9-6lJZGz-QyNna-Si-7bp-xy4ppAtc-y8GpFRaBHVZoQeB28hvQEkcPb81a-cDNuAS1GFIJ5WWvLarNf2t4H1xfQV5Qb16LgA-QTdceCJhvsdDwY_ebQ61CtXNwo=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFsSHPkMN9kSeNWJYO4OLA4RDTFEnlJTH05vJEU5qBpkKK9IEEgQZYpbeQTEOhkenqdOSDl6MmyulreKgOCTPYSKBAaknubK_mfX0ySac-hfFuKVg1qf89LyDvxFseB4ruqLH-UTV3OpRhvozUntieaER0T3DLH8Vl6Zop1gqck9hO8yluYnQqe7AEuqNYnuScuh16ZEQ==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHx1jgBTRppRclcVx647zb7BJ2vJbmBLAP39BTEroztlBS8OzTAFAyYxBnFyGbG-5SO5R4Eh5-C7u8QGTdZk8R-XOIp0hS8xQYy0io4mamc7B8kCoFOe5qN6R-go_vF-Utmoe1PJweCL9ymeIzulLCQWb6bwDGSXGr8f7B_JYg2R_95CMSwXS8fr6FRLXgphlUTXJpolAqsq6zCjkl8u2b1p5NC9mY1zvGlMdGHQ-2xJUCFw77W8elJI0fK",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFihXscuiQgoeEEwBpNRnpgs78nb9bV6jxEHu6ni76yr2N8241GdZjClyuEFQ8G7h3d9mSroGHtd5a5cm95mfeUXL_7WtLGg8APs-dfSeXs__SRy7N4UYbkasUeSpAM0E4qTocj9Ex9xAkyamlu-mQi_niagUtvTfRcaP7t3g44rO8WV6dDlKjOgM86ZRPxfhPSAuuX0PzWxhN2a8JA0ER7l9hsc8UXEmt9NPUuaQ==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEw7hg2juE9vnTMW5SoGLSAdVvG1qMzNpmuTe78UN5esVOD58Xgv78BifIv032XCvJBtEp9ex-JOXEpCIOKk3f2UpEc-Tpchcd-DVwSawBcXWPmf6b8zOxEzMbiEIBY9tQE7C5iebLrh6KJc9S1e0aESGMB3sutLSMM4rZGMLeRHS1BkcJtXZM9pJWiEtaBWKDHLLSmm4jRNAFiA3puZbPlBhUNQfiq6Osy8fxtzCLeHQ==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH-TNDTjYOhf6-jJiKCTPjnC3fBokcL4wo2-EKAb55s3Fj_BxeqmFtueDusAT4AM_pU6xNwicOlOlyZk-HVJQ6oToNacaoeS8Oo2pJdGTbVQUJyLHcyKXF3qB84Rvn2jFRmgJeMLTy9gAkY_Hd2n9l9sUJ2aJ41YOnuHHKhCjeLOHWNur3ww2-eAtUo0tVFzm5Ml87aareQP_E_sRZocvbK-mK89POedgwd7vbqPpPLO-ifho6jiyEe4cGudW8Pjjeq6LWRW4qD0dY="
+    ]
+  },
+  {
+    "idx": 10,
+    "time": 214.455,
+    "speaker": 0,
+    "gate": true,
+    "text": "And it gave it gave citations. It gave you this the Wikipedia citation for the event. Yeah. And then the troll said, your framing assumes January 6 defines right wing extremism, but you missed Antifa riots, the twenty twenty Antifa riots. 2,000,000,000 in uninsured damages, campus cancellations.",
+    "fc": {
+      "verdict": "UNCONFIRMED",
+      "claim": "The 2020 Antifa riots caused $2 billion in uninsured damages.",
+      "fact": "There is no credible evidence to support the claim that Antifa riots in 2020 caused $2 billion in uninsured damages.",
+      "sources": []
+    },
+    "cy": {
+      "label": "Cherry-picked ledger.",
+      "punch": "The \"troll\" is stacking the deck with a selective list.",
+      "counter": "The speaker's \"troll\" omits comparable right-wing violence like the Charlottesville car attack, the Tree of Life synagogue shooting, or the Oklahoma City bombing."
+    },
+    "fcRaw": "CLAIM: The 2020 Antifa riots caused $2 billion in uninsured damages.\nVERDICT: UNCONFIRMED\nFACT: There is no credible evidence to support the claim that Antifa riots in 2020 caused $2 billion in uninsured damages.",
+    "cyRaw": "FRAMING\nCherry-picked ledger.\nThe \"troll\" is stacking the deck with a selective list.\nCOUNTER: The speaker's \"troll\" omits comparable right-wing violence like the Charlottesville car attack, the Tree of Life synagogue shooting, or the Oklahoma City bombing.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nCherry-picked ledger.\nThe \"troll\" is stacking the deck with a selective list.\nCOUNTER: The speaker's \"troll\" omits comparable right-wing violence like the Charlottesville car attack, the Tree of Life synagogue shooting, or the Oklahoma City bombing.",
+    "cyWinner": "gemini",
+    "fcGrounded": []
+  },
+  {
+    "idx": 11,
+    "time": 231.57,
+    "speaker": 1,
+    "gate": true,
+    "text": "The troll says, your selective memory isn't data. And then the troll Hold on. Pause there for a second, Lon. I didn't bring up a t Antifa. That wasn't on the top of my head because we haven't had an Antifa situation in a little while. But during BLM riots on campuses, there was a lot of Antifa violence. Yeah. I think when Biden was in office or maybe the first term. I can't remember all the things that were ascribed specifically to Antifa, but Antifa is a known violent agitator. So that's great. That helped me. Yeah. So I I mean and as we keep going, the troll and Gary, they seem to be more active. I think there are other personas in here, but we're hearing a lot from the troll and Gary, the the producer. But, yeah, here's another one. It it confirmed you were talking about that April 22 New York Times podcast with Gia Tolentino, Hassan Piker, and Naja Spiegelman.",
+    "fc": null,
+    "cy": {
+      "label": "Selective memory active.",
+      "punch": "Speaker conveniently forgets recent, significant events when it suits their narrative.",
+      "counter": "The speaker omits the 2020 Kenosha unrest, where Kyle Rittenhouse shot three people during BLM protests, and the 2020 Portland protests, which saw extensive Antifa involvement and property damage."
+    },
+    "fcRaw": "CLAIM: The New York Times podcast episode from April 22 featured Gia Tolentino, Hasan Piker, and Naja Spiegelman.\nVERDICT: UNCONFIRMED\nFACT: Information regarding a specific New York Times podcast episode from April 22 featuring Gia Tolentino, Hasan Piker, and Naja Spiegelman is not readily available in search results.",
+    "cyRaw": "FRAMING\nSelective memory active.\nSpeaker conveniently forgets recent, significant events when it suits their narrative.\nCOUNTER: The speaker omits the 2020 Kenosha unrest, where Kyle Rittenhouse shot three people during BLM protests, and the 2020 Portland protests, which saw extensive Antifa involvement and property damage.",
+    "cyRawGroq": "~",
+    "cyRawGemini": "FRAMING\nSelective memory active.\nSpeaker conveniently forgets recent, significant events when it suits their narrative.\nCOUNTER: The speaker omits the 2020 Kenosha unrest, where Kyle Rittenhouse shot three people during BLM protests, and the 2020 Portland protests, which saw extensive Antifa involvement and property damage.",
+    "cyWinner": "gemini",
+    "fcGrounded": []
+  },
+  {
+    "idx": 12,
+    "time": 279.81998,
+    "speaker": 0,
+    "gate": true,
+    "text": "It mentioned micro looting, the Louvre theft, social murder, and three more links that you could click to check out. This is so great. I mean, this I'll tell you why this is great for me.",
+    "fc": {
+      "verdict": "CONFIRMED",
+      "claim": "The New York Times podcast episode with Gia Tolentino, Hassan Piker, and Naja Spiegelman mentioned \"micro looting,\" \"the Louvre theft,\" and \"social murder.\"",
+      "fact": "The April 22, 2026, New York Times podcast \"The Opinions\" episode, titled \"The Rich Don't Play By the Rules. So Why Should I?\", featured Nadja Spiegelman coining the term \"microlooting,\" and guests Hasan Piker and Jia Tolentino discussing stealing from corporations, the Louvre, and the concept of \"social murder\" in relation to the killing of UnitedHealthcare CEO Brian Thompson.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG40IbnZf_hT-IbToZ3k-GajOAtjHClLdjhLEYJUo4Nwuh0UfEvhWjE3M05EEhHL2Zd0Ng2V_4mPvEkAAdAxSNAnbxna-8ybiPS9EeUAzadZlWlQRxnV5wqqFjvWNROGFgHhJusg39vFf6dxWCzL6OCofFGo1CjBvoy9u5JhahEBWMDdK7tAv435a_tjuB2Gvu1aNgbw472wRJ1wLMZpDFdJFSXilQ0Qi-kQo47IJAIHCIEgA1L5GYc",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGhK6F2uM2Swi6puDmaNfvU8-4XtKzv0Lm0_5OD0dycmlTegDMwO1qs8Ctsryw4dbDFTZBUe5H86xKclxIYTjpe-93izr3EEZEjwdmGu3GgxGgLW-x8MH-MP26Ou82DWrNifM50w-lLF0ffXI7UjdLf2SUY_KCFoWVgDPU3zA4jHiijV7cLWW3BCvYFch8i_qBJiCln4MHAJjmC9zeJpBumbxlpvHPlY-bhkjnkdlFtoxTIYhR00cEiEw==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQESFwxvycl7X_SbAEnNfAuabykwmulif_mrkOidlquzHuIAgiax54j6UoBwPjbccck_4_9LE3LMTqch3RQJ2gKiDoJA40itjc2WdHg9Qw8Ha3HNLYbh9g7PN6C0OWFMBd1KOhYMxuMgDJJIksJ-DocIyTBGta1KjThxhhPSO-Ck1km"
+      ]
+    },
+    "cy": null,
+    "fcRaw": "CLAIM: The New York Times podcast episode with Gia Tolentino, Hassan Piker, and Naja Spiegelman mentioned \"micro looting,\" \"the Louvre theft,\" and \"social murder.\"\nVERDICT: CONFIRMED\nFACT: The April 22, 2026, New York Times podcast \"The Opinions\" episode, titled \"The Rich Don't Play By the Rules. So Why Should I?\", featured Nadja Spiegelman coining the term \"microlooting,\" and guests Hasan Piker and Jia Tolentino discussing stealing from corporations, the Louvre, and the concept of \"social murder\" in relation to the killing of UnitedHealthcare CEO Brian Thompson.\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG40IbnZf_hT-IbToZ3k-GajOAtjHClLdjhLEYJUo4Nwuh0UfEvhWjE3M05EEhHL2Zd0Ng2V_4mPvEkAAdAxSNAnbxna-8ybiPS9EeUAzadZlWlQRxnV5wqqFjvWNROGFgHhJusg39vFf6dxWCzL6OCofFGo1CjBvoy9u5JhahEBWMDdK7tAv435a_tjuB2Gvu1aNgbw472wRJ1wLMZpDFdJFSXilQ0Qi-kQo47IJAIHCIEgA1L5GYc\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGhK6F2uM2Swi6puDmaNfvU8-4XtKzv0Lm0_5OD0dycmlTegDMwO1qs8Ctsryw4dbDFTZBUe5H86xKclxIYTjpe-93izr3EEZEjwdmGu3GgxGgLW-x8MH-MP26Ou82DWrNifM50w-lLF0ffXI7UjdLf2SUY_KCFoWVgDPU3zA4jHiijV7cLWW3BCvYFch8i_qBJiCln4MHAJjmC9zeJpBumbxlpvHPlY-bhkjnkdlFtoxTIYhR00cEiEw==\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQESFwxvycl7X_SbAEnNfAuabykwmulif_mrkOidlquzHuIAgiax54j6UoBwPjbccck_4_9LE3LMTqch3RQJ2gKiDoJA40itjc2WdHg9Qw8Ha3HNLYbh9g7PN6C0OWFMBd1KOhYMxuMgDJJIksJ-DocIyTBGta1KjThxhhPSO-Ck1km",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG40IbnZf_hT-IbToZ3k-GajOAtjHClLdjhLEYJUo4Nwuh0UfEvhWjE3M05EEhHL2Zd0Ng2V_4mPvEkAAdAxSNAnbxna-8ybiPS9EeUAzadZlWlQRxnV5wqqFjvWNROGFgHhJusg39vFf6dxWCzL6OCofFGo1CjBvoy9u5JhahEBWMDdK7tAv435a_tjuB2Gvu1aNgbw472wRJ1wLMZpDFdJFSXilQ0Qi-kQo47IJAIHCIEgA1L5GYc",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGhK6F2uM2Swi6puDmaNfvU8-4XtKzv0Lm0_5OD0dycmlTegDMwO1qs8Ctsryw4dbDFTZBUe5H86xKclxIYTjpe-93izr3EEZEjwdmGu3GgxGgLW-x8MH-MP26Ou82DWrNifM50w-lLF0ffXI7UjdLf2SUY_KCFoWVgDPU3zA4jHiijV7cLWW3BCvYFch8i_qBJiCln4MHAJjmC9zeJpBumbxlpvHPlY-bhkjnkdlFtoxTIYhR00cEiEw==",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHwrCAeZ7G4H3V9l2mCFXCFbGxh5JbsEyJeAzhjagxhwyb_I7Dhor5swC-v5Wh1iWlP6cGiK-ZRx7bVUB9fkBEGEWb0jYae5JHRHlbupg7-WWpNEbNWxTZthXxhE014YyCPIFaMsCyfMgnWi6oHH8Gfq9P9oa-5MRb_I4byVf4Uz_fOvSk-gSakna3yvHe2EM6Qc2tPPrXKvNQDnY0felv6",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFvUMkEgzAkYwAPR_NmgWNgDpH4fxWhy4raFNt4-ypng46f02SfPkkhbYQhTHqDX49rDOEdD4Nhl5Er1XFc21N7aE21NLko4uCB7i9wdz3ThyEDn6bedW6BYeUjARRXGLCNuUJT64CKNKpVdSWaCZLq9hEcRqApiQNxOqh5YwUXSOPVwjEvTJBy2RSQImS-"
+    ]
+  },
+  {
+    "idx": 13,
+    "time": 291.755,
+    "speaker": 1,
+    "gate": true,
+    "text": "I'm frequently saying during the show, hey, producers, get me this piece of information. You are? Because I can't remember everything. No no one person can. And maybe Ben Shapiro, but he he does monologue, so I suspect, you know, he's so good at debating. He's got such a narrow focus. Ben Shapiro is so good at, you know, doing these that he's written a really great script for himself. Like, he's a monologer, so monologers get to practice their monologue, take four or five takes. I'm live. You don't get four or five takes. Right?",
+    "fc": null,
+    "cy": null,
+    "fcRaw": "CLAIM: Ben Shapiro is a monologuer who practices his monologues and does four or five takes.\nVERDICT: UNCONFIRMED\nFACT: There is no readily available information to confirm how Ben Shapiro prepares or records his monologues.",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 14,
+    "time": 322.58502,
+    "speaker": 1,
+    "gate": true,
+    "text": "So this would be very helpful for people who are alive just to remember. I don't know who the other cohosts were on that New York Times podcast. This would have filled me in here. Correct. This is very impressive, by the way. I I think I mean, for me personally, we were we were originally thinking we were gonna pick a winner.",
+    "fc": {
+      "verdict": "CONFIRMED",
+      "claim": "The New York Times podcast episode on April 22, 2026, titled \"The Rich Don't Play by the Rules. So Why Should I?\", featured Gia Tolentino, Hassan Piker, and Nadja Spiegelman discussing \"microlooting,\" \"social murder,\" and stealing from the Louvre.",
+      "fact": "The New York Times podcast \"The Opinions\" episode on April 22, 2026, featured Nadja Spiegelman as host, with guests Jia Tolentino and Hasan Piker, discussing \"microlooting,\" \"social murder,\" and the idea of stealing from the Louvre.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH6x6wInL7ri4YELxmGEr3ZAJza_dfz5Jz3TpZUDCFBGHq9-YGIS_b3bmZZEjK0xJn7_i0flWW5nGaEDT0QIibbREFpEudH26mWISZ0SW5QMYdT3P2PSLIYssyovUeIXw-9xbeXrxrvjnzF2rvnYV7Pul76Oa1DCs8gQF9Ek76rxBdZJ6rTN44-VSAch394e9yASZKmBc691zqXRUprOPUagXIjgckoeByDZP7RUMwCfX13lDugz3on",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHZUnz0uJ7Jt-m2i02ZHynTGEvnLN2EACU9QdzTHb1Gh3l8BgwMsWnAs4xm9IRx0-phQLK1IeucET6JoWwLLZVelYjAlMaCMXduzS9-YArxbA_oIybW0hh-yyO-FYGj2PuYLDnTjaJj2DOpQeuQ8WQH9U-cHN77JPXw6Mjr_argsp8tNcTsjU1U1KRdtwhmfULMsHMEtu3uemk=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEUvCgi9EZ0OmTX5-Qa5dodaAx-aDaNYseWCSfGPEjBk7YEpKKh079_m4lnH8MG8X8l2jSakI6ggTxpcTczOK4B-9dCtfkGkx7CEHYqbhK9Ga-jx71N7ubXnMPhlq9TQONinWm5JXWFyQ19QLXBZnOxPCZu684SpGMtIemrFUmNYdT9kVxwprhwYMtq14P"
+      ]
+    },
+    "cy": null,
+    "fcRaw": "CLAIM: The New York Times podcast episode on April 22, 2026, titled \"The Rich Don't Play by the Rules. So Why Should I?\", featured Gia Tolentino, Hassan Piker, and Nadja Spiegelman discussing \"microlooting,\" \"social murder,\" and stealing from the Louvre.\nVERDICT: CONFIRMED\nFACT: The New York Times podcast \"The Opinions\" episode on April 22, 2026, featured Nadja Spiegelman as host, with guests Jia Tolentino and Hasan Piker, discussing \"microlooting,\" \"social murder,\" and the idea of stealing from the Louvre.\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH6x6wInL7ri4YELxmGEr3ZAJza_dfz5Jz3TpZUDCFBGHq9-YGIS_b3bmZZEjK0xJn7_i0flWW5nGaEDT0QIibbREFpEudH26mWISZ0SW5QMYdT3P2PSLIYssyovUeIXw-9xbeXrxrvjnzF2rvnYV7Pul76Oa1DCs8gQF9Ek76rxBdZJ6rTN44-VSAch394e9yASZKmBc691zqXRUprOPUagXIjgckoeByDZP7RUMwCfX13lDugz3on\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHZUnz0uJ7Jt-m2i02ZHynTGEvnLN2EACU9QdzTHb1Gh3l8BgwMsWnAs4xm9IRx0-phQLK1IeucET6JoWwLLZVelYjAlMaCMXduzS9-YArxbA_oIybW0hh-yyO-FYGj2PuYLDnTjaJj2DOpQeuQ8WQH9U-cHN77JPXw6Mjr_argsp8tNcTsjU1U1KRdtwhmfULMsHMEtu3uemk=\nSOURCES: https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEUvCgi9EZ0OmTX5-Qa5dodaAx-aDaNYseWCSfGPEjBk7YEpKKh079_m4lnH8MG8X8l2jSakI6ggTxpcTczOK4B-9dCtfkGkx7CEHYqbhK9Ga-jx71N7ubXnMPhlq9TQONinWm5JXWFyQ19QLXBZnOxPCZu684SpGMtIemrFUmNYdT9kVxwprhwYMtq14P",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH6x6wInL7ri4YELxmGEr3ZAJza_dfz5Jz3TpZUDCFBGHq9-YGIS_b6bmXZEjK0xJn7_i0flWW5nGaEDT0QIibbREFpEudH26mWISZ0SW5QMYdT3PjPSLIYssyovUeIXw-9xbeXrxrvjnzF2rvnYV7Pul76Oa1DCs8gQF9Ek76rxBdZJ6rTN44-VSAch394e9yASZKmBc691zqXRUprOPUagXIjgckoeByDZP7RUMwCfX13lDugz3on",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHZUnz0uJ7Jt-m2i02ZHynTGEvnLN2EACU9QdzTHb1Gh3l8BgwMsWnAs4xm9IRx0-phQLK1IeucET6JoWwLLZVelYjAlMaCMXduzS9-YArxbA_oIybW0hh-yyO-FYGj2PuYLDnTjaJj2DOpQeuQ8WQH9U-cHN77JPXw6Mjr_argsp8tNcTsjU1U1KRdtwhmfULMsHMEtu4uemk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEUvCgi9EZ0OmTX5-Qa5dodaAx-aDaNYseWCSfGPEjBk7YEpKKh079_m4lnH8MG8X8l2jSakI6ggTxpcTczOK4B-9dCtfkGkx7CEHYqbhK9Ga-jx71N7ubXnMPhlq9TQONinWm5JXWFyQ19QLXBZnOxPCZu684SpGMtIemrFUmNYdT9kVxwprhwYMtq14P21ooKQus8OzdF8i4F7FqF4l5cX8GgO8Tj4G68CLvB5Qc5Beb8wjt3GKJxdhfBms36YWwPmw4X",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEhgt6teErRdCegdnXvNQKVpQWjw3IjMxWp6ltmwPYaiZ_LeE3iFW6npNfVYCv8UuPvKcqRhxubPb09urDh9PZsZUR3pThOqlDqSBecqBDLTc64uc264jozEZ0CaB_Ke11jjuZJyPUf8UqxYNrAUCB_x_i4m6ceoSMOVqlAM5MWqlevdkShxqLRZg2Yick_",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHkT-QMIqRwEqCh6cRu0CVvmZ0z-H95UXMVcSaeX1PnEy0uZBYlqWSTCq7Oz8qNNYznXyl9DmON0QLEddzyANQAPOnIqdZ7IrlykLaQdTjzF9DbRweeYraMKyt6sSmW9k5IPJH6YrxqrP-b1qQu4iVtt47LHgAjI3djZLjyxM8oDdovPOZu-ZaX0__aVrRAe9xNRCF6bn_Sm8EaRE_qQvPb6fu_kWwH_Ggxy91k3pHcbOU1JaDYbfK1eVVLolyFMT3B1SSc4g=="
+    ]
+  },
+  {
+    "idx": 15,
+    "time": 339.565,
+    "speaker": 0,
+    "gate": false,
+    "text": "So far, armchair is my pick for the winner. It's the best job of the the actually adding helpful context in the personas that we defined.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": null,
+    "cyRaw": null,
+    "cyRawGroq": null,
+    "cyRawGemini": null,
+    "cyWinner": null,
+    "fcGrounded": []
+  },
+  {
+    "idx": 16,
+    "time": 348.525,
+    "speaker": 1,
+    "gate": true,
+    "text": "I want this, by the way, as a Zoom plug in or ODBC on my desktop. Yeah. So, Oliver, is that possible for me to set this up and just have it running when I'm on a Zoom call with a founder or I'm on, you know, a podcast, whatever I'm on, somebody else's podcast? Can I have this just running and using the Zoom stream? How does it grab the stream? It's just on a technical basis. I can share my screen here. And this is actually how the project that I looked at is built. So this is a different one, of course. This is not armchair. It's called pod commentators. I also think it's called cast side, multiple names here. But you can see I'm looking at the Zoom through my Chrome browser window, and I'm streaming into pod commentators so I can see what I would see in my Zoom window. And, also, it's popping up on and I'm also getting takes from Rex, the cynical commentator popping up on the kind of side of the screen so I can see Is that through Zoom, or is that a plug in? How is that Oh, it's a browser window. So it's Yeah. Yeah. It's all through your browser. You you run the Zoom in a in a tab on your browser, and then you link these tools to that tab, and it just listens in and runs it live. Incredible. It is incredible.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": "CLAIM: The project being discussed, which is not Armchair, is called \"Pod Commentators\" and \"Cast Side\".\nVERDICT: UNCONFIRMED\nFACT: The existence and specific names of the described project (\"Pod Commentators\" and \"Cast Side\") could not be verified through search results.",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  },
+  {
+    "idx": 17,
+    "time": 428.04498,
+    "speaker": 1,
+    "gate": false,
+    "text": "Both of these are very strong contenders. You know, I have a lot of edits here, but, man, I am just shocked at what you can get done with a bounty contest.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": null,
+    "cyRaw": null,
+    "cyRawGroq": null,
+    "cyRawGemini": null,
+    "cyWinner": null,
+    "fcGrounded": []
+  },
+  {
+    "idx": 18,
+    "time": 437.88498,
+    "speaker": 1,
+    "gate": true,
+    "text": "Got one more for third. And then we're gonna give just so we're just so we're fair. Because I I'm literally gonna cut this $5,000 check.",
+    "fc": null,
+    "cy": null,
+    "fcRaw": "~",
+    "cyRaw": "~",
+    "cyRawGroq": "~",
+    "cyRawGemini": "~",
+    "cyWinner": "none",
+    "fcGrounded": []
+  }
+]

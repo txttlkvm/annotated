@@ -2,6 +2,8 @@ const { globalShortcut, screen } = require('electron');
 const shortcutsRepository = require('./repositories');
 const internalBridge = require('../../bridge/internalBridge');
 const askService = require('../ask/askService');
+// Lazy-require windowManager to avoid circular dependency
+const getWindowManager = () => require('../../window/windowManager');
 
 
 class ShortcutsService {
@@ -273,6 +275,22 @@ class ShortcutsService {
                 }
             }
         }
+        // ── Annotated overlay shortcuts (hardcoded) ───────────────────────
+        const annotatedShortcuts = [
+            { key: `${modifier}+Shift+A`, fn: () => getWindowManager().toggleAnnotatedOverlay() },
+            { key: `${modifier}+Shift+O`, fn: () => getWindowManager().toggleOBSOverlay() },
+            { key: `${modifier}+Shift+B`, fn: () => getWindowManager().sendAnnotatedAction('bookmark-last') },
+            { key: `${modifier}+Shift+N`, fn: () => getWindowManager().sendAnnotatedAction('new-session') },
+            { key: `${modifier}+Shift+E`, fn: () => getWindowManager().sendAnnotatedAction('end-session') },
+        ];
+        annotatedShortcuts.forEach(({ key, fn }) => {
+            try {
+                globalShortcut.register(key, fn);
+            } catch (e) {
+                console.error(`[Shortcuts] Failed to register annotated shortcut ${key}:`, e.message);
+            }
+        });
+
         console.log('[Shortcuts] All shortcuts have been registered.');
     }
 

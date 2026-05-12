@@ -13,7 +13,7 @@ function buildSystemPrompt(promptParts, customPrompt = '', googleSearchEnabled =
 }
 
 function getSystemPrompt(profile, customPrompt = '', googleSearchEnabled = true) {
-    const promptParts = profilePrompts[profile] || profilePrompts.interview;
+    const promptParts = profilePrompts[profile] || profilePrompts.default;
     return buildSystemPrompt(promptParts, customPrompt, googleSearchEnabled);
 }
 

@@ -45,7 +45,7 @@ export class MainHeader extends LitElement {
             padding: 2px 10px 2px 13px;
             background: transparent;
             overflow: hidden;
-            border-radius: 9000px;
+            border-radius: 9000px 9000px 0 0;
             /* backdrop-filter: blur(1px); */
             justify-content: space-between;
             align-items: center;
@@ -61,7 +61,7 @@ export class MainHeader extends LitElement {
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.6);
-            border-radius: 9000px;
+            border-radius: 9000px 9000px 0 0;
             z-index: -1;
         }
 
@@ -69,7 +69,7 @@ export class MainHeader extends LitElement {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 9000px;
+            border-radius: 9000px 9000px 0 0;
             padding: 1px;
             background: linear-gradient(169deg, rgba(255, 255, 255, 0.17) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.17) 100%); 
             -webkit-mask:

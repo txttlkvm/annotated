@@ -176,11 +176,16 @@ export class AskView extends LitElement {
             flex-direction: column;
             height: 100%;
             width: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            /* Liquid glass morphism */
+            background: rgba(10, 10, 13, 0.38);
+            backdrop-filter: blur(48px) saturate(2.4) brightness(1.12);
+            -webkit-backdrop-filter: blur(48px) saturate(2.4) brightness(1.12);
             border-radius: 12px;
-            outline: 0.5px rgba(255, 255, 255, 0.3) solid;
-            outline-offset: -1px;
-            backdrop-filter: blur(1px);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.20),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+                0 8px 40px rgba(0, 0, 0, 0.50);
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
@@ -188,18 +193,17 @@ export class AskView extends LitElement {
 
         .ask-container::before {
             content: '';
+            pointer-events: none;
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.15);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            inset: 0;
             border-radius: 12px;
-            filter: blur(10px);
-            z-index: -1;
+            background: linear-gradient(
+                160deg,
+                rgba(255, 255, 255, 0.07) 0%,
+                rgba(180, 200, 255, 0.04) 30%,
+                transparent 60%
+            );
+            z-index: 0;
         }
 
         .response-header {

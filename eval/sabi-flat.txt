@@ -1,0 +1,64 @@
+[S1] Yeah. Which is to say,
+[S1] for this to be useful
+[S1] to the host of the show or the audience
+[S1] because I think this serves two roles. One,
+[S1] I could run this privately
+[S1] and just see when I'm on Megyn Kelly
+[S1] what fact she's getting right, what fact she's getting wrong, and I could be challenging her on a fact and say, like, okay. Is that actually true? And then I could go look at it, which, by the way, everybody's doing right now. There was a famous Larry Summers episode of All In where he claimed,
+[S1] you know, I think he said Chumov's looking stuff up or whatever. That's kinda all fair and loving more now in terms of, you know, a podcast. People are looking up stuff in real time.
+[S0] So let's go into our demos here. So we always like to demo or die. Who's gonna lead the demos? I'm I'm actually I started sharing already. This is, this is armchair, the one of the first ones that we set up. K.
+[S0] It is by I'm looking up his name right here. Mark Kolbruge
+[S0] says this. I believe that's that. And as you can see, this is what I really liked about it. It's highlighted this block of what we're talking about.
+[S0] You know, you're this is Be more specific here so that the audience listening The quote sports guest, please. The quote here is, as you said, there was a famous Larry Summers episode of All In where he claimed that Shamath was looking stuff up. It's highlighted that, and then Gary,
+[S0] their producer with contest Oh, we're using this right now? Yep. This is live. I'm I'm doing this live. Gary says in April 2025, All In had a tariff debate with Summers and Shammoth Sachs using Grok ChatGPT live per Reddit buzz. They couldn't confirm
+[S0] whether Shammoth was actually looking stuff up. And then here a little later, I mentioned Mark Kolbrugge,
+[S0] and Gary says, yes. He he found it. Mark created armchair. He found his,
+[S0] you know, he found his URL. He he corrected me on the spelling.
+[S1] Wow. Yeah. So you can see it's actually it's working live. And we'll Wait. Wait. Let me let me try using this now. This is incredible. Holy cow. Let me do this right now. Let's
+[S1] do it based on political topic. I'll do a political topic right now.
+[S1] Obviously, we know there was an incident at the White House Correspondents'
+[S1] Dinner this weekend,
+[S1] and the buzz online was which
+[S1] side of the aisle has the most extremist?
+[S1] Is it the right with the oath keepers and the Proud Boys and what happened on January 6 where there was violence at the capital?
+[S1] Or does the left
+[S1] have the violence problem with
+[S1] the recent New York Times podcast where they were talking about soft murder or something, and they were talking about
+[S1] micro looting and stealing from the Louvre. And then we've had the three assassination attempts, including this weekend on president Trump,
+[S1] all from left
+[S1] mentally ill. I think you gotta be mentally ill to do an assassination.
+[S1] So I'm curious,
+[S1] of these instances, I mentioned a handful of them, but if you were to take political violence in the last twenty years,
+[S1] I'm curious
+[S1] which side would have the most notable
+[S1] actual violent
+[S1] behavior
+[S1] in the market, the Democrats or the Republicans?
+[S1] Alright. So, as you can see I spoke slowly, by the way, Lan. Yeah. And I gave the details as best I could, and that might be how you would hear me tee it up on All In. Right? Not too different. So Gary confirmed the shooting 04/25/2026
+[S0] at the White House Correspondents' Dinner at the Washington Hilton. Gunmen breached checkpoint, fired shots. Trump and officials evacuated unharmed. It even named suspect Cole Thomas Allen was arrested.
+[S0] And it gave it gave citations. It gave you this the Wikipedia citation for the event. Yeah. And then the troll said, your framing assumes January 6 defines right wing extremism,
+[S0] but you missed Antifa riots,
+[S0] the twenty twenty Antifa riots. 2,000,000,000 in uninsured damages, campus cancellations.
+[S1] The troll says, your selective memory isn't data. And then the troll Hold on. Pause there for a second, Lon. I didn't bring up a t Antifa. That wasn't on the top of my head because we haven't had an Antifa situation in a little while. But during BLM riots on campuses, there was a lot of Antifa violence. Yeah. I think when Biden was in office or maybe the first term. I can't remember all the things that were ascribed specifically to Antifa, but Antifa is
+[S0] a known violent agitator. So that's great. That helped me. Yeah. So I I mean and as we keep going, the troll and Gary, they seem to be more active. I think there are other personas in here, but we're hearing a lot from the troll and Gary, the the producer. But, yeah, here's another one. It it confirmed you were talking about that April 22 New York Times podcast with Gia Tolentino,
+[S0] Hassan Piker, and Naja Spiegelman.
+[S0] It mentioned micro looting, the Louvre theft, social murder, and three more links that you could click to check out. This is so great. I mean, this I'll tell you why this is great for me.
+[S1] I'm frequently saying during the show,
+[S1] hey, producers, get me this piece of information. You are? Because I can't remember everything.
+[S1] No no one person can. And maybe Ben Shapiro, but he he does monologue, so I suspect,
+[S1] you know, he's so good at debating. He's got such a narrow focus. Ben Shapiro is so good at, you know, doing these that he's written a really great script for himself. Like, he's a monologer, so monologers get to practice their monologue, take four or five takes. I'm live. You don't get four or five takes. Right?
+[S1] So
+[S1] this would be very helpful for people who are alive just to remember. I don't know who the other cohosts were on that New York Times podcast. This would have filled me in here. Correct. This is very impressive, by the way. I I think I mean, for me personally, we were we were originally thinking we were gonna pick a winner.
+[S0] So far, armchair is my pick for the winner. It's the best job of the the actually adding helpful context in the personas that we defined.
+[S1] I want this, by the way, as a Zoom plug in or ODBC
+[S1] on my desktop. Yeah. So, Oliver, is that possible for me to set this up and just have it running when I'm on a Zoom call with a founder or
+[S1] I'm on, you know, a podcast, whatever I'm on, somebody else's podcast? Can I have this just running and using the Zoom stream? How does it grab the stream? It's just on a technical basis. I can share my screen here. And this is actually how the
+[S2] project that I looked at is built. So
+[S2] this is a different one, of course. This is not armchair. It's called pod commentators. I also think it's called cast side, multiple names here. But you can see I'm looking at the Zoom through
+[S2] my Chrome browser window, and I'm streaming into pod commentators so I can see what I would see in my Zoom window. And, also, it's popping up on and I'm also getting takes from Rex, the cynical commentator popping up on the kind of side of the screen so I can see Is that through Zoom, or is that a plug in? How is that Oh,
+[S0] it's a browser window. So it's Yeah. Yeah. It's all through your browser. You you run the Zoom in a in a tab on your browser, and then you link these tools to that tab,
+[S0] and it just listens in and runs it live. Incredible. It is incredible.
+[S1] Both of these are very strong contenders.
+[S1] You know, I have a lot of edits here, but, man, I am just shocked at what you can get done with a bounty contest.
+[S1] Got one
+[S1] more for third. And then we're gonna give just so we're just so we're fair. Because I I'm literally gonna cut this $5,000 check.

@@ -32,6 +32,11 @@ function createApp(eventBridge) {
     app.use('/api/conversations', require('./routes/conversations'));
     app.use('/api/presets', require('./routes/presets'));
 
+    // Annotated LLM proxy routes (no auth — local only)
+    app.use('/api/gemini', require('./routes/annotated-gemini'));
+    app.use('/api/cynic-groq', require('./routes/annotated-cynic'));
+    app.use('/api/citations', require('./routes/annotated-citations'));
+
     app.get('/api/sync/status', (req, res) => {
         res.json({
             status: 'online',

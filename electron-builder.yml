@@ -1,25 +1,16 @@
-# electron-builder.yml
+appId: app.twoshares.annotated
+productName: Annotated
+copyright: Copyright © 2026 twoshares.app
 
-# The unique application ID
-appId: com.pickle.glass
-
-# The user-facing application name
-productName: Glass
-
-# Publish configuration for GitHub releases
 publish:
-    provider: github
-    owner: pickle-com
-    repo: glass
-    releaseType: draft
+    provider: generic
+    url: https://releases.annotated.app
 
-# Protocols configuration for deep linking
 protocols:
-    name: PickleGlass Protocol
-    schemes: 
-        - pickleglass
+    name: Annotated Protocol
+    schemes:
+        - annotated
 
-# List of files to be included in the app package
 files:
     - src/**/*
     - package.json
@@ -27,17 +18,21 @@ files:
     - '!**/node_modules/electron/**'
     - public/build/**/*
 
-# Additional resources to be copied into the app's resources directory
 extraResources:
     - from: pickleglass_web/out
       to: out
+    - from: .env
+      to: .env
+    - from: src/seed-voiceprints.json
+      to: seed-voiceprints.json
 
 asarUnpack:
     - "src/ui/assets/SystemAudioDump"
     - "**/node_modules/sharp/**/*"
     - "**/node_modules/@img/**/*"
+    - "**/node_modules/@google/generative-ai/**/*"
+    - "**/node_modules/better-sqlite3/**/*"
 
-# Windows configuration
 win:
     icon: src/ui/assets/logo.ico
     target:
@@ -46,35 +41,26 @@ win:
         - target: portable
           arch: x64
     requestedExecutionLevel: asInvoker
-    signAndEditExecutable: true
-    cscLink: build\certs\glass-dev.pfx
-    cscKeyPassword: "${env.CSC_KEY_PASSWORD}"
-    signtoolOptions:
-      certificateSubjectName: "Glass Dev Code Signing"
+    legalTrademarks: twoshares.app
+    verifyUpdateCodeSignature: false
 
-# NSIS installer configuration for Windows
 nsis:
-    oneClick: false
+    oneClick: true
     perMachine: false
-    allowToChangeInstallationDirectory: true
-    deleteAppDataOnUninstall: true
+    deleteAppDataOnUninstall: false
     createDesktopShortcut: always
     createStartMenuShortcut: true
-    shortcutName: Glass
+    shortcutName: Annotated
+    installerIcon: src/ui/assets/logo.ico
+    uninstallerIcon: src/ui/assets/logo.ico
 
-# macOS specific configuration
 mac:
-    # The application category type
     category: public.app-category.utilities
-    # Path to the .icns icon file
     icon: src/ui/assets/logo.icns
-    # Minimum macOS version (supports both Intel and Apple Silicon)
     minimumSystemVersion: '11.0'
-    hardenedRuntime: true
-    entitlements: entitlements.plist
-    entitlementsInherit: entitlements.plist
+    hardenedRuntime: false
     target:
-      - target: dmg
-        arch: universal
-      - target: zip
-        arch: universal
+        - target: dmg
+          arch: universal
+        - target: zip
+          arch: universal

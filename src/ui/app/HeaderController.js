@@ -17,6 +17,11 @@ class HeaderTransitionManager {
          * @param {'welcome'|'apikey'|'main'|'permission'} type
          */
         this.ensureHeader = (type) => {
+            // Annotated: block welcome/apikey — always use main
+            if (type === 'welcome' || type === 'apikey') {
+                console.log('[HeaderController] ensureHeader: blocking', type, '— redirecting to main');
+                type = 'main';
+            }
             console.log('[HeaderController] ensureHeader: Ensuring header of type:', type);
             if (this.currentHeaderType === type) {
                 console.log('[HeaderController] ensureHeader: Header of type:', type, 'already exists.');
@@ -91,15 +96,8 @@ class HeaderTransitionManager {
                 }
             });
             window.api.headerController.onForceShowApiKeyHeader(async () => {
-                console.log('[HeaderController] Received broadcast to show apikey header. Switching now.');
-                const isConfigured = await window.api.apiKeyHeader.areProvidersConfigured();
-                if (!isConfigured) {
-                    await this._resizeForWelcome();
-                    this.ensureHeader('welcome');
-                } else {
-                    await this._resizeForApiKey();
-                    this.ensureHeader('apikey');
-                }
+                // Annotated: skip Glass provider setup, stay on main header
+                this.transitionToMainHeader();
             });            
         }
     }
@@ -127,21 +125,9 @@ class HeaderTransitionManager {
 
     //////// after_modelStateService ////////
     async handleStateUpdate(userState) {
-        const isConfigured = await window.api.apiKeyHeader.areProvidersConfigured();
-
-        if (isConfigured) {
-            // If providers are configured, always check permissions regardless of login state.
-            const permissionResult = await this.checkPermissions();
-            if (permissionResult.success) {
-                this.transitionToMainHeader();
-            } else {
-                this.transitionToPermissionHeader();
-            }
-        } else {
-            // If no providers are configured, show the welcome header to prompt for setup.
-            await this._resizeForWelcome();
-            this.ensureHeader('welcome');
-        }
+        // Annotated uses its own API keys (Gemini/Groq via .env) — skip Glass
+        // provider setup entirely and go straight to main header.
+        this.transitionToMainHeader();
     }
 
     // WelcomeHeader 콜백 메서드들
@@ -163,12 +149,8 @@ class HeaderTransitionManager {
     }
 
     async transitionToWelcomeHeader() {
-        if (this.currentHeaderType === 'welcome') {
-            return this._resizeForWelcome();
-        }
-
-        await this._resizeForWelcome();
-        this.ensureHeader('welcome');
+        // Annotated: never show welcome screen — go straight to main
+        this.transitionToMainHeader();
     }
     //////// after_modelStateService ////////
 

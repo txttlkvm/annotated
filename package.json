@@ -1,12 +1,12 @@
 {
-    "name": "pickle-glass",
-    "productName": "Glass",
-    "version": "0.2.4",
-    "description": "Cl*ely for Free",
+    "name": "annotated",
+    "productName": "Annotated",
+    "version": "1.0.1",
+    "description": "Real-time fact-checking overlay for live podcasts and video",
     "main": "src/index.js",
     "scripts": {
         "setup": "npm install && cd pickleglass_web && npm install && npm run build && cd .. && npm start",
-        "start": "npm run build:renderer && electron .",
+        "start": "npm run build:renderer && npm run build:web && electron .",
         "package": "npm run build:all && electron-builder --dir",
         "make": "npm run build:renderer && electron-forge make",
         "build": "npm run build:all && electron-builder --config electron-builder.yml --publish never",
@@ -17,7 +17,8 @@
         "build:renderer": "node build.js",
         "build:web": "cd pickleglass_web && npm run build && cd ..",
         "build:all": "npm run build:renderer && npm run build:web",
-        "watch:renderer": "node build.js --watch"
+        "watch:renderer": "node build.js --watch",
+        "dump:voiceprints": "electron scripts/dump-voiceprints.js"
     },
     "keywords": [
         "glass",
@@ -28,7 +29,9 @@
         "contextual ai"
     ],
     "author": {
-        "name": "Pickle Team"
+        "name": "twoshares.app",
+        "email": "matt@twoshares.app",
+        "url": "https://twoshares.app"
     },
     "license": "GPL-3.0",
     "dependencies": {
@@ -36,6 +39,7 @@
         "@deepgram/sdk": "^4.9.1",
         "@google/genai": "^1.8.0",
         "@google/generative-ai": "^0.24.1",
+        "@supabase/supabase-js": "^2.105.3",
         "axios": "^1.10.0",
         "better-sqlite3": "^9.6.0",
         "cors": "^2.8.5",
@@ -46,6 +50,7 @@
         "express": "^4.18.2",
         "firebase": "^11.10.0",
         "firebase-admin": "^13.4.0",
+        "form-data": "^4.0.5",
         "jsonwebtoken": "^9.0.2",
         "keytar": "^7.9.0",
         "node-fetch": "^2.7.0",

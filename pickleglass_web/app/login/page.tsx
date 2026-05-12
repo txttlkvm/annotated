@@ -88,7 +88,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Welcome to Pickle Glass</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome to Annotated</h1>
         <p className="text-gray-600 mt-2">Sign in with your Google account to sync your data across all devices.</p>
         {isElectronMode ? (
           <p className="text-sm text-blue-600 mt-1 font-medium">🔗 Login requested from Electron app</p>
@@ -112,7 +112,7 @@ export default function LoginPage() {
             <button
               onClick={() => {
                 if (isElectronMode) {
-                  window.location.href = 'pickleglass://auth-success?uid=default_user&email=contact@pickle.com&displayName=Default%20User'
+                  window.location.href = 'pickleglass://auth-success?uid=default_user&email=contact@twoshares.app&displayName=Default%20User'
                 } else {
                   router.push('/settings')
                 }

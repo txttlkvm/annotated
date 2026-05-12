@@ -1,0 +1,42 @@
+[
+  {
+    "speaker": "0",
+    "winner": "Lon",
+    "score": 90,
+    "runner": "Jason",
+    "runnerScore": 58,
+    "gateOk": true
+  },
+  {
+    "speaker": "1",
+    "winner": "Jason",
+    "score": 90,
+    "runner": "Lon",
+    "runnerScore": 70,
+    "gateOk": false
+  },
+  {
+    "speaker": "1",
+    "winner": "Jason",
+    "score": 16,
+    "runner": "Lon",
+    "runnerScore": 16,
+    "gateOk": false
+  },
+  {
+    "speaker": "2",
+    "winner": "Oliver",
+    "score": 90,
+    "runner": "Jason",
+    "runnerScore": 77,
+    "gateOk": false
+  },
+  {
+    "speaker": "2",
+    "winner": "Jason",
+    "score": 16,
+    "runner": "Lon",
+    "runnerScore": 16,
+    "gateOk": false
+  }
+]

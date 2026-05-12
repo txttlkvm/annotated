@@ -1914,7 +1914,7 @@ export class ApiKeyHeader extends LitElement {
     openPrivacyPolicy() {
         console.log('🔊 openPrivacyPolicy ApiKeyHeader');
         if (window.api?.common) {
-            window.api.common.openExternal('https://pickle.com/privacy-policy');
+            window.api.common.openExternal('https://twoshares.app/privacy');
         }
     }
 

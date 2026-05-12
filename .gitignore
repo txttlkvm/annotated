@@ -112,4 +112,29 @@ data/*.db-wal
 # Build output
 out/
 dist/
-build/ 
+build/
+
+# Secrets — never commit env files anywhere in the tree
+.env
+.env.local
+.env.test
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Local debug + identify-sample audio (may contain user speech)
+annotated-debug.log
+**/annotated-identify-samples/
+
+# Next.js build outputs
+**/.next/
+pickleglass_web/.next/
+pickleglass_web/out/
+
+# Voiceprint enrollment tmp
+eval/_tmp_speakers/
+eval/_tmp_enroll/
+eval/live-*.wav
+eval/sabi.wav
+eval/sabi-utts.json

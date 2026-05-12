@@ -174,7 +174,8 @@ contextBridge.exposeInMainWorld('api', {
   listenView: {
     // Window Management
     adjustWindowHeight: (winName, height) => ipcRenderer.invoke('adjust-window-height', { winName, height }),
-    
+    minimizeWindow: () => ipcRenderer.invoke('listen:minimize'),
+
     // Listeners
     onSessionStateChanged: (callback) => ipcRenderer.on('session-state-changed', callback),
     removeOnSessionStateChanged: (callback) => ipcRenderer.removeListener('session-state-changed', callback)
@@ -302,5 +303,48 @@ contextBridge.exposeInMainWorld('api', {
     // Listeners
     onChangeListenCaptureState: (callback) => ipcRenderer.on('change-listen-capture-state', callback),
     removeOnChangeListenCaptureState: (callback) => ipcRenderer.removeListener('change-listen-capture-state', callback)
-  }
+  },
+
+  // Debug logging from renderer to main process
+  debug: {
+    log: (msg) => ipcRenderer.send('debug:log', msg),
+  },
+
+  // Annotated overlay
+  overlay: {
+    getDesktopCapturerSources: () => ipcRenderer.invoke('overlay:getDesktopCapturerSources'),
+  },
+
+  // Annotated — keyboard shortcut actions from main process
+  annotated: {
+    onAction: (callback) => ipcRenderer.on('annotated:action', callback),
+    removeOnAction: (callback) => ipcRenderer.removeListener('annotated:action', callback),
+    // Window control for drag-to-move and resize
+    startDrag: () => ipcRenderer.send('overlay:startDrag'),
+    getBounds: () => ipcRenderer.invoke('overlay:getBounds'),
+    setBounds: (bounds) => ipcRenderer.send('overlay:setBounds', bounds),
+    setIgnoreMouseEvents: (ignore, opts) => ipcRenderer.send('overlay:setIgnoreMouseEvents', ignore, opts),
+    // Show/hide the annotated overlay panel
+    toggle: () => ipcRenderer.invoke('annotated:toggle'),
+    hide: () => ipcRenderer.invoke('annotated:hide'),
+    quit: () => ipcRenderer.invoke('annotated:quitApp'),
+    openSettings: () => ipcRenderer.invoke('annotated:openSettings'),
+    // Manual listen control
+    startListening: () => ipcRenderer.invoke('listen:start'),
+    stopListening: () => ipcRenderer.invoke('listen:stop'),
+    // Hide overlay from screen capture (private mode)
+    setContentProtection: (enabled) => ipcRenderer.invoke('annotated:setContentProtection', enabled),
+    // Tell detector not to auto-restart after a manual stop
+    setManualStop: (stopped) => ipcRenderer.invoke('annotated:setManualStop', stopped),
+    // Voice biometrics (pyannote)
+    enrollVoiceprint: (speakerId, name) => ipcRenderer.invoke('annotated:enrollVoiceprint', speakerId, name),
+    enrollFromFile:   (opts) => ipcRenderer.invoke('annotated:enrollFromFile', opts),
+    identifyVoice:    () => ipcRenderer.invoke('annotated:identifyVoice'),
+    listVoiceprints:  () => ipcRenderer.invoke('annotated:listVoiceprints'),
+    onSpeakerIdentified: (cb) => ipcRenderer.on('speaker-identified', cb),
+    removeOnSpeakerIdentified: (cb) => ipcRenderer.removeListener('speaker-identified', cb),
+    // API key settings — used by the inline settings window
+    saveApiKeys: (data) => ipcRenderer.invoke('annotated:saveApiKeys', data),
+    testApiKey:  (name, value) => ipcRenderer.invoke('annotated:testApiKey', { name, value }),
+  },
 });

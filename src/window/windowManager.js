@@ -458,8 +458,10 @@ function createFeatureWindows(header, namesToCreate) {
         switch (name) {
             case 'listen': {
                 const listen = new BrowserWindow({
-                    ...commonChildOptions, width:400,minWidth:400,maxWidth:900,
-                    maxHeight:900,
+                    ...commonChildOptions,
+                    width: 353, minWidth: 400, maxWidth: 900,
+                    height: 600, minHeight: 200, maxHeight: 900,
+                    resizable: true,  // user-resizable sidebar
                 });
                 listen.setContentProtection(isContentProtectionOn);
                 listen.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
@@ -483,7 +485,7 @@ function createFeatureWindows(header, namesToCreate) {
                     });
                 }
                 if (!app.isPackaged) {
-                    listen.webContents.openDevTools({ mode: 'detach' });
+                    
                 }
                 windowPool.set('listen', listen);
                 break;
@@ -516,7 +518,7 @@ function createFeatureWindows(header, namesToCreate) {
                 
                 // Open DevTools in development
                 if (!app.isPackaged) {
-                    ask.webContents.openDevTools({ mode: 'detach' });
+                    
                 }
                 windowPool.set('ask', ask);
                 break;
@@ -551,7 +553,7 @@ function createFeatureWindows(header, namesToCreate) {
                 windowPool.set('settings', settings);  
 
                 if (!app.isPackaged) {
-                    settings.webContents.openDevTools({ mode: 'detach' });
+                    
                 }
                 break;
             }
@@ -589,7 +591,7 @@ function createFeatureWindows(header, namesToCreate) {
 
                 windowPool.set('shortcut-settings', shortcutEditor);
                 if (!app.isPackaged) {
-                    shortcutEditor.webContents.openDevTools({ mode: 'detach' });
+                    
                 }
                 break;
             }
@@ -662,6 +664,7 @@ function createWindows() {
         resizable: false,
         focusable: true,
         acceptFirstMouse: true,
+        acceptFirstMouse: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -721,10 +724,16 @@ function createWindows() {
 
     header.setContentProtection(isContentProtectionOn);
     header.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    
+
+    // Hide the original header pill — controls are embedded in the listen window nav bar.
+    // setOpacity(0) keeps bounds/events intact so layout positioning still works;
+    // setIgnoreMouseEvents lets clicks pass through to windows below.
+    header.setOpacity(0);
+    header.setIgnoreMouseEvents(true);
+
     // Open DevTools in development
     if (!app.isPackaged) {
-        header.webContents.openDevTools({ mode: 'detach' });
+
     }
 
     header.on('focus', () => {
@@ -790,8 +799,155 @@ const handleHeaderStateChanged = (state) => {
 };
 
 
+function createAnnotatedOverlay(port) {
+    if (windowPool.has('annotated-overlay')) return;
+
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { height } = primaryDisplay.workAreaSize;
+
+    const overlay = new BrowserWindow({
+        width: 320,
+        height,
+        x: 0,
+        y: 0,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        show: false,   // hidden until a trigger app is detected
+        resizable: true,
+        minWidth: 400,
+        maxWidth: 680,
+        focusable: true,
+        hasShadow: false,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, '../preload.js'),
+            backgroundThrottling: false,
+        },
+    });
+
+    overlay.setIgnoreMouseEvents(false);
+    overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    overlay.setAlwaysOnTop(true, 'screen-saver'); // beat fullscreen apps + other windows
+    overlay.setContentProtection(false); // must be capturable by OBS
+
+    const url = `http://localhost:${port}/overlay`;
+    overlay.loadURL(url);
+
+    windowPool.set('annotated-overlay', overlay);
+    console.log(`[Annotated] Overlay window created → ${url}`);
+    return overlay;
+}
+
+function createOBSOverlay(port) {
+    if (windowPool.has('annotated-obs')) return;
+
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { height } = primaryDisplay.workAreaSize;
+
+    const obs = new BrowserWindow({
+        width: 320,
+        height,
+        x: 0,
+        y: 0,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        resizable: false,
+        focusable: false,
+        hasShadow: false,
+        show: false, // hidden by default, toggled via shortcut
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, '../preload.js'),
+            backgroundThrottling: false,
+        },
+    });
+
+    // Full passthrough — clicks go to apps beneath
+    obs.setIgnoreMouseEvents(true, { forward: true });
+    obs.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    obs.setContentProtection(false); // capturable by OBS
+
+    const url = `http://localhost:${port}/overlay?obs=true`;
+    obs.loadURL(url);
+
+    windowPool.set('annotated-obs', obs);
+    console.log(`[Annotated] OBS overlay created → ${url}`);
+    return obs;
+}
+
+function toggleAnnotatedOverlay() {
+    const win = windowPool.get('annotated-overlay');
+    if (!win || win.isDestroyed()) return;
+    if (win.isVisible()) {
+        win.hide();
+    } else {
+        win.show();
+        win.focus();
+    }
+}
+
+function toggleOBSOverlay() {
+    const win = windowPool.get('annotated-obs');
+    if (!win || win.isDestroyed()) return;
+    if (win.isVisible()) {
+        win.hide();
+    } else {
+        win.show();
+    }
+}
+
+function sendAnnotatedAction(type) {
+    const win = windowPool.get('annotated-overlay');
+    if (win && !win.isDestroyed()) {
+        win.webContents.send('annotated:action', { type });
+    }
+}
+
+/**
+ * Minimal bootstrap — creates only the hidden listen window needed for audio
+ * capture. Skips the header toolbar and all other PickleGlass UI entirely.
+ */
+function createListenWindowOnly() {
+    // Create a minimal invisible listen window for audio capture
+    const listen = new BrowserWindow({
+        show: false,
+        frame: false,
+        transparent: true,
+        hasShadow: false,
+        skipTaskbar: true,
+        hiddenInMissionControl: true,
+        width: 353, height: 600,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, '../preload.js'),
+            backgroundThrottling: false,
+            webSecurity: false,
+        },
+    });
+    listen.loadFile(path.join(__dirname, '../ui/app/content.html'), { query: { view: 'listen' } });
+    windowPool.set('listen', listen);
+
+    // Swallow any visibility requests for the listen window — keep it always hidden
+    internalBridge.on('window:requestVisibility', ({ name }) => {
+        if (name === 'listen') return; // never show it
+    });
+}
+
 module.exports = {
     createWindows,
+    createListenWindowOnly,
+    createAnnotatedOverlay,
+    createOBSOverlay,
+    toggleAnnotatedOverlay,
+    toggleOBSOverlay,
+    sendAnnotatedAction,
     windowPool,
     toggleContentProtection,
     resizeHeaderWindow,

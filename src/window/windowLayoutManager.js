@@ -83,9 +83,10 @@ class WindowLayoutManager {
 
         const PAD = 5;
         const buttonPadding = 170;
+        const NAV_HEIGHT = 47; // visual nav bar is in the listen window now
 
         const x = headerBounds.x + headerBounds.width - settingsBounds.width + buttonPadding;
-        const y = headerBounds.y + headerBounds.height + PAD;
+        const y = headerBounds.y + NAV_HEIGHT + PAD;
 
         const clampedX = Math.max(workAreaX + 10, Math.min(workAreaX + screenWidth - settingsBounds.width - 10, x));
         const clampedY = Math.max(workAreaY + 10, Math.min(workAreaY + screenHeight - settingsBounds.height - 10, y));
@@ -203,17 +204,29 @@ class WindowLayoutManager {
             const winName = askVis ? 'ask' : 'listen';
             const winB = askVis ? askB : listenB;
             if (!winB) return {};
-    
-            let xRel = headerCenterXRel - winB.width / 2;
-            xRel = Math.max(PAD, Math.min(screenWidth - winB.width - PAD, xRel));
-    
-            let yPos;
-            if (strategy.primary === 'above') {
-                yPos = (headerBounds.y - workAreaY) - PAD - winB.height;
-            } else { // 'below'
-                yPos = (headerBounds.y - workAreaY) + headerBounds.height + PAD;
+
+            let xRel, yPos;
+
+            if (winName === 'listen') {
+                // Attach listen flush to header — left-align, zero gap
+                xRel = headerBounds.x - workAreaX;
+                xRel = Math.max(0, Math.min(screenWidth - winB.width, xRel));
+                if (strategy.primary === 'above') {
+                    yPos = (headerBounds.y - workAreaY) - winB.height; // flush above
+                } else {
+                    yPos = (headerBounds.y - workAreaY) + headerBounds.height; // flush below
+                }
+            } else {
+                // Ask window: keep original centered behavior
+                xRel = headerCenterXRel - winB.width / 2;
+                xRel = Math.max(PAD, Math.min(screenWidth - winB.width - PAD, xRel));
+                if (strategy.primary === 'above') {
+                    yPos = (headerBounds.y - workAreaY) - PAD - winB.height;
+                } else {
+                    yPos = (headerBounds.y - workAreaY) + headerBounds.height + PAD;
+                }
             }
-            
+
             layout[winName] = { x: Math.round(xRel + workAreaX), y: Math.round(yPos + workAreaY), width: winB.width, height: winB.height };
         }
         return layout;

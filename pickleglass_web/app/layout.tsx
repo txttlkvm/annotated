@@ -1,12 +1,9 @@
 import './globals.css'
-import { Inter } from 'next/font/google'
 import ClientLayout from '@/components/ClientLayout'
 
-const inter = Inter({ subsets: ['latin'] })
-
 export const metadata = {
-  title: 'pickleglass - AI Assistant',
-  description: 'Personalized AI Assistant for various contexts',
+  title: 'Annotated — Live AI Sidebar',
+  description: 'Real-time fact checking and analysis for live podcasts',
 }
 
 export default function RootLayout({
@@ -16,11 +13,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+      </head>
+      <body>
         <ClientLayout>
           {children}
         </ClientLayout>
       </body>
     </html>
   )
-} 
+}
