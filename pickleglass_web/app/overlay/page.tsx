@@ -136,9 +136,13 @@ function OverlayInner() {
     flushTimer: ReturnType<typeof setTimeout> | null
     firstStartedAt: number
   } | null>(null)
-  const FC_FLUSH_MS = 2000
-  const FC_MAX_BUFFER_AGE_MS = 7000
-  const FC_MIN_WORDS = 12
+  // Reduced from (2000ms, 7000ms, 12 words) to fire FC more often. The model
+  // can absorb shorter triggers because the rolling buffer carries the prior
+  // 5-min context. Cards arrive ~3x faster at the cost of slightly more
+  // ~ (silence) outputs on borderline fragments — net win for "live" feel.
+  const FC_FLUSH_MS = 1200
+  const FC_MAX_BUFFER_AGE_MS = 4500
+  const FC_MIN_WORDS = 7
   const cardIdCounter = useRef(0)
   const supabaseSessionId = useRef<string | null>(null)
   // map cardId → supabaseId for subsequent updates
@@ -321,7 +325,7 @@ function OverlayInner() {
     const ageMs = now - firstStartedAt
     const sentenceEnd = /[.!?]$/.test(trimmedText)
     if ((sentenceEnd && bufWordCount >= FC_MIN_WORDS)
-        || bufWordCount >= 25
+        || bufWordCount >= 16  // mid-sentence backstop (was 25 — too patient for live)
         || ageMs >= FC_MAX_BUFFER_AGE_MS) {
       clearTimeout(flushTimer)
       flushUtteranceForFC(merged.text, merged.lineIds[merged.lineIds.length - 1])

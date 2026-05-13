@@ -1,7 +1,7 @@
 {
     "name": "annotated",
     "productName": "Annotated",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Real-time fact-checking overlay for live podcasts and video",
     "main": "src/index.js",
     "scripts": {
