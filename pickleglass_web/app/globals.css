@@ -131,16 +131,39 @@ code, pre, kbd, samp {
 }
 
 .glass-card {
-  /* Frosted-glass effect — translucent surface lets the backdrop-blur
-     actually show through. Saturate bump gives the iOS-style color pop. */
-  background: rgba(22, 22, 28, 0.42);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 14px;
+  /* iOS-style frosted glass — light translucent gradient surface +
+     multi-stop shadow stack. Reads as "frosted" even when the parent
+     panel is opaque and backdrop-filter has nothing colorful to blur. */
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.06) 55%,
+      rgba(255, 255, 255, 0.12) 100%
+    );
+  backdrop-filter: blur(40px) saturate(200%) brightness(108%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(108%);
+  border: none; /* hairline handled via inset shadow for sub-pixel control */
+  border-radius: 18px;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18); /* top-edge sheen */
+    /* outer ambient drop — soft, far falloff */
+    0 14px 40px rgba(0, 0, 0, 0.45),
+    /* outer tight drop — keeps edge crisp */
+    0 2px 8px rgba(0, 0, 0, 0.28),
+    /* top-edge bright sheen */
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    /* bottom-edge soft inner shadow for depth */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    /* hairline border */
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* Crisp white text with subtle drop shadow — readable on any backdrop */
+.glass-card,
+.glass-card p,
+.glass-card span {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.40);
 }
 
 /* ── Glass — exact WelcomeHeader.js match ── */
