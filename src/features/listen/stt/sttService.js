@@ -494,6 +494,10 @@ class SttService {
     }
 
     async initializeSttSessions(language = 'en') {
+        // Reset the intentional-close flag from any previous closeSessions().
+        // A fresh init means the user wants to listen again — auto-reconnect
+        // on abnormal closes should resume normally.
+        this._intentionalClose = false;
         const effectiveLanguage = process.env.OPENAI_TRANSCRIBE_LANG || language || 'en';
 
         const modelInfo = await modelStateService.getCurrentModelInfo('stt');
@@ -916,6 +920,16 @@ class SttService {
                     // try to reconnect transparently before giving up. Speechmatics
                     // free tier emits 4006 'timelimit_exceeded' every 30 min;
                     // reconnect resumes the session without losing audio.
+                    //
+                    // ALSO: when the user explicitly clicked STOP, closeSessions()
+                    // sets `_intentionalClose = true`. Skip reconnect in that case
+                    // so the manual stop sticks — some providers emit a non-1000
+                    // code on intentional close (e.g. Speechmatics sends 1011 if
+                    // the EndOfStream message hadn't been ack'd yet).
+                    if (this._intentionalClose) {
+                        _debugLog('[SttService] My STT close skipped reconnect — intentional stop');
+                        return;
+                    }
                     if (event.code !== 1000) this._tryReconnect('me', event.code, event.reason);
                 },
             },
@@ -928,6 +942,10 @@ class SttService {
                 onerror: error => { _debugLog('[SttService] Their STT session ERROR:', error.message); },
                 onclose: event => {
                     _debugLog('[SttService] Their STT session CLOSED code=' + event.code + ' reason=' + event.reason);
+                    if (this._intentionalClose) {
+                        _debugLog('[SttService] Their STT close skipped reconnect — intentional stop');
+                        return;
+                    }
                     if (event.code !== 1000) this._tryReconnect('them', event.code, event.reason);
                 },
             },
@@ -1394,6 +1412,11 @@ class SttService {
     }
 
     async closeSessions() {
+        // Flag so close handlers in createSttSessions skip auto-reconnect.
+        // User clicked STOP — they want the session to stay stopped, no
+        // matter what close-code the WS server sends back. Cleared on next
+        // successful initStt.
+        this._intentionalClose = true;
         this.stopMacOSAudioCapture();
 
         // Clear heartbeat / renewal timers
