@@ -131,12 +131,16 @@ code, pre, kbd, samp {
 }
 
 .glass-card {
-  background: rgba(16, 16, 20, 0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 10px;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.55);
+  /* Frosted-glass effect — translucent surface lets the backdrop-blur
+     actually show through. Saturate bump gives the iOS-style color pop. */
+  background: rgba(22, 22, 28, 0.42);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18); /* top-edge sheen */
 }
 
 /* ── Glass — exact WelcomeHeader.js match ── */

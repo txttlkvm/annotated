@@ -622,10 +622,14 @@ export function TranscriptZone({
     const CARD_GAP = 8
     for (const { card, lineId } of orderedCards) {
       const lineEl = lineRefs.current[lineId]
-      if (!lineEl) continue
-      const naturalTop = lineEl.offsetTop
       const cardEl = cardRefs.current[card.id]
       const cardH = cardEl?.offsetHeight ?? 0
+      // FALLBACK: when the line ref isn't yet mounted (race during initial
+      // mount, or trigger line was removed by reset-transcript), DO NOT
+      // skip — that leaves the card with no top and opacity 0 (invisible).
+      // Instead, stack the card below the previous one. The card stays
+      // visible; ResizeObserver / next render will tighten alignment.
+      const naturalTop = lineEl ? lineEl.offsetTop : Math.max(0, lastBottom + CARD_GAP)
       const top = Math.max(naturalTop, lastBottom + CARD_GAP)
       tops[card.id] = top
       lastBottom = top + cardH
@@ -683,6 +687,21 @@ export function TranscriptZone({
     cardEls.forEach(el => ro.observe(el))
     return () => ro.disconnect()
   }, [orderedCards.length, recomputeCardTops])
+
+  // Belt-and-suspenders: when a new card lands but its trigger line ref
+  // wasn't ready at recompute time (cardTops still missing), schedule a
+  // few retry frames so the card snaps to its proper Y as soon as the line
+  // ref mounts. Without this, the card would sit at top:0 visually until
+  // the user scrolls or resizes.
+  useEffect(() => {
+    const missing = orderedCards.filter(({ card }) => cardTops[card.id] === undefined)
+    if (missing.length === 0) return
+    let t1 = 0, t2 = 0, t3 = 0
+    t1 = window.setTimeout(() => recomputeCardTops(), 60)
+    t2 = window.setTimeout(() => recomputeCardTops(), 250)
+    t3 = window.setTimeout(() => recomputeCardTops(), 900)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [orderedCards, cardTops, recomputeCardTops])
 
   // Two-column path: continuous transcript flow on the right, absolute-positioned
   // cards floating in the left column anchored to their trigger line. This
@@ -747,7 +766,13 @@ export function TranscriptZone({
                 position: 'absolute',
                 top: cardTops[card.id] ?? 0,
                 left: 0, right: 0,
-                opacity: cardTops[card.id] === undefined ? 0 : 1,
+                // ALWAYS visible. Previously hid until cardTops was populated,
+                // but a race between setCards and the ResizeObserver could
+                // leave a card permanently at opacity 0 if the trigger line
+                // ref wasn't ready when recomputeCardTops ran. With the
+                // fallback positioning above, even an uncomputed card lands
+                // at top:0 — which is fine; ResizeObserver tightens later.
+                opacity: 1,
                 transform: activeCardIds.includes(card.id) ? 'translateX(-2px)' : 'translateX(0)',
                 filter: activeCardIds.includes(card.id) ? 'drop-shadow(0 0 6px rgba(255,255,255,0.10))' : 'none',
                 transition: 'top 0.2s ease, opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease',
