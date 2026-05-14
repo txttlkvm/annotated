@@ -173,12 +173,19 @@ export function FCCard({
     <div
       onMouseEnter={() => onHoverChange?.(card.id, true)}
       onMouseLeave={() => onHoverChange?.(card.id, false)}
+      // Click on the card body (anywhere not on an inner button/link) re-collapses
+      // when the card is pinned. Inner interactive elements stop propagation
+      // so they don't trigger collapse. Only enabled when onTogglePin is wired
+      // AND the card is currently pinned (otherwise newest-2 cards must stay
+      // expanded regardless of click).
+      onClick={isPinned && onTogglePin ? () => onTogglePin(card.id) : undefined}
       className={`glass-card card-entrance${isPulsing ? ' card-pulse' : ''}`}
       style={{
         borderLeft: '2.5px solid var(--fc1)',
         margin: isInline ? 'var(--sp2) 0 var(--sp2) 0' : '0',
         padding: 'var(--sp3)',
         position: 'relative',
+        cursor: isPinned && onTogglePin ? 'pointer' : 'default',
       }}
     >
       {isPinned && onTogglePin && (
@@ -217,7 +224,7 @@ export function FCCard({
           color: 'var(--t3)',
         }}>{card.elapsed}</span>
         <button
-          onClick={() => onBookmark?.(card.id)}
+          onClick={(e) => { e.stopPropagation(); onBookmark?.(card.id) }}
           className="interactive"
           title={card.isBookmarked ? 'Remove bookmark' : 'Save this fact'}
           style={{
@@ -226,6 +233,7 @@ export function FCCard({
             fontSize: 13, padding: '1px 3px',
           }}>{card.isBookmarked ? '🔖' : '🔖'}</button>
         <button
+          onClick={(e) => e.stopPropagation()}
           className="interactive"
           title="Share on X"
           style={{
@@ -274,6 +282,7 @@ export function FCCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="interactive"
+                  onClick={(e) => e.stopPropagation()}
                   onMouseEnter={() => {
                     const rect = anchorRefs.current[url]?.getBoundingClientRect() ?? new DOMRect()
                     setHoveredCitation({ url, rect })
@@ -300,7 +309,7 @@ export function FCCard({
       {/* Reactions + Publish — track livestream reactions and comments */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp3)' }}>
         <button
-          onClick={() => onReact?.(card.id, 'agree')}
+          onClick={(e) => { e.stopPropagation(); onReact?.(card.id, 'agree') }}
           className="interactive"
           title="Agreed — fact stands"
           style={{
@@ -311,7 +320,7 @@ export function FCCard({
           <span style={{ fontSize: '1.5em', lineHeight: 1 }}>💯</span>{card.reactionsAgree > 0 ? ` · ${card.reactionsAgree}` : ''}
         </button>
         <button
-          onClick={() => onReact?.(card.id, 'question')}
+          onClick={(e) => { e.stopPropagation(); onReact?.(card.id, 'question') }}
           className="interactive"
           title="Questioning this fact"
           style={{
@@ -322,7 +331,7 @@ export function FCCard({
           <span style={{ fontSize: '1.5em', lineHeight: 1 }}>🤔</span>{card.reactionsQuestion > 0 ? ` · ${card.reactionsQuestion}` : ''}
         </button>
         <button
-          onClick={() => onReact?.(card.id, 'comment')}
+          onClick={(e) => { e.stopPropagation(); onReact?.(card.id, 'comment') }}
           className="interactive"
           title="Livestream comments on this fact"
           style={{
@@ -341,7 +350,7 @@ export function FCCard({
             }}>✓ PUBLISHED</span>
           ) : (
             <button
-              onClick={() => onPublish(card.id)}
+              onClick={(e) => { e.stopPropagation(); onPublish(card.id) }}
               className="interactive"
               title="post to anotated.com profile"
               style={{

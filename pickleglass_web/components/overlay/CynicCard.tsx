@@ -62,12 +62,14 @@ export function CynicCard({
     <div
       onMouseEnter={() => onHoverChange?.(card.id, true)}
       onMouseLeave={() => onHoverChange?.(card.id, false)}
+      onClick={isPinned && onTogglePin ? () => onTogglePin(card.id) : undefined}
       className={`glass-card card-entrance${isPulsing ? ' card-pulse' : ''}`}
       style={{
         borderLeft: '2.5px solid var(--cy1)',
         margin: isInline ? 'var(--sp2) 0 var(--sp2) 0' : '0',
         padding: 'var(--sp3)',
         position: 'relative',
+        cursor: isPinned && onTogglePin ? 'pointer' : 'default',
       }}
     >
       {isPinned && onTogglePin && (
@@ -155,7 +157,7 @@ export function CynicCard({
       {/* Reactions — track livestream reactions and comments */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp3)' }}>
         <button
-          onClick={() => onReact?.(card.id, 'agree')}
+          onClick={(e) => { e.stopPropagation(); onReact?.(card.id, "agree") }}
           className="interactive"
           title="Agreed — fallacy nailed"
           style={{
@@ -166,7 +168,7 @@ export function CynicCard({
           <span style={{ fontSize: '1.5em', lineHeight: 1 }}>💯</span>{card.reactionsAgree > 0 ? ` · ${card.reactionsAgree}` : ''}
         </button>
         <button
-          onClick={() => onReact?.(card.id, 'question')}
+          onClick={(e) => { e.stopPropagation(); onReact?.(card.id, "question") }}
           className="interactive"
           title="Not sure about this one"
           style={{
@@ -177,7 +179,7 @@ export function CynicCard({
           <span style={{ fontSize: '1.5em', lineHeight: 1 }}>🤔</span>{card.reactionsQuestion > 0 ? ` · ${card.reactionsQuestion}` : ''}
         </button>
         <button
-          onClick={() => onReact?.(card.id, 'comment')}
+          onClick={(e) => { e.stopPropagation(); onReact?.(card.id, "comment") }}
           className="interactive"
           title="Livestream comments on this take"
           style={{

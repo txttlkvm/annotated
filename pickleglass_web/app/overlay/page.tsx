@@ -630,10 +630,17 @@ function OverlayInner() {
               .filter(r => r.ts > cutoff)
               .slice(-12)
 
+            // Require ≥2 shared entities to suppress. With only 1 overlap
+            // (e.g. both cards mention "Joe Biden" but discuss totally
+            // different incidents — Burisma vs. Shokin vs. pardon), they
+            // are NOT duplicates. Live political discussion threads dozens
+            // of distinct claims through the same names; the previous
+            // single-entity rule killed almost every follow-up card.
             const dupeOverlap = recentCardClaimEntities.current.find(rec => {
+              let shared = 0
               const arr = Array.from(newClaimEnts)
-              for (const e of arr) if (rec.entities.has(e)) return true
-              return false
+              for (const e of arr) if (rec.entities.has(e)) shared++
+              return shared >= 2
             })
             const suppressedAsDupe = !!(dupeOverlap && newClaimEnts.size > 0)
             if (suppressedAsDupe) {
