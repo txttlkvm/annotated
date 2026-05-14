@@ -130,6 +130,9 @@ export function parseFCResponse(raw: string): ParsedFC | null {
   const denial = comment.toLowerCase()
   const denialPatterns = [
     'no credible reporting',
+    'no credible evidence',
+    'no credible source',
+    'no public record',
     'no such incident',
     'no such event',
     'no incident at',
@@ -142,9 +145,15 @@ export function parseFCResponse(raw: string): ParsedFC | null {
     'never happened',
     'no evidence the',
     'no evidence of any',
+    'no evidence that',
+    'no evidence to support',
+    'no reporting that',
+    'no reporting confirming',
     'fabricated event',
     'fabricated incident',
     'is not a real event',
+    'has not pardoned',
+    'has not been pardoned',
   ]
   if (denialPatterns.some(p => denial.includes(p))) return null
 

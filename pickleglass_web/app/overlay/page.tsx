@@ -154,7 +154,7 @@ function OverlayInner() {
   // converges on the same claim every time. Track multi-word proper nouns
   // from the parsed CLAIM and suppress new cards that share any with a
   // recent fired card.
-  const recentCardClaimEntities = useRef<Array<{ ts: number; entities: Set<string> }>>([])
+  const recentCardClaimEntities = useRef<Array<{ ts: number; entities: Set<string>; words?: Set<string> }>>([])
   // Speaker diarization: speakerId (number) → resolved display name
   const speakerNameMap = useRef<Record<number, string>>({})
   // Track who was last speaking to help resolve addressed names
@@ -630,17 +630,34 @@ function OverlayInner() {
               .filter(r => r.ts > cutoff)
               .slice(-12)
 
-            // Require ≥2 shared entities to suppress. With only 1 overlap
-            // (e.g. both cards mention "Joe Biden" but discuss totally
-            // different incidents — Burisma vs. Shokin vs. pardon), they
-            // are NOT duplicates. Live political discussion threads dozens
-            // of distinct claims through the same names; the previous
-            // single-entity rule killed almost every follow-up card.
+            // Require shared entities AND high claim-content word overlap
+            // (>55%) to suppress. Live political talk threads the same two
+            // names (e.g. "Joe Biden", "Hunter Biden") through every
+            // distinct incident — Burisma board, Shokin firing, pardon
+            // timing, Ukraine money. Two shared names alone are NOT a
+            // duplicate; the content words distinguish events. Only
+            // suppress if the same names AND mostly the same content
+            // re-appear.
+            const claimWords = new Set<string>()
+            const newClaimText = ((parsed.claim || '') + ' ' + (parsed.comment || '')).toLowerCase()
+            newClaimText.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).forEach(w => {
+              if (w.length >= 5) claimWords.add(w)
+            })
             const dupeOverlap = recentCardClaimEntities.current.find(rec => {
-              let shared = 0
+              let sharedEnts = 0
               const arr = Array.from(newClaimEnts)
-              for (const e of arr) if (rec.entities.has(e)) shared++
-              return shared >= 2
+              for (const e of arr) if (rec.entities.has(e)) sharedEnts++
+              if (sharedEnts < 2) return false
+              // Now check claim-content similarity. rec.words is the same
+              // 5+-letter-word set we stored on the prior card. If <55% of
+              // the new card's content words overlap, treat as a distinct
+              // event despite shared names.
+              if (!rec.words || rec.words.size === 0) return true  // legacy entries — fall back to entity-only
+              let sharedWords = 0
+              const cArr = Array.from(claimWords)
+              for (const w of cArr) if (rec.words.has(w)) sharedWords++
+              const denom = Math.min(claimWords.size, rec.words.size) || 1
+              return sharedWords / denom > 0.55
             })
             const suppressedAsDupe = !!(dupeOverlap && newClaimEnts.size > 0)
             if (suppressedAsDupe) {
@@ -656,7 +673,7 @@ function OverlayInner() {
             newCardIds.push(cardId)
             // Record this card's entities for future dedup
             if (newClaimEnts.size > 0) {
-              recentCardClaimEntities.current.push({ ts: Date.now(), entities: newClaimEnts })
+              recentCardClaimEntities.current.push({ ts: Date.now(), entities: newClaimEnts, words: claimWords })
             }
             const elapsed = formatElapsed(sessionStartTime.current)
 
