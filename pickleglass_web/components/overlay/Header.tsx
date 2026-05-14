@@ -1,6 +1,29 @@
 'use client'
 import { useState, useRef } from 'react'
 
+/* Inline SVG filter for the liquid-glass header. feTurbulence generates
+   fractal noise, feGaussianBlur smooths it, feDisplacementMap warps the
+   backdrop pixels through that noise — produces the wavy refractive
+   distortion you see on iOS liquid-glass surfaces. Chromium-only on
+   backdrop-filter (we're Electron, so fine). Hidden from layout via
+   position:absolute + 0×0 svg. */
+function LiquidGlassFilter() {
+  return (
+    <svg
+      aria-hidden="true"
+      style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    >
+      <defs>
+        <filter id="liquid-glass-header" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.015 0.020" numOctaves="2" seed="7" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="1.2" result="blurredNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="14" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+  )
+}
+
 interface HeaderProps {
   speaker: string
   topic: string
@@ -37,17 +60,32 @@ export function Header({
     resetTimer.current = setTimeout(() => setResetArmed(false), 3000)
   }
   return (
+    <>
+    <LiquidGlassFilter />
     <div style={{
+      position: 'relative',
       height: '48px',
       display: 'flex',
       alignItems: 'center',
       padding: '0 var(--sp3)',
-      gap: 0, // explicit gaps below — no global gap so spacings are exact
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      background: 'rgba(255,255,255,0.03)',
+      gap: 0,
       flexShrink: 0,
       WebkitAppRegion: 'drag',
       cursor: 'grab',
+      /* Liquid-glass treatment: SVG displacement filter + heavy blur +
+         saturation on the backdrop, light-gradient surface on top with
+         multi-stop shadow for the iOS look. The url(#liquid-glass-header)
+         is the wavy refractive distortion. */
+      backdropFilter: 'url(#liquid-glass-header) blur(22px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(22px) saturate(180%)',
+      background:
+        'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0.10) 100%)',
+      borderBottom: 'none',
+      boxShadow: [
+        '0 4px 16px rgba(0,0,0,0.32)',
+        'inset 0 1px 0 rgba(255,255,255,0.40)',
+        'inset 0 -1px 0 rgba(255,255,255,0.06)',
+      ].join(', '),
     } as React.CSSProperties}>
 
       {/* Live dot — orange + pulsing while recording, gray + static when stopped */}
@@ -219,5 +257,6 @@ export function Header({
 
       </div>
     </div>
+    </>
   )
 }
