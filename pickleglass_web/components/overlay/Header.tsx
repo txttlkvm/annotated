@@ -7,6 +7,11 @@ import { useState, useRef } from 'react'
    distortion you see on iOS liquid-glass surfaces. Chromium-only on
    backdrop-filter (we're Electron, so fine). Hidden from layout via
    position:absolute + 0×0 svg. */
+/* Clear-glass-with-strong-ripple recipe — backdrop stays sharp, only
+   refracts through the noise. Three displacement passes at slightly
+   different scales, isolated by RGB channel via feColorMatrix, then
+   feBlend mode="screen" recomposes — gives the prismatic chromatic-
+   aberration fringing of real refractive glass. */
 function LiquidGlassFilter() {
   return (
     <svg
@@ -14,10 +19,28 @@ function LiquidGlassFilter() {
       style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
     >
       <defs>
-        <filter id="liquid-glass-header" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.015 0.020" numOctaves="2" seed="7" result="noise" />
-          <feGaussianBlur in="noise" stdDeviation="1.2" result="blurredNoise" />
-          <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="14" xChannelSelector="R" yChannelSelector="G" />
+        <filter
+          id="liquid-glass-header"
+          x="-20%" y="-20%" width="140%" height="140%"
+          colorInterpolationFilters="sRGB"
+        >
+          {/* Smoothed fractal-noise displacement map */}
+          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="7" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="1.6" result="dispMap" />
+
+          {/* 3 displacement passes at differing scales — chromatic aberration */}
+          <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G" result="rDisp" />
+          <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="38" xChannelSelector="R" yChannelSelector="G" result="gDisp" />
+          <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="44" xChannelSelector="R" yChannelSelector="G" result="bDisp" />
+
+          {/* Isolate each color channel of its pass */}
+          <feColorMatrix in="rDisp" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rOnly" />
+          <feColorMatrix in="gDisp" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gOnly" />
+          <feColorMatrix in="bDisp" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bOnly" />
+
+          {/* Recompose */}
+          <feBlend in="rOnly" in2="gOnly" mode="screen" result="rg" />
+          <feBlend in="rg" in2="bOnly" mode="screen" />
         </filter>
       </defs>
     </svg>
@@ -72,19 +95,20 @@ export function Header({
       flexShrink: 0,
       WebkitAppRegion: 'drag',
       cursor: 'grab',
-      /* Liquid-glass treatment: SVG displacement filter + heavy blur +
-         saturation on the backdrop, light-gradient surface on top with
-         multi-stop shadow for the iOS look. The url(#liquid-glass-header)
-         is the wavy refractive distortion. */
-      backdropFilter: 'url(#liquid-glass-header) blur(22px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(22px) saturate(180%)',
+      /* Clear-glass: blur(0px) just triggers the stacking context so the
+         SVG filter can refract the backdrop; saturate(115%) keeps colors
+         vivid without softening. The displacement filter does ALL the
+         visual work — strong ripple, no haze. Surface stays nearly
+         transparent so you can see through. */
+      backdropFilter: 'url(#liquid-glass-header) blur(0px) saturate(115%)',
+      WebkitBackdropFilter: 'saturate(115%)',
       background:
-        'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0.10) 100%)',
+        'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 55%, rgba(255,255,255,0.06) 100%)',
       borderBottom: 'none',
       boxShadow: [
         '0 4px 16px rgba(0,0,0,0.32)',
-        'inset 0 1px 0 rgba(255,255,255,0.40)',
-        'inset 0 -1px 0 rgba(255,255,255,0.06)',
+        'inset 0 1px 0 rgba(255,255,255,0.45)',
+        'inset 0 -1px 0 rgba(255,255,255,0.08)',
       ].join(', '),
     } as React.CSSProperties}>
 
