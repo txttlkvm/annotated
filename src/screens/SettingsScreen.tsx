@@ -48,18 +48,18 @@ export default function SettingsScreen() {
     type?: 'text' | 'toggle' | 'slider';
   }) => {
     return (
-      <View style={[styles.settingRow, { borderBottomColor: theme.selectionColor }]}>
-        <Text style={[styles.settingLabel, { color: theme.textColor }]}>{label}</Text>
+      <View style={[styles.settingRow, { borderBottomColor: '#8b7355' }]}>
+        <Text style={[styles.settingLabel, { color: '#c9a961' }]}>{label}</Text>
         {type === 'toggle' && (
           <Switch
             value={value}
             onValueChange={onValueChange}
-            trackColor={{ false: '#3e3e3e', true: '#4A90E2' }}
-            thumbColor="#fff"
+            trackColor={{ false: '#3d3730', true: '#8b7355' }}
+            thumbColor="#c9a961"
           />
         )}
         {type === 'text' && (
-          <Text style={[styles.settingValue, { color: theme.accentColor }]}>{value}</Text>
+          <Text style={[styles.settingValue, { color: '#8b7355' }]}>{value}</Text>
         )}
       </View>
     );
@@ -67,26 +67,26 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.backgroundColor }]}
+      style={[styles.container, { backgroundColor: '#0f0a1a' }]}
       contentContainerStyle={styles.content}
     >
       {/* Reader Settings */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>📖 Reader Settings</Text>
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Reader Settings</Text>
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Theme</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Theme</Text>
           <View style={styles.themeButtons}>
             {Object.keys(READER_THEMES).map(themeName => (
               <TouchableOpacity
                 key={themeName}
                 style={[
                   styles.themeButton,
-                  settings.theme === themeName && { borderColor: '#4A90E2', borderWidth: 2 },
+                  settings.theme === themeName && { borderColor: '#c9a961', borderWidth: 2 },
                 ]}
                 onPress={() => updateSettings({ theme: themeName as any })}
               >
-                <Text style={[styles.themeButtonText, { color: theme.textColor }]}>
+                <Text style={[styles.themeButtonText, { color: '#c9a961' }]}>
                   {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
                 </Text>
               </TouchableOpacity>
@@ -95,36 +95,36 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Font Size: {settings.fontSize}px</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Font Size: {settings.fontSize}px</Text>
           <View style={styles.buttonRow}>
             {[14, 16, 18, 20, 22, 24].map(size => (
               <TouchableOpacity
                 key={size}
                 style={[
                   styles.sizeButton,
-                  settings.fontSize === size && { backgroundColor: '#4A90E2' },
+                  settings.fontSize === size && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                 ]}
                 onPress={() => updateSettings({ fontSize: size })}
               >
-                <Text style={styles.buttonText}>{size}</Text>
+                <Text style={[styles.buttonText, { color: '#c9a961' }]}>{size}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Line Height: {settings.lineHeight.toFixed(1)}</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Line Height: {settings.lineHeight.toFixed(1)}</Text>
           <View style={styles.buttonRow}>
             {[1.3, 1.5, 1.7, 1.9, 2.1].map(height => (
               <TouchableOpacity
                 key={height}
                 style={[
                   styles.sizeButton,
-                  Math.abs(settings.lineHeight - height) < 0.05 && { backgroundColor: '#4A90E2' },
+                  Math.abs(settings.lineHeight - height) < 0.05 && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                 ]}
                 onPress={() => updateSettings({ lineHeight: height })}
               >
-                <Text style={styles.buttonText}>{height.toFixed(1)}</Text>
+                <Text style={[styles.buttonText, { color: '#c9a961' }]}>{height.toFixed(1)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -138,18 +138,18 @@ export default function SettingsScreen() {
         />
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Margin Size</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Margin Size</Text>
           <View style={styles.buttonRow}>
             {['small', 'medium', 'large'].map(size => (
               <TouchableOpacity
                 key={size}
                 style={[
                   styles.sizeButton,
-                  settings.marginSize === size && { backgroundColor: '#4A90E2' },
+                  settings.marginSize === size && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                 ]}
                 onPress={() => updateSettings({ marginSize: size as any })}
               >
-                <Text style={styles.buttonText}>{size.charAt(0).toUpperCase()}</Text>
+                <Text style={[styles.buttonText, { color: '#c9a961' }]}>{size.charAt(0).toUpperCase()}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -158,7 +158,7 @@ export default function SettingsScreen() {
 
       {/* Display Settings */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>🌟 Display</Text>
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Display</Text>
 
         <SettingRow
           label="Auto Brightness"
@@ -169,7 +169,7 @@ export default function SettingsScreen() {
 
         {!settings.autoBrightnessEnabled && (
           <View style={styles.settingGroup}>
-            <Text style={[styles.groupLabel, { color: theme.textColor }]}>
+            <Text style={[styles.groupLabel, { color: '#c9a961' }]}>
               Brightness: {Math.round(settings.brightness * 100)}%
             </Text>
             <View style={styles.brightnessButtons}>
@@ -178,11 +178,11 @@ export default function SettingsScreen() {
                   key={brightness}
                   style={[
                     styles.brightnessButton,
-                    Math.abs(settings.brightness - brightness) < 0.05 && { backgroundColor: '#4A90E2' },
+                    Math.abs(settings.brightness - brightness) < 0.05 && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                   ]}
                   onPress={() => updateSettings({ brightness })}
                 >
-                  <Text style={styles.buttonText}>{Math.round(brightness * 100)}%</Text>
+                  <Text style={[styles.buttonText, { color: '#c9a961' }]}>{Math.round(brightness * 100)}%</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -190,18 +190,18 @@ export default function SettingsScreen() {
         )}
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Page Mode</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Page Mode</Text>
           <View style={styles.buttonRow}>
             {['scroll', 'paginated'].map(mode => (
               <TouchableOpacity
                 key={mode}
                 style={[
                   styles.modeButton,
-                  settings.pageMode === mode && { backgroundColor: '#4A90E2' },
+                  settings.pageMode === mode && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                 ]}
                 onPress={() => updateSettings({ pageMode: mode as any })}
               >
-                <Text style={styles.buttonText}>{mode.charAt(0).toUpperCase() + mode.slice(1)}</Text>
+                <Text style={[styles.buttonText, { color: '#c9a961' }]}>{mode.charAt(0).toUpperCase() + mode.slice(1)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -210,9 +210,9 @@ export default function SettingsScreen() {
 
       {/* TTS Settings */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>🎤 Text-to-Speech</Text>
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Voice Synthesis</Text>
 
-        <Text style={[styles.helpText, { color: theme.textColor }]}>
+        <Text style={[styles.helpText, { color: '#8b7355' }]}>
           Configure your Google Cloud TTS API key for high-quality voice synthesis
         </Text>
 
@@ -221,58 +221,58 @@ export default function SettingsScreen() {
             style={[
               styles.apiKeyInput,
               {
-                backgroundColor: theme.selectionColor,
-                color: theme.textColor,
-                borderColor: theme.accentColor,
+                backgroundColor: '#2d1b4e',
+                color: '#c9a961',
+                borderColor: '#8b7355',
               },
             ]}
             placeholder="Paste Google Cloud API key"
-            placeholderTextColor={theme.accentColor}
+            placeholderTextColor="#8b7355"
             value={apiKey}
             onChangeText={setApiKey}
             secureTextEntry={!showApiKey}
             multiline
           />
           <TouchableOpacity onPress={() => setShowApiKey(!showApiKey)} style={styles.toggleButton}>
-            <Text style={styles.toggleIcon}>{showApiKey ? '🙈' : '👁'}</Text>
+            <Text style={styles.toggleIcon}>{showApiKey ? '✦' : '◯'}</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.saveButton, { backgroundColor: '#4A90E2' }]} onPress={handleSaveApiKey}>
-          <Text style={styles.saveButtonText}>Save API Key</Text>
+        <TouchableOpacity style={[styles.saveButton, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]} onPress={handleSaveApiKey}>
+          <Text style={[styles.saveButtonText, { color: '#c9a961' }]}>Save API Key</Text>
         </TouchableOpacity>
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Voice Pitch: {settings.ttsVoicePitch.toFixed(1)}</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Voice Pitch: {settings.ttsVoicePitch.toFixed(1)}</Text>
           <View style={styles.buttonRow}>
             {[0.8, 0.9, 1.0, 1.1, 1.2].map(pitch => (
               <TouchableOpacity
                 key={pitch}
                 style={[
                   styles.sizeButton,
-                  Math.abs(settings.ttsVoicePitch - pitch) < 0.05 && { backgroundColor: '#4A90E2' },
+                  Math.abs(settings.ttsVoicePitch - pitch) < 0.05 && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                 ]}
                 onPress={() => updateSettings({ ttsVoicePitch: pitch })}
               >
-                <Text style={styles.buttonText}>{pitch.toFixed(1)}</Text>
+                <Text style={[styles.buttonText, { color: '#c9a961' }]}>{pitch.toFixed(1)}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         <View style={styles.settingGroup}>
-          <Text style={[styles.groupLabel, { color: theme.textColor }]}>Speaking Rate: {settings.ttsVoiceRate.toFixed(1)}x</Text>
+          <Text style={[styles.groupLabel, { color: '#c9a961' }]}>Speaking Rate: {settings.ttsVoiceRate.toFixed(1)}x</Text>
           <View style={styles.buttonRow}>
             {[0.8, 0.9, 1.0, 1.1, 1.2, 1.3].map(rate => (
               <TouchableOpacity
                 key={rate}
                 style={[
                   styles.sizeButton,
-                  Math.abs(settings.ttsVoiceRate - rate) < 0.05 && { backgroundColor: '#4A90E2' },
+                  Math.abs(settings.ttsVoiceRate - rate) < 0.05 && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
                 ]}
                 onPress={() => updateSettings({ ttsVoiceRate: rate })}
               >
-                <Text style={styles.buttonText}>{rate.toFixed(1)}x</Text>
+                <Text style={[styles.buttonText, { color: '#c9a961' }]}>{rate.toFixed(1)}x</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -285,15 +285,15 @@ export default function SettingsScreen() {
           type="toggle"
         />
 
-        <Text style={[styles.helpText, { color: theme.textColor, marginTop: 12 }]}>
-          💡 Get your free API key:{'\n'}1. Go to console.cloud.google.com{'\n'}2. Create a project{'\n'}3. Enable "Cloud Text-to-Speech API"{'\n'}4. Create an API key
+        <Text style={[styles.helpText, { color: '#8b7355', marginTop: 12 }]}>
+          ✦ Get your free API key:{'\n'}1. Go to console.cloud.google.com{'\n'}2. Create a project{'\n'}3. Enable "Cloud Text-to-Speech API"{'\n'}4. Create an API key
         </Text>
       </View>
 
       {/* About */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>ℹ️ About</Text>
-        <Text style={[styles.aboutText, { color: theme.textColor }]}>
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ About</Text>
+        <Text style={[styles.aboutText, { color: '#8b7355' }]}>
           Book Voice Reader Pro v2.0{'\n'}
           Premium ebook reader with TTS, annotations, and advanced features{'\n\n'}
           © 2024. All rights reserved.
@@ -306,10 +306,10 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingBottom: 32 },
-  section: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#333' },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  section: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#3d3730' },
+  sectionTitle: { fontSize: 16, fontWeight: '400', marginBottom: 12, letterSpacing: 2, fontFamily: 'Georgia' },
   settingGroup: { marginBottom: 16 },
-  groupLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  groupLabel: { fontSize: 12, fontWeight: '400', marginBottom: 8, letterSpacing: 1, fontFamily: 'Georgia' },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -317,60 +317,68 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  settingLabel: { fontSize: 14 },
-  settingValue: { fontSize: 12, fontWeight: '600' },
+  settingLabel: { fontSize: 13, fontFamily: 'Georgia' },
+  settingValue: { fontSize: 11, fontWeight: '400', letterSpacing: 1 },
   themeButtons: { flexDirection: 'row', gap: 8 },
   themeButton: {
     flex: 1,
     paddingVertical: 8,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    alignItems: 'center',
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#8b7355',
+    alignItems: 'center',
   },
-  themeButtonText: { fontSize: 12, fontWeight: '600' },
+  themeButtonText: { fontSize: 11, fontWeight: '400', letterSpacing: 1 },
   buttonRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   sizeButton: {
     flex: 1,
     minWidth: '30%',
     paddingVertical: 8,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 6,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
     alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 12 },
+  buttonText: { fontWeight: '400', fontSize: 11, letterSpacing: 1 },
   brightnessButtons: { flexDirection: 'row', gap: 8 },
   brightnessButton: {
     flex: 1,
     paddingVertical: 10,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 6,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
     alignItems: 'center',
   },
   modeButton: {
     flex: 1,
     paddingVertical: 8,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 6,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
     alignItems: 'center',
   },
   apiKeyInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 2,
     padding: 10,
     minHeight: 80,
     marginBottom: 8,
+    fontFamily: 'Georgia',
   },
   toggleButton: { position: 'absolute', right: 10, top: 10 },
-  toggleIcon: { fontSize: 20 },
+  toggleIcon: { fontSize: 18, fontWeight: '300' },
   saveButton: {
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 2,
+    borderWidth: 1,
     alignItems: 'center',
     marginBottom: 12,
   },
-  saveButtonText: { color: '#fff', fontWeight: '600' },
-  helpText: { fontSize: 12, lineHeight: 18, marginBottom: 8 },
-  aboutText: { fontSize: 13, lineHeight: 20 },
+  saveButtonText: { fontWeight: '400', letterSpacing: 1, fontSize: 12 },
+  helpText: { fontSize: 11, lineHeight: 18, marginBottom: 8, fontFamily: 'Georgia' },
+  aboutText: { fontSize: 12, lineHeight: 20, fontFamily: 'Georgia' },
 });

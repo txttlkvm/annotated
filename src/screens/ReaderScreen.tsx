@@ -64,12 +64,12 @@ export default function ReaderScreen() {
 
   if (!currentBook) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+      <View style={[styles.container, { backgroundColor: '#0f0a1a' }]}>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📖</Text>
-          <Text style={[styles.emptyText, { color: theme.textColor }]}>No book selected</Text>
-          <Text style={[styles.emptySubtext, { color: theme.accentColor }]}>
-            Choose a book from your library to start reading
+          <Text style={styles.emptyIcon}>✦</Text>
+          <Text style={[styles.emptyText, { color: '#c9a961' }]}>No manuscript selected</Text>
+          <Text style={[styles.emptySubtext, { color: '#8b7355' }]}>
+            Choose a manuscript from your library to begin your contemplation
           </Text>
         </View>
       </View>
@@ -184,31 +184,31 @@ export default function ReaderScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.backgroundColor, borderBottomColor: theme.selectionColor }]}>
+      <View style={[styles.header, { backgroundColor: '#1a1328', borderBottomColor: '#c9a961' }]}>
         <View>
-          <Text style={[styles.bookTitle, { color: theme.textColor }]} numberOfLines={1}>
+          <Text style={[styles.bookTitle, { color: '#c9a961' }]} numberOfLines={1}>
             {currentBook.title}
           </Text>
-          <Text style={[styles.pageInfo, { color: theme.accentColor }]}>
+          <Text style={[styles.pageInfo, { color: '#8b7355' }]}>
             Page {currentPage + 1} of {totalPages}
           </Text>
         </View>
         <TouchableOpacity onPress={() => setShowMenus(!showMenus)}>
-          <Text style={styles.menuIcon}>⋮</Text>
+          <Text style={[styles.menuIcon, { color: '#c9a961' }]}>≡</Text>
         </TouchableOpacity>
       </View>
 
       {/* Menu */}
       {showMenus && (
-        <View style={[styles.menu, { backgroundColor: theme.backgroundColor, borderColor: theme.selectionColor }]}>
+        <View style={[styles.menu, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}>
           <TouchableOpacity onPress={() => setShowBookmarkModal(true)}>
-            <Text style={[styles.menuItem, { color: theme.textColor }]}>🔖 Add Bookmark</Text>
+            <Text style={[styles.menuItem, { color: '#c9a961' }]}>✦ Add Bookmark</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare}>
-            <Text style={[styles.menuItem, { color: theme.textColor }]}>📤 Share</Text>
+            <Text style={[styles.menuItem, { color: '#c9a961' }]}>✦ Share Passage</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowMenus(false)}>
-            <Text style={[styles.menuItem, { color: theme.textColor }]}>✕ Close</Text>
+            <Text style={[styles.menuItem, { color: '#c9a961' }]}>✦ Close</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -238,7 +238,7 @@ export default function ReaderScreen() {
 
       {/* TTS Playback */}
       {isPlaying && (
-        <View style={[styles.audioBar, { backgroundColor: theme.selectionColor }]}>
+        <View style={[styles.audioBar, { backgroundColor: '#2d1b4e' }]}>
           <View style={styles.progressBar}>
             <View
               style={[
@@ -249,60 +249,60 @@ export default function ReaderScreen() {
               ]}
             />
           </View>
-          <Text style={[styles.audioTime, { color: theme.textColor }]}>
+          <Text style={[styles.audioTime, { color: '#c9a961' }]}>
             {Math.floor(playbackState.position / 1000)}s / {Math.floor(playbackState.duration / 1000)}s
           </Text>
         </View>
       )}
 
       {/* Controls */}
-      <View style={[styles.controls, { backgroundColor: theme.backgroundColor, borderTopColor: theme.selectionColor }]}>
-        <TouchableOpacity style={styles.controlButton} onPress={handlePreviousPage}>
-          <Text style={styles.controlText}>← Prev</Text>
+      <View style={[styles.controls, { backgroundColor: '#1a1328', borderTopColor: '#8b7355' }]}>
+        <TouchableOpacity style={[styles.controlButton, { borderColor: '#8b7355' }]} onPress={handlePreviousPage}>
+          <Text style={[styles.controlText, { color: '#c9a961' }]}>← Prev</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.playButton, isPlaying && styles.playButtonActive]}
+          style={[styles.playButton, { borderColor: '#c9a961' }, isPlaying && styles.playButtonActive]}
           onPress={isPlaying ? handlePause : handleReadAloud}
           disabled={isLoadingAudio}
         >
           {isLoadingAudio ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#c9a961" />
           ) : (
-            <Text style={styles.controlText}>{isPlaying ? '⏸' : '▶'}</Text>
+            <Text style={[styles.controlText, { color: '#c9a961' }]}>{isPlaying ? '⏸' : '▶'}</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlButton} onPress={handleNextPage}>
-          <Text style={styles.controlText}>Next →</Text>
+        <TouchableOpacity style={[styles.controlButton, { borderColor: '#8b7355' }]} onPress={handleNextPage}>
+          <Text style={[styles.controlText, { color: '#c9a961' }]}>Next →</Text>
         </TouchableOpacity>
       </View>
 
       {/* Bookmark Modal */}
       <Modal visible={showBookmarkModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundColor }]}>
-            <Text style={[styles.modalTitle, { color: theme.textColor }]}>Add Bookmark</Text>
+          <View style={[styles.modalContent, { backgroundColor: '#1a1328', borderColor: '#c9a961' }]}>
+            <Text style={[styles.modalTitle, { color: '#c9a961' }]}>✦ Add Bookmark</Text>
             <TextInput
-              style={[styles.bookmarkInput, { color: theme.textColor, borderColor: theme.accentColor }]}
+              style={[styles.bookmarkInput, { color: '#c9a961', borderColor: '#8b7355', backgroundColor: '#2d1b4e' }]}
               placeholder="Add a note (optional)"
-              placeholderTextColor={theme.accentColor}
+              placeholderTextColor="#8b7355"
               value={bookmarkNote}
               onChangeText={setBookmarkNote}
               multiline
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.modalButton}
+                style={[styles.modalButton, { borderColor: '#8b7355' }]}
                 onPress={() => setShowBookmarkModal(false)}
               >
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={[styles.modalButtonText, { color: '#c9a961' }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.accentColor }]}
+                style={[styles.modalButton, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
                 onPress={handleAddBookmark}
               >
-                <Text style={styles.modalButtonText}>Save</Text>
+                <Text style={[styles.modalButtonText, { color: '#c9a961' }]}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -313,7 +313,7 @@ export default function ReaderScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0f0a1a' },
   header: {
     paddingTop: 12,
     paddingHorizontal: 16,
@@ -321,11 +321,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
   },
-  bookTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  pageInfo: { fontSize: 12 },
-  menuIcon: { fontSize: 20 },
+  bookTitle: { fontSize: 17, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia', letterSpacing: 1 },
+  pageInfo: { fontSize: 11, letterSpacing: 0.5 },
+  menuIcon: { fontSize: 18, fontWeight: '300' },
   menu: {
     borderBottomWidth: 1,
     paddingVertical: 8,
@@ -333,82 +333,91 @@ const styles = StyleSheet.create({
   menuItem: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '400',
+    fontFamily: 'Georgia',
+    letterSpacing: 1,
   },
-  textContainer: { flex: 1 },
+  textContainer: { flex: 1, backgroundColor: '#0f0a1a' },
   textContent: { padding: 16 },
   bookText: { fontFamily: 'Georgia' },
   audioBar: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: '#8b7355',
   },
   progressBar: {
-    height: 3,
-    backgroundColor: '#333',
-    borderRadius: 1.5,
+    height: 2,
+    backgroundColor: '#3d3730',
+    borderRadius: 1,
     marginBottom: 6,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#8b7355',
   },
-  progressFill: { height: '100%', backgroundColor: '#4A90E2' },
-  audioTime: { fontSize: 11, textAlign: 'center' },
+  progressFill: { height: '100%', backgroundColor: '#c9a961' },
+  audioTime: { fontSize: 10, textAlign: 'center', letterSpacing: 1 },
   controls: {
     flexDirection: 'row',
     paddingHorizontal: 8,
     paddingVertical: 12,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     gap: 8,
   },
   controlButton: {
     flex: 1,
     paddingVertical: 12,
-    backgroundColor: '#333',
-    borderRadius: 8,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   playButton: {
     flex: 1.2,
     paddingVertical: 12,
-    backgroundColor: '#4A90E2',
-    borderRadius: 8,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  playButtonActive: { backgroundColor: '#2E5CB8' },
-  controlText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  playButtonActive: { backgroundColor: '#2d1b4e' },
+  controlText: { fontWeight: '400', fontSize: 13, letterSpacing: 1 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyText: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptySubtext: { fontSize: 14 },
+  emptyIcon: { fontSize: 60, marginBottom: 16 },
+  emptyText: { fontSize: 16, fontWeight: '400', marginBottom: 8, fontFamily: 'Georgia', letterSpacing: 1 },
+  emptySubtext: { fontSize: 12, letterSpacing: 0.5 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    borderRadius: 12,
+    borderRadius: 2,
+    borderWidth: 2,
     padding: 16,
     width: '85%',
   },
-  modalTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  modalTitle: { fontSize: 15, fontWeight: '400', marginBottom: 12, fontFamily: 'Georgia', letterSpacing: 1 },
   bookmarkInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 2,
     padding: 10,
     minHeight: 80,
     marginBottom: 12,
+    fontFamily: 'Georgia',
   },
   modalButtons: { flexDirection: 'row', gap: 8 },
   modalButton: {
     flex: 1,
     paddingVertical: 10,
-    backgroundColor: '#333',
-    borderRadius: 8,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
     alignItems: 'center',
   },
-  modalButtonText: { color: '#fff', fontWeight: '600' },
+  modalButtonText: { fontWeight: '400', letterSpacing: 1, fontSize: 12 },
 });

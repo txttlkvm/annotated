@@ -4,21 +4,21 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-nati
 export default function StoreScreen() {
   const [category, setCategory] = useState('featured');
 
-  const categories = ['Featured', 'Free Books', 'Bestsellers', 'Fiction', 'Science', 'Self-Help'];
+  const categories = ['Featured', 'Free Books', 'Classics', 'Philosophy', 'Poetry', 'Sacred Texts'];
 
   const books = [
     { id: 1, title: 'The Art of War', author: 'Sun Tzu', price: 'Free', rating: 4.8 },
     { id: 2, title: 'Pride and Prejudice', author: 'Jane Austen', price: 'Free', rating: 4.7 },
-    { id: 3, title: 'Alice in Wonderland', author: 'Lewis Carroll', price: 'Free', rating: 4.6 },
-    { id: 4, title: 'Sherlock Holmes', author: 'Arthur Conan Doyle', price: 'Free', rating: 4.9 },
-    { id: 5, title: 'Emma', author: 'Jane Austen', price: 'Free', rating: 4.7 },
-    { id: 6, title: 'Dracula', author: 'Bram Stoker', price: 'Free', rating: 4.5 },
+    { id: 3, title: 'The Divine Comedy', author: 'Dante Alighieri', price: 'Free', rating: 4.9 },
+    { id: 4, title: 'Paradise Lost', author: 'John Milton', price: 'Free', rating: 4.8 },
+    { id: 5, title: 'Jane Eyre', author: 'Charlotte Brontë', price: 'Free', rating: 4.7 },
+    { id: 6, title: 'Wuthering Heights', author: 'Emily Brontë', price: 'Free', rating: 4.6 },
   ];
 
   const BookCard = ({ book }: any) => (
     <TouchableOpacity style={styles.bookCard} activeOpacity={0.8}>
       <View style={styles.bookCover}>
-        <Text style={styles.bookEmoji}>📖</Text>
+        <Text style={styles.bookSymbol}>✦</Text>
       </View>
       <View style={styles.bookInfo}>
         <Text style={styles.bookTitle} numberOfLines={2}>{book.title}</Text>
@@ -26,7 +26,7 @@ export default function StoreScreen() {
         <View style={styles.bookMeta}>
           <Text style={styles.price}>{book.price}</Text>
           <View style={styles.rating}>
-            <Text style={styles.stars}>⭐ {book.rating}</Text>
+            <Text style={styles.stars}>✦ {book.rating}</Text>
           </View>
         </View>
       </View>
@@ -40,8 +40,8 @@ export default function StoreScreen() {
     <View style={styles.container}>
       {/* Featured Banner */}
       <View style={styles.banner}>
-        <Text style={styles.bannerTitle}>📚 Discover Books</Text>
-        <Text style={styles.bannerSubtitle}>50,000+ free and premium titles</Text>
+        <Text style={styles.bannerTitle}>✦ Discover Manuscripts ✦</Text>
+        <Text style={styles.bannerSubtitle}>50,000+ volumes across worlds and ages</Text>
       </View>
 
       {/* Category Tabs */}
@@ -83,32 +83,38 @@ export default function StoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a1a' },
+  container: { flex: 1, backgroundColor: '#0f0a1a' },
   banner: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#1a1328',
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 28,
     alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#c9a961',
   },
-  bannerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  bannerSubtitle: { fontSize: 13, color: '#e0e0e0' },
-  categoryScroll: { borderBottomWidth: 1, borderBottomColor: '#333' },
-  categoryContent: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  bannerTitle: { fontSize: 22, fontWeight: '400', color: '#c9a961', marginBottom: 8, letterSpacing: 2, fontFamily: 'Georgia' },
+  bannerSubtitle: { fontSize: 11, color: '#8b7355', letterSpacing: 1, fontStyle: 'italic' },
+  categoryScroll: { borderBottomWidth: 1, borderBottomColor: '#3d3730' },
+  categoryContent: { paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
   categoryTab: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#2a2a2a',
+    borderRadius: 2,
+    backgroundColor: '#2d1b4e',
+    borderWidth: 1,
+    borderColor: '#8b7355',
     marginRight: 8,
   },
-  categoryTabActive: { backgroundColor: '#4A90E2' },
-  categoryText: { color: '#888', fontSize: 12, fontWeight: '600' },
-  categoryTextActive: { color: '#fff' },
+  categoryTabActive: { backgroundColor: '#3d3730', borderColor: '#c9a961' },
+  categoryText: { color: '#8b7355', fontSize: 11, fontWeight: '400', letterSpacing: 1, fontFamily: 'Georgia' },
+  categoryTextActive: { color: '#c9a961' },
   booksContent: { paddingHorizontal: 16, paddingVertical: 16, paddingBottom: 32 },
   bookCard: {
     flexDirection: 'row',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 12,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
     marginBottom: 12,
     padding: 12,
     alignItems: 'center',
@@ -116,28 +122,32 @@ const styles = StyleSheet.create({
   bookCover: {
     width: 50,
     height: 70,
-    backgroundColor: '#333',
-    borderRadius: 6,
+    backgroundColor: '#2d1b4e',
+    borderRadius: 1,
+    borderWidth: 1,
+    borderColor: '#c9a961',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  bookEmoji: { fontSize: 24 },
+  bookSymbol: { fontSize: 28, color: '#c9a961', fontWeight: '300' },
   bookInfo: { flex: 1 },
-  bookTitle: { fontSize: 13, fontWeight: '600', color: '#fff', marginBottom: 4 },
-  bookAuthor: { fontSize: 11, color: '#aaa', marginBottom: 6 },
+  bookTitle: { fontSize: 12, fontWeight: '400', color: '#c9a961', marginBottom: 4, fontFamily: 'Georgia' },
+  bookAuthor: { fontSize: 10, color: '#8b7355', marginBottom: 6, letterSpacing: 0.5 },
   bookMeta: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  price: { fontSize: 12, fontWeight: '700', color: '#52C41A' },
+  price: { fontSize: 11, fontWeight: '400', color: '#c9a961', letterSpacing: 1 },
   rating: { marginLeft: 'auto' },
-  stars: { fontSize: 11, color: '#FFB800' },
+  stars: { fontSize: 10, color: '#8b7355', letterSpacing: 1 },
   addBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#4A90E2',
+    borderRadius: 2,
+    backgroundColor: '#2d1b4e',
+    borderWidth: 1,
+    borderColor: '#c9a961',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
   },
-  addBtnText: { fontSize: 18, color: '#fff', fontWeight: 'bold' },
+  addBtnText: { fontSize: 18, color: '#c9a961', fontWeight: '300' },
 });
