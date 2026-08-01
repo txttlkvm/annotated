@@ -159,3 +159,63 @@ export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   enableTTS: false,
   autoBrightnessEnabled: true,
 };
+
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  bookIds: string[];
+  coverImage?: string;
+  createdAt: number;
+  color?: string;
+  type: 'custom' | 'smart' | 'series' | 'author';
+}
+
+export interface BookshelfTheme {
+  id: string;
+  name: string;
+  backgroundColor: string;
+  shelfColor: string;
+  shelfStyle: 'wood' | 'modern' | 'minimal' | 'glass' | 'fabric';
+  textColor: string;
+  accentColor: string;
+}
+
+export const BOOKSHELF_THEMES: Record<string, BookshelfTheme> = {
+  classic: {
+    id: 'classic',
+    name: 'Classic Wood',
+    backgroundColor: '#3d2817',
+    shelfColor: '#5c3d2e',
+    shelfStyle: 'wood',
+    textColor: '#f5e6d3',
+    accentColor: '#d4a574',
+  },
+  modern: {
+    id: 'modern',
+    name: 'Modern',
+    backgroundColor: '#f8f9fa',
+    shelfColor: '#e9ecef',
+    shelfStyle: 'modern',
+    textColor: '#212529',
+    accentColor: '#4A90E2',
+  },
+  minimal: {
+    id: 'minimal',
+    name: 'Minimal',
+    backgroundColor: '#ffffff',
+    shelfColor: '#f0f0f0',
+    shelfStyle: 'minimal',
+    textColor: '#333333',
+    accentColor: '#666666',
+  },
+  dark: {
+    id: 'dark',
+    name: 'Dark',
+    backgroundColor: '#1a1a1a',
+    shelfColor: '#2a2a2a',
+    shelfStyle: 'minimal',
+    textColor: '#e0e0e0',
+    accentColor: '#4A90E2',
+  },
+};
