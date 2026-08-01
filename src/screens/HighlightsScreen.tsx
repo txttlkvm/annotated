@@ -15,12 +15,11 @@ export default function HighlightsScreen() {
   const { currentBook, highlights, updateHighlight, deleteHighlight, settings } = useApp();
   const [searchText, setSearchText] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const theme = READER_THEMES[settings.theme];
 
   if (!currentBook) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-        <Text style={[styles.emptyText, { color: theme.textColor }]}>No highlights yet</Text>
+      <View style={[styles.container, { backgroundColor: '#0f0a1a' }]}>
+        <Text style={[styles.emptyText, { color: '#c9a961' }]}>No passages yet</Text>
       </View>
     );
   }
@@ -33,13 +32,13 @@ export default function HighlightsScreen() {
     ? filteredHighlights.filter(h => h.color === selectedColor)
     : filteredHighlights;
 
-  const colors = ['yellow', 'orange', 'pink', 'green', 'blue', 'purple'];
+  const colors = ['#d4a574', '#c9a961', '#b8860b', '#8b7355', '#5c4033', '#3e2723'];
 
   const handleDeleteHighlight = (id: string) => {
-    Alert.alert('Delete Highlight', 'Remove this highlight?', [
+    Alert.alert('Remove Passage', 'Remove this highlighted passage?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Delete',
+        text: 'Remove',
         style: 'destructive',
         onPress: () => deleteHighlight(id),
       },
@@ -51,27 +50,28 @@ export default function HighlightsScreen() {
       style={[
         styles.highlightCard,
         {
-          backgroundColor: theme.selectionColor,
-          borderLeftColor: color,
+          backgroundColor: '#1a1328',
+          borderColor: color || '#8b7355',
+          borderLeftWidth: 3,
         },
       ]}
     >
-      <Text style={[styles.highlightText, { color: theme.textColor }]}>"{text}"</Text>
+      <Text style={[styles.highlightText, { color: '#c9a961' }]}>"{text}"</Text>
       <View style={styles.cardFooter}>
-        <Text style={[styles.pageText, { color: theme.textColor }]}>Page {page}</Text>
+        <Text style={[styles.pageText, { color: '#8b7355' }]}>Page {page}</Text>
         <TouchableOpacity onPress={() => handleDeleteHighlight(id)}>
-          <Text style={styles.deleteIcon}>🗑</Text>
+          <Text style={[styles.deleteIcon, { color: '#8b7355' }]}>—</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor: '#0f0a1a' }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.selectionColor }]}>
-        <Text style={[styles.headerTitle, { color: theme.textColor }]}>✓ Highlights</Text>
-        <Text style={[styles.count, { color: theme.accentColor }]}>{highlights.length}</Text>
+      <View style={[styles.header, { borderBottomColor: '#c9a961' }]}>
+        <Text style={[styles.headerTitle, { color: '#c9a961' }]}>✦ Sacred Passages</Text>
+        <Text style={[styles.count, { color: '#8b7355' }]}>{highlights.length}</Text>
       </View>
 
       {/* Search */}
@@ -80,13 +80,13 @@ export default function HighlightsScreen() {
           style={[
             styles.searchInput,
             {
-              backgroundColor: theme.selectionColor,
-              color: theme.textColor,
-              borderColor: theme.accentColor,
+              backgroundColor: '#2d1b4e',
+              color: '#c9a961',
+              borderColor: '#8b7355',
             },
           ]}
-          placeholder="Search highlights..."
-          placeholderTextColor={theme.accentColor}
+          placeholder="Search passages..."
+          placeholderTextColor="#8b7355"
           value={searchText}
           onChangeText={setSearchText}
         />
@@ -97,11 +97,12 @@ export default function HighlightsScreen() {
         <TouchableOpacity
           style={[
             styles.colorButton,
-            selectedColor === null && { backgroundColor: theme.accentColor },
+            { borderColor: '#8b7355' },
+            selectedColor === null && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' },
           ]}
           onPress={() => setSelectedColor(null)}
         >
-          <Text style={styles.colorButtonText}>All</Text>
+          <Text style={[styles.colorButtonText, { color: '#c9a961' }]}>All</Text>
         </TouchableOpacity>
         {colors.map(color => (
           <TouchableOpacity
@@ -109,7 +110,7 @@ export default function HighlightsScreen() {
             style={[
               styles.colorDot,
               { backgroundColor: color },
-              selectedColor === color && { borderColor: '#fff', borderWidth: 2 },
+              selectedColor === color && { borderColor: '#c9a961', borderWidth: 2 },
             ]}
             onPress={() => setSelectedColor(color)}
           />
@@ -119,9 +120,9 @@ export default function HighlightsScreen() {
       {/* Highlights List */}
       {colorFiltered.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>✓</Text>
-          <Text style={[styles.emptyText, { color: theme.textColor }]}>
-            {highlights.length === 0 ? 'No highlights yet' : 'No matches found'}
+          <Text style={[styles.emptyIcon, { color: '#c9a961' }]}>✦</Text>
+          <Text style={[styles.emptyText, { color: '#c9a961' }]}>
+            {highlights.length === 0 ? 'No passages yet' : 'No matches found'}
           </Text>
         </View>
       ) : (
@@ -149,16 +150,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold' },
-  count: { fontSize: 14, fontWeight: '600' },
+  headerTitle: { fontSize: 18, fontWeight: '400', letterSpacing: 2, fontFamily: 'Georgia' },
+  count: { fontSize: 13, fontWeight: '400', letterSpacing: 1 },
   searchSection: { paddingHorizontal: 16, paddingVertical: 12 },
   searchInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 2,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    fontFamily: 'Georgia',
   },
   colorFilter: {
     flexDirection: 'row',
@@ -169,32 +171,32 @@ const styles = StyleSheet.create({
   colorButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#333',
+    borderRadius: 2,
+    backgroundColor: '#1a1328',
+    borderWidth: 1,
   },
-  colorButtonText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  colorButtonText: { fontSize: 11, fontWeight: '400', letterSpacing: 1 },
   colorDot: {
     width: 30,
     height: 30,
-    borderRadius: 15,
+    borderRadius: 2,
   },
   listContainer: { flex: 1 },
   listContent: { padding: 12 },
   highlightCard: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 2,
     marginBottom: 12,
-    borderLeftWidth: 4,
   },
-  highlightText: { fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  highlightText: { fontSize: 12, lineHeight: 18, marginBottom: 8, fontStyle: 'italic', fontFamily: 'Georgia' },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  pageText: { fontSize: 11, fontWeight: '600' },
-  deleteIcon: { fontSize: 16 },
+  pageText: { fontSize: 10, fontWeight: '400', letterSpacing: 1 },
+  deleteIcon: { fontSize: 14, fontWeight: '300' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyText: { fontSize: 16, fontWeight: '600' },
+  emptyIcon: { fontSize: 60, marginBottom: 16 },
+  emptyText: { fontSize: 15, fontWeight: '400', fontFamily: 'Georgia', letterSpacing: 1 },
 });

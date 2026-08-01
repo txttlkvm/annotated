@@ -7,7 +7,6 @@ import { READER_THEMES } from '../types';
 export default function StatsScreen() {
   const { books, settings } = useApp();
   const [stats, setStats] = useState({ totalPages: 0, totalMinutes: 0, booksRead: 0 });
-  const theme = READER_THEMES[settings.theme];
 
   useEffect(() => {
     calculateStats();
@@ -28,11 +27,11 @@ export default function StatsScreen() {
   };
 
   const StatCard = ({ title, value, unit }: { title: string; value: number | string; unit?: string }) => (
-    <View style={[styles.statCard, { backgroundColor: theme.selectionColor }]}>
-      <Text style={[styles.statTitle, { color: theme.textColor }]}>{title}</Text>
+    <View style={[styles.statCard, { backgroundColor: '#2d1b4e', borderColor: '#8b7355' }]}>
+      <Text style={[styles.statTitle, { color: '#8b7355' }]}>{title}</Text>
       <View style={styles.statValueRow}>
-        <Text style={[styles.statValue, { color: theme.accentColor }]}>{value}</Text>
-        {unit && <Text style={[styles.statUnit, { color: theme.textColor }]}>{unit}</Text>}
+        <Text style={[styles.statValue, { color: '#c9a961' }]}>{value}</Text>
+        {unit && <Text style={[styles.statUnit, { color: '#c9a961' }]}>{unit}</Text>}
       </View>
     </View>
   );
@@ -43,69 +42,68 @@ export default function StatsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.backgroundColor }]}
+      style={[styles.container, { backgroundColor: '#0f0a1a' }]}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.title, { color: theme.textColor }]}>📊 Reading Statistics</Text>
+      <Text style={[styles.title, { color: '#c9a961' }]}>✦ Reading Wisdom</Text>
 
       {/* Main Stats */}
       <View style={styles.statsGrid}>
-        <StatCard title="Books in Library" value={totalBooks} />
-        <StatCard title="Books Completed" value={stats.booksRead} />
-        <StatCard title="Total Pages Read" value={stats.totalPages} />
-        <StatCard title="Reading Hours" value={(stats.totalMinutes / 60).toFixed(1)} unit="hrs" />
+        <StatCard title="Manuscripts" value={totalBooks} />
+        <StatCard title="Completed" value={stats.booksRead} />
+        <StatCard title="Pages Read" value={stats.totalPages} />
+        <StatCard title="Hours" value={(stats.totalMinutes / 60).toFixed(1)} unit="hrs" />
       </View>
 
       {/* Detailed Stats */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>📈 Summary</Text>
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Summary</Text>
 
-        <View style={[styles.infoRow, { borderBottomColor: theme.selectionColor }]}>
-          <Text style={[styles.infoLabel, { color: theme.textColor }]}>Average Reading Time/Book</Text>
-          <Text style={[styles.infoValue, { color: theme.accentColor }]}>{averageReadingTime} mins</Text>
+        <View style={[styles.infoRow, { borderBottomColor: '#8b7355' }]}>
+          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>Average Reading Time</Text>
+          <Text style={[styles.infoValue, { color: '#8b7355' }]}>{averageReadingTime} mins</Text>
         </View>
 
-        <View style={[styles.infoRow, { borderBottomColor: theme.selectionColor }]}>
-          <Text style={[styles.infoLabel, { color: theme.textColor }]}>Completion Rate</Text>
-          <Text style={[styles.infoValue, { color: theme.accentColor }]}>{finishRate}%</Text>
+        <View style={[styles.infoRow, { borderBottomColor: '#8b7355' }]}>
+          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>Completion Rate</Text>
+          <Text style={[styles.infoValue, { color: '#8b7355' }]}>{finishRate}%</Text>
         </View>
 
-        <View style={[styles.infoRow, { borderBottomColor: theme.selectionColor }]}>
-          <Text style={[styles.infoLabel, { color: theme.textColor }]}>Books in Progress</Text>
-          <Text style={[styles.infoValue, { color: theme.accentColor }]}>{totalBooks - stats.booksRead}</Text>
+        <View style={[styles.infoRow, { borderBottomColor: '#8b7355' }]}>
+          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>In Progress</Text>
+          <Text style={[styles.infoValue, { color: '#8b7355' }]}>{totalBooks - stats.booksRead}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.textColor }]}>Average Pages/Book</Text>
-          <Text style={[styles.infoValue, { color: theme.accentColor }]}>
+          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>Average Pages</Text>
+          <Text style={[styles.infoValue, { color: '#8b7355' }]}>
             {books.length > 0 ? Math.round(stats.totalPages / books.length) : 0}
           </Text>
         </View>
       </View>
 
-      {/* Reading Streak */}
+      {/* Reading Goals */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>🔥 Reading Goals</Text>
-        <Text style={[styles.goalText, { color: theme.textColor }]}>
-          Keep track of your reading goals and maintain a consistent reading habit. Set targets for pages read or
-          time spent reading.
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Reading Intentions</Text>
+        <Text style={[styles.goalText, { color: '#8b7355' }]}>
+          Establish reading goals and maintain a consistent contemplative practice. Set targets for pages read or time spent in deep engagement with your manuscripts.
         </Text>
       </View>
 
-      {/* Recent Books */}
+      {/* Recently Read */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>📚 Recently Read</Text>
+        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Recently Contemplated</Text>
         {books.slice(0, 5).map(book => (
-          <View key={book.id} style={[styles.recentBook, { borderBottomColor: theme.selectionColor }]}>
+          <View key={book.id} style={[styles.recentBook, { borderBottomColor: '#8b7355' }]}>
             <View>
-              <Text style={[styles.recentTitle, { color: theme.textColor }]} numberOfLines={1}>
+              <Text style={[styles.recentTitle, { color: '#c9a961' }]} numberOfLines={1}>
                 {book.title}
               </Text>
-              <Text style={[styles.recentAuthor, { color: theme.textColor }]}>
+              <Text style={[styles.recentAuthor, { color: '#8b7355' }]}>
                 {Math.round((book.currentProgress / book.totalPages) * 100)}% complete
               </Text>
             </View>
-            <Text style={[styles.recentPages, { color: theme.accentColor }]}>{book.currentProgress} / {book.totalPages}</Text>
+            <Text style={[styles.recentPages, { color: '#c9a961' }]}>{book.currentProgress} / {book.totalPages}</Text>
           </View>
         ))}
       </View>
@@ -116,7 +114,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: '400', marginBottom: 20, letterSpacing: 2, fontFamily: 'Georgia' },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -125,24 +123,25 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48%',
-    borderRadius: 12,
+    borderRadius: 2,
+    borderWidth: 1,
     padding: 16,
   },
-  statTitle: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  statTitle: { fontSize: 11, fontWeight: '400', marginBottom: 8, letterSpacing: 1, fontFamily: 'Georgia' },
   statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  statValue: { fontSize: 28, fontWeight: 'bold' },
-  statUnit: { fontSize: 12 },
+  statValue: { fontSize: 28, fontWeight: '300' },
+  statUnit: { fontSize: 11, letterSpacing: 1 },
   section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '400', marginBottom: 12, letterSpacing: 2, fontFamily: 'Georgia' },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  infoLabel: { fontSize: 14 },
-  infoValue: { fontSize: 14, fontWeight: '600' },
-  goalText: { fontSize: 13, lineHeight: 20 },
+  infoLabel: { fontSize: 13, fontFamily: 'Georgia' },
+  infoValue: { fontSize: 13, fontWeight: '400', letterSpacing: 1 },
+  goalText: { fontSize: 12, lineHeight: 20, fontFamily: 'Georgia', letterSpacing: 0.5 },
   recentBook: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -150,7 +149,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  recentTitle: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  recentAuthor: { fontSize: 12 },
-  recentPages: { fontSize: 13, fontWeight: '600' },
+  recentTitle: { fontSize: 13, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
+  recentAuthor: { fontSize: 11, letterSpacing: 0.5 },
+  recentPages: { fontSize: 12, fontWeight: '400', letterSpacing: 1 },
 });

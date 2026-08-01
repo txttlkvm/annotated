@@ -97,22 +97,22 @@ export default function LibraryScreen({ navigation }: any) {
     if (viewMode === 'grid') {
       return (
         <TouchableOpacity
-          style={[styles.gridCard, { backgroundColor: settings.theme === 'light' ? '#f5f5f5' : '#2a2a2a' }]}
+          style={[styles.gridCard, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}
           onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
         >
-          <View style={styles.gridCover}>
-            <Text style={styles.coverEmoji}>📖</Text>
+          <View style={[styles.gridCover, { borderColor: '#c9a961' }]}>
+            <Text style={styles.coverSymbol}>✦</Text>
           </View>
-          <Text style={[styles.gridTitle, { color: settings.theme === 'light' ? '#000' : '#fff' }]} numberOfLines={2}>
+          <Text style={[styles.gridTitle, { color: '#c9a961' }]} numberOfLines={2}>
             {book.title}
           </Text>
-          <Text style={[styles.gridAuthor, { color: settings.theme === 'light' ? '#666' : '#aaa' }]} numberOfLines={1}>
-            {book.author || 'Unknown'}
+          <Text style={[styles.gridAuthor, { color: '#8b7355' }]} numberOfLines={1}>
+            {book.author || '—'}
           </Text>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { borderColor: '#8b7355' }]}>
             <View style={[styles.progressFill, { width: `${progress}%` }]} />
           </View>
-          <Text style={[styles.progressText, { color: settings.theme === 'light' ? '#666' : '#aaa' }]}>
+          <Text style={[styles.progressText, { color: '#8b7355' }]}>
             {Math.round(progress)}%
           </Text>
         </TouchableOpacity>
@@ -121,87 +121,87 @@ export default function LibraryScreen({ navigation }: any) {
 
     return (
       <TouchableOpacity
-        style={[styles.listCard, { backgroundColor: settings.theme === 'light' ? '#f5f5f5' : '#2a2a2a' }]}
+        style={[styles.listCard, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}
         onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
       >
-        <View style={styles.listCover}>
-          <Text style={styles.coverEmojiList}>📖</Text>
+        <View style={[styles.listCover, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}>
+          <Text style={styles.coverSymbolList}>✦</Text>
         </View>
         <View style={styles.listInfo}>
-          <Text style={[styles.listTitle, { color: settings.theme === 'light' ? '#000' : '#fff' }]} numberOfLines={1}>
+          <Text style={[styles.listTitle, { color: '#c9a961' }]} numberOfLines={1}>
             {book.title}
           </Text>
-          <Text style={[styles.listAuthor, { color: settings.theme === 'light' ? '#666' : '#aaa' }]}>
-            {book.author || 'Unknown Author'}
+          <Text style={[styles.listAuthor, { color: '#8b7355' }]}>
+            {book.author || '—'}
           </Text>
           <View style={styles.listMeta}>
-            <Text style={[styles.metaText, { color: settings.theme === 'light' ? '#999' : '#888' }]}>
+            <Text style={[styles.metaText, { color: '#8b7355' }]}>
               {book.totalPages} pages • {(book.fileSize / 1024 / 1024).toFixed(1)}MB
             </Text>
           </View>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { borderColor: '#8b7355' }]}>
             <View style={[styles.progressFill, { width: `${(book.currentProgress / book.totalPages) * 100}%` }]} />
           </View>
         </View>
         <View style={styles.listStatus}>
-          <Text style={styles.pageNumber}>{book.currentProgress}</Text>
-          <Text style={[styles.pageLabel, { color: settings.theme === 'light' ? '#999' : '#888' }]}>pages</Text>
+          <Text style={[styles.pageNumber, { color: '#c9a961' }]}>{book.currentProgress}</Text>
+          <Text style={[styles.pageLabel, { color: '#8b7355' }]}>p.</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: settings.theme === 'light' ? '#fff' : '#1a1a1a' }]}>
+    <View style={[styles.container, { backgroundColor: '#0f0a1a' }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: settings.theme === 'light' ? '#f5f5f5' : '#1a1a1a' }]}>
-        <Text style={[styles.headerTitle, { color: settings.theme === 'light' ? '#000' : '#fff' }]}>
-          My Library
+      <View style={[styles.header, { backgroundColor: '#1a1328', borderBottomColor: '#c9a961' }]}>
+        <Text style={[styles.headerTitle, { color: '#c9a961' }]}>
+          ✦ My Library
         </Text>
-        <TouchableOpacity style={styles.addButton} onPress={handleUploadBook} disabled={isLoading}>
+        <TouchableOpacity style={[styles.addButton, { borderColor: '#c9a961' }]} onPress={handleUploadBook} disabled={isLoading}>
           {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color="#c9a961" size="small" />
           ) : (
-            <Text style={styles.addButtonText}>+ Add</Text>
+            <Text style={[styles.addButtonText, { color: '#c9a961' }]}>+ Add</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* Search & Filters */}
-      <View style={[styles.searchSection, { backgroundColor: settings.theme === 'light' ? '#f5f5f5' : '#1a1a1a' }]}>
+      <View style={[styles.searchSection, { backgroundColor: '#1a1328', borderBottomColor: '#8b7355' }]}>
         <TextInput
           style={[
             styles.searchInput,
             {
-              backgroundColor: settings.theme === 'light' ? '#e0e0e0' : '#2a2a2a',
-              color: settings.theme === 'light' ? '#000' : '#fff',
-              borderColor: settings.theme === 'light' ? '#d0d0d0' : '#333',
+              backgroundColor: '#2d1b4e',
+              color: '#c9a961',
+              borderColor: '#8b7355',
             },
           ]}
-          placeholder="Search books..."
-          placeholderTextColor={settings.theme === 'light' ? '#999' : '#666'}
+          placeholder="Seek a manuscript..."
+          placeholderTextColor="#8b7355"
           value={searchText}
           onChangeText={setSearchText}
         />
 
         <View style={styles.controls}>
           <TouchableOpacity
-            style={[styles.sortButton, sortBy === 'recent' && styles.sortButtonActive]}
+            style={[styles.sortButton, { borderColor: '#8b7355' }, sortBy === 'recent' && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
             onPress={() => setSortBy('recent')}
           >
-            <Text style={styles.sortButtonText}>Recent</Text>
+            <Text style={[styles.sortButtonText, { color: '#c9a961' }]}>Recent</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.sortButton, sortBy === 'title' && styles.sortButtonActive]}
+            style={[styles.sortButton, { borderColor: '#8b7355' }, sortBy === 'title' && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
             onPress={() => setSortBy('title')}
           >
-            <Text style={styles.sortButtonText}>Title</Text>
+            <Text style={[styles.sortButtonText, { color: '#c9a961' }]}>Title</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
+            style={[styles.viewButton, { borderColor: '#8b7355' }, viewMode === 'grid' && { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
             onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
           >
-            <Text style={styles.viewButtonText}>{viewMode === 'list' ? '⊞' : '≡'}</Text>
+            <Text style={[styles.viewButtonText, { color: '#c9a961' }]}>{viewMode === 'list' ? '⊞' : '≡'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -209,12 +209,12 @@ export default function LibraryScreen({ navigation }: any) {
       {/* Books List/Grid */}
       {filteredBooks.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📚</Text>
-          <Text style={[styles.emptyText, { color: settings.theme === 'light' ? '#000' : '#fff' }]}>
-            {books.length === 0 ? 'No books yet' : 'No results found'}
+          <Text style={styles.emptyIcon}>✦</Text>
+          <Text style={[styles.emptyText, { color: '#c9a961' }]}>
+            {books.length === 0 ? 'Your Library Awaits' : 'No results found'}
           </Text>
-          <Text style={[styles.emptySubtext, { color: settings.theme === 'light' ? '#666' : '#aaa' }]}>
-            {books.length === 0 ? 'Tap "Add" to upload your ebooks' : 'Try a different search'}
+          <Text style={[styles.emptySubtext, { color: '#8b7355' }]}>
+            {books.length === 0 ? 'Tap "Add" to bring manuscripts into your collection' : 'Try a different search'}
           </Text>
         </View>
       ) : (
@@ -240,30 +240,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomWidth: 2,
   },
-  headerTitle: { fontSize: 24, fontWeight: 'bold' },
+  headerTitle: { fontSize: 20, fontWeight: '400', letterSpacing: 2, fontFamily: 'Georgia' },
   addButton: {
-    backgroundColor: '#4A90E2',
-    paddingHorizontal: 16,
+    backgroundColor: '#1a1328',
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 2,
+    borderWidth: 1,
   },
-  addButtonText: { color: '#fff', fontWeight: '600' },
+  addButtonText: { fontWeight: '400', letterSpacing: 1, fontSize: 12 },
   searchSection: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   searchInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 2,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 10,
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: 'Georgia',
   },
   controls: {
     flexDirection: 'row',
@@ -272,76 +272,79 @@ const styles = StyleSheet.create({
   sortButton: {
     flex: 1,
     paddingVertical: 8,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 6,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
     alignItems: 'center',
   },
-  sortButtonActive: { backgroundColor: '#4A90E2' },
-  sortButtonText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  sortButtonText: { fontSize: 11, fontWeight: '400', letterSpacing: 1 },
   viewButton: {
     width: 40,
     paddingVertical: 8,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 6,
+    backgroundColor: '#1a1328',
+    borderRadius: 2,
+    borderWidth: 1,
     alignItems: 'center',
   },
-  viewButtonActive: { backgroundColor: '#4A90E2' },
-  viewButtonText: { color: '#fff', fontSize: 14 },
+  viewButtonText: { fontSize: 13, fontWeight: '300' },
   listContent: { padding: 12 },
   listCard: {
     flexDirection: 'row',
     marginBottom: 12,
-    borderRadius: 12,
+    borderRadius: 2,
+    borderWidth: 1,
     padding: 12,
     alignItems: 'center',
   },
   listCover: {
     width: 50,
     height: 70,
-    backgroundColor: '#333',
-    borderRadius: 6,
+    borderRadius: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  coverEmojiList: { fontSize: 24 },
+  coverSymbolList: { fontSize: 28, fontWeight: '300' },
   listInfo: { flex: 1 },
-  listTitle: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  listAuthor: { fontSize: 12, marginBottom: 4 },
+  listTitle: { fontSize: 13, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
+  listAuthor: { fontSize: 11, marginBottom: 4, letterSpacing: 0.5 },
   listMeta: { marginBottom: 8 },
-  metaText: { fontSize: 11 },
+  metaText: { fontSize: 10, letterSpacing: 0.5 },
   progressBar: {
-    height: 4,
-    backgroundColor: '#333',
-    borderRadius: 2,
+    height: 2,
+    backgroundColor: '#3d3730',
+    borderRadius: 1,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#4A90E2' },
+  progressFill: { height: '100%', backgroundColor: '#c9a961' },
   listStatus: { alignItems: 'center', marginLeft: 12 },
-  pageNumber: { fontSize: 14, fontWeight: 'bold', color: '#4A90E2' },
-  pageLabel: { fontSize: 10, marginTop: 2 },
+  pageNumber: { fontSize: 12, fontWeight: '300', letterSpacing: 1 },
+  pageLabel: { fontSize: 9, marginTop: 2, letterSpacing: 1 },
   gridCard: {
     flex: 1,
     marginHorizontal: 6,
     marginBottom: 12,
-    borderRadius: 12,
+    borderRadius: 2,
+    borderWidth: 1,
     padding: 12,
   },
   gridCover: {
     width: '100%',
     aspectRatio: 3 / 4,
-    backgroundColor: '#333',
-    borderRadius: 8,
+    backgroundColor: '#2d1b4e',
+    borderRadius: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
   },
-  coverEmoji: { fontSize: 40 },
-  gridTitle: { fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  gridAuthor: { fontSize: 11, marginBottom: 8 },
-  progressText: { fontSize: 11, marginTop: 4 },
+  coverSymbol: { fontSize: 40, fontWeight: '300' },
+  gridTitle: { fontSize: 12, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
+  gridAuthor: { fontSize: 10, marginBottom: 8, letterSpacing: 0.5 },
+  progressText: { fontSize: 10, marginTop: 4, letterSpacing: 0.5 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyText: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptySubtext: { fontSize: 14 },
+  emptyIcon: { fontSize: 60, marginBottom: 16 },
+  emptyText: { fontSize: 16, fontWeight: '400', marginBottom: 8, fontFamily: 'Georgia', letterSpacing: 1 },
+  emptySubtext: { fontSize: 12, letterSpacing: 0.5 },
 });
