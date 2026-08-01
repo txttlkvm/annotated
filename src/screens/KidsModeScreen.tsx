@@ -1,115 +1,110 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text, FlatList } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
 import { useApp } from '../context/AppContext';
 
 export default function KidsModeScreen() {
   const { books, setCurrentBook } = useApp();
-  const [selectedBook, setSelectedBook] = useState<string | null>(null);
-
-  const kidsBooks = books.filter(b =>
-    b.title.toLowerCase().includes('kid') ||
-    b.title.toLowerCase().includes('story') ||
-    b.author?.toLowerCase().includes('seuss')
-  ).length > 0
-    ? books.filter(b =>
-        b.title.toLowerCase().includes('kid') ||
-        b.title.toLowerCase().includes('story') ||
-        b.author?.toLowerCase().includes('seuss')
-      )
-    : books.slice(0, 4);
+  const kidBooks = books.slice(0, 4);
 
   const LargeBookCard = ({ book, onPress }: any) => (
     <TouchableOpacity
       style={styles.largeCard}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
       <View style={styles.largeCover}>
-        <Text style={styles.largeEmoji}>📖</Text>
+        <Text style={styles.largeSymbol}>✦</Text>
       </View>
       <Text style={styles.largeTitle}>{book.title}</Text>
-      <Text style={styles.largeAuthor}>{book.author || 'Unknown'}</Text>
+      <Text style={styles.largeAuthor}>{book.author || '—'}</Text>
       <View style={styles.largeProgress}>
         <View style={[styles.progressFill, { width: `${(book.currentProgress / book.totalPages) * 100}%` }]} />
       </View>
-      <Text style={styles.progressText}>
-        {Math.round((book.currentProgress / book.totalPages) * 100)}% read
-      </Text>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🎉 Kids Mode</Text>
-        <Text style={styles.headerSubtitle}>Fun Reading Time!</Text>
+        <Text style={styles.headerTitle}>✦ Young Reader ✦</Text>
+        <Text style={styles.headerSubtitle}>A Solemn Journey Through Stories</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>📚 My Stories</Text>
-        <View style={styles.gridRow}>
-          {kidsBooks.slice(0, 2).map(book => (
-            <View key={book.id} style={{ width: '48%' }}>
-              <LargeBookCard
-                book={book}
-                onPress={() => {
-                  setCurrentBook(book);
-                  setSelectedBook(book.id);
-                }}
-              />
-            </View>
-          ))}
+        {/* My Stories Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>✦ My Manuscripts</Text>
+          <View style={styles.gridRow}>
+            {kidBooks.slice(0, 2).map(book => (
+              <View key={book.id} style={{ width: '48%' }}>
+                <LargeBookCard
+                  book={book}
+                  onPress={() => setCurrentBook(book)}
+                />
+              </View>
+            ))}
+          </View>
+          <View style={styles.gridRow}>
+            {kidBooks.slice(2, 4).map(book => (
+              <View key={book.id} style={{ width: '48%' }}>
+                <LargeBookCard
+                  book={book}
+                  onPress={() => setCurrentBook(book)}
+                />
+              </View>
+            ))}
+          </View>
         </View>
 
-        <View style={styles.gridRow}>
-          {kidsBooks.slice(2, 4).map(book => (
-            <View key={book.id} style={{ width: '48%' }}>
-              <LargeBookCard
-                book={book}
-                onPress={() => {
-                  setCurrentBook(book);
-                  setSelectedBook(book.id);
-                }}
-              />
+        {/* Reading Quest */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>✦ Reading Quest</Text>
+          <View style={styles.questCard}>
+            <Text style={styles.questLabel}>Complete Three Manuscripts</Text>
+            <View style={styles.questProgress}>
+              <View style={styles.questFill} />
             </View>
-          ))}
+            <Text style={styles.questStat}>2 of 3 Completed</Text>
+          </View>
         </View>
 
-        <View style={styles.featureSection}>
-          <Text style={styles.featureTitle}>🎯 Reading Goals</Text>
-          <View style={styles.goalCard}>
-            <Text style={styles.goalText}>Read 3 books this week!</Text>
-            <View style={styles.goalProgress}>
-              <View style={styles.goalFill} />
-              <Text style={styles.goalPercent}>2/3</Text>
+        {/* Virtues & Deeds */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>✦ Virtues Earned</Text>
+          <View style={styles.virtuesRow}>
+            <View style={styles.virtue}>
+              <Text style={styles.virtueSymbol}>✦</Text>
+              <Text style={styles.virtueLabel}>Perseverance</Text>
+            </View>
+            <View style={styles.virtue}>
+              <Text style={styles.virtueSymbol}>✦</Text>
+              <Text style={styles.virtueLabel}>Contemplation</Text>
+            </View>
+            <View style={[styles.virtue, styles.virtueLocked]}>
+              <Text style={styles.virtueSymbol}>◯</Text>
+              <Text style={styles.virtueLabel}>Wisdom</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.featureSection}>
-          <Text style={styles.featureTitle}>🏆 Achievements</Text>
-          <View style={styles.achievementRow}>
-            <View style={styles.achievement}>
-              <Text style={styles.achievementIcon}>🌟</Text>
-              <Text style={styles.achievementLabel}>Read 10 pages</Text>
-            </View>
-            <View style={styles.achievement}>
-              <Text style={styles.achievementIcon}>✨</Text>
-              <Text style={styles.achievementLabel}>Added bookmark</Text>
-            </View>
-            <View style={[styles.achievement, styles.achievementLocked]}>
-              <Text style={styles.achievementIcon}>🎉</Text>
-              <Text style={styles.achievementLabel}>Complete book</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.featureSection}>
-          <Text style={styles.featureTitle}>🎨 Text-to-Speech</Text>
-          <Text style={styles.featureText}>Tap the read icon to hear your story!</Text>
-          <TouchableOpacity style={styles.featureButton}>
-            <Text style={styles.featureButtonText}>▶ Listen Now</Text>
+        {/* Listen Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>✦ Hear the Words</Text>
+          <Text style={styles.listenText}>
+            Listen as a voice reads your manuscript aloud
+          </Text>
+          <TouchableOpacity style={styles.listenButton}>
+            <Text style={styles.listenButtonText}>▶ Begin Listening</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Wisdom Quote */}
+        <View style={styles.wisdomBox}>
+          <Text style={styles.wisdomSymbol}>✦</Text>
+          <Text style={styles.wisdomText}>
+            "Every book is a doorway to understanding. Approach with reverence."
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -117,94 +112,134 @@ export default function KidsModeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#1a1328' },
   header: {
-    backgroundColor: '#FF6B9D',
+    backgroundColor: '#2d1b4e',
     paddingVertical: 24,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomWidth: 2,
+    borderBottomColor: '#c9a961',
   },
-  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  headerSubtitle: { fontSize: 14, color: '#ffdd88' },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '400',
+    color: '#c9a961',
+    marginBottom: 4,
+    letterSpacing: 3,
+    fontFamily: 'Georgia',
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    color: '#8b7355',
+    letterSpacing: 2,
+    fontStyle: 'italic',
+  },
   content: { padding: 16, paddingBottom: 32 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#333', marginBottom: 16 },
+  section: { marginBottom: 28 },
+  sectionTitle: {
+    fontSize: 13,
+    color: '#c9a961',
+    marginBottom: 16,
+    letterSpacing: 2,
+    fontFamily: 'Georgia',
+  },
   gridRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   largeCard: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 16,
-    padding: 12,
+    backgroundColor: '#2d1b4e',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
+    padding: 10,
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFB6C1',
   },
   largeCover: {
     width: '100%',
     aspectRatio: 3 / 4,
-    backgroundColor: '#FFE4E1',
-    borderRadius: 12,
+    backgroundColor: '#1a1328',
+    borderRadius: 1,
+    borderWidth: 1,
+    borderColor: '#c9a961',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#FF69B4',
   },
-  largeEmoji: { fontSize: 48 },
-  largeTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 4, textAlign: 'center' },
-  largeAuthor: { fontSize: 12, color: '#888', marginBottom: 8 },
+  largeSymbol: { fontSize: 40, color: '#c9a961', fontWeight: '300' },
+  largeTitle: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#c9a961',
+    marginBottom: 2,
+    textAlign: 'center',
+    fontFamily: 'Georgia',
+  },
+  largeAuthor: { fontSize: 10, color: '#8b7355', marginBottom: 8, letterSpacing: 1 },
   largeProgress: {
     width: '100%',
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
+    height: 2,
+    backgroundColor: '#3d3730',
+    borderWidth: 1,
+    borderColor: '#8b7355',
+  },
+  progressFill: { height: '100%', backgroundColor: '#c9a961' },
+  questCard: {
+    backgroundColor: '#2d1b4e',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
+    padding: 14,
+  },
+  questLabel: { fontSize: 12, fontWeight: '400', color: '#c9a961', marginBottom: 8, fontFamily: 'Georgia' },
+  questProgress: {
+    height: 3,
+    backgroundColor: '#1a1328',
+    borderWidth: 1,
+    borderColor: '#8b7355',
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  progressFill: { height: '100%', backgroundColor: '#4CAF50' },
-  progressText: { fontSize: 11, color: '#666', fontWeight: '600' },
-  featureSection: { marginTop: 24, marginBottom: 16 },
-  featureTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  featureText: { fontSize: 13, color: '#666', marginBottom: 12, lineHeight: 18 },
-  featureButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  featureButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  goalCard: {
-    backgroundColor: '#FFF9C4',
-    borderRadius: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FBC02D',
-  },
-  goalText: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
-  goalProgress: {
-    height: 12,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 6,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goalFill: { height: '100%', backgroundColor: '#FBC02D', width: '66%' },
-  goalPercent: { fontSize: 10, color: '#fff', fontWeight: 'bold', marginLeft: 4 },
-  achievementRow: { flexDirection: 'row', gap: 12 },
-  achievement: {
+  questFill: { height: '100%', backgroundColor: '#c9a961', width: '66%' },
+  questStat: { fontSize: 10, color: '#8b7355', letterSpacing: 1 },
+  virtuesRow: { flexDirection: 'row', gap: 10 },
+  virtue: {
     flex: 1,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: '#2d1b4e',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
+    paddingVertical: 14,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#2196F3',
   },
-  achievementLocked: {
-    backgroundColor: '#f0f0f0',
-    borderColor: '#ccc',
-    opacity: 0.6,
+  virtueLocked: { opacity: 0.5 },
+  virtueSymbol: { fontSize: 20, color: '#c9a961', marginBottom: 4 },
+  virtueLabel: { fontSize: 10, color: '#c9a961', textAlign: 'center', letterSpacing: 1 },
+  listenText: { fontSize: 12, color: '#8b7355', marginBottom: 12, lineHeight: 18, fontStyle: 'italic' },
+  listenButton: {
+    backgroundColor: '#2d1b4e',
+    borderWidth: 1,
+    borderColor: '#c9a961',
+    paddingVertical: 12,
+    borderRadius: 2,
+    alignItems: 'center',
   },
-  achievementIcon: { fontSize: 24, marginBottom: 4 },
-  achievementLabel: { fontSize: 11, fontWeight: '600', color: '#333', textAlign: 'center' },
+  listenButtonText: { color: '#c9a961', fontSize: 13, fontWeight: '400', letterSpacing: 1 },
+  wisdomBox: {
+    backgroundColor: '#2d1b4e',
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#8b7355',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  wisdomSymbol: { fontSize: 16, color: '#c9a961', marginBottom: 8 },
+  wisdomText: {
+    fontSize: 11,
+    color: '#c9a961',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 16,
+    fontFamily: 'Georgia',
+  },
 });

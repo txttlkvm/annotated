@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,41 +9,32 @@ import {
   FlatList,
   Dimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { BOOKSHELF_THEMES } from '../types';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }: any) {
-  const { books, settings } = useApp();
-  const [bookshelfTheme, setBookshelfTheme] = useState('dark');
-  const [viewMode, setViewMode] = useState<'shelf' | 'grid' | 'list'>('shelf');
+  const { books } = useApp();
+  const [bookshelfTheme, setBookshelfTheme] = useState('byzantine');
+  const [viewMode, setViewMode] = useState<'shelf' | 'grid'>('shelf');
   const [searchText, setSearchText] = useState('');
-  const [showKidsMode, setShowKidsMode] = useState(false);
 
   const theme = BOOKSHELF_THEMES[bookshelfTheme];
-  const recentBooks = books.slice(0, 6);
+  const recentBooks = books.slice(0, 4);
   const filteredBooks = books.filter(b =>
     b.title.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const ShelfBook = ({ book, width: bookWidth }: any) => (
     <TouchableOpacity
-      style={[
-        styles.shelfBook,
-        {
-          width: bookWidth,
-          backgroundColor: `${theme.accentColor}40`,
-          borderColor: theme.accentColor,
-        },
-      ]}
+      style={[styles.shelfBook, { width: bookWidth, borderColor: theme.accentColor }]}
       onPress={() => navigation.navigate('Reader', { bookId: book.id })}
     >
-      <View style={styles.bookCover}>
-        <Text style={styles.coverEmoji}>📖</Text>
+      <View style={[styles.bookCover, { backgroundColor: theme.shelfColor, borderColor: theme.accentColor }]}>
+        <Text style={[styles.coverText, { color: theme.textColor }]}>✦</Text>
         <View style={styles.progressOverlay}>
-          <Text style={styles.progressPercent}>
+          <Text style={[styles.progressPercent, { color: theme.textColor }]}>
             {Math.round((book.currentProgress / book.totalPages) * 100)}%
           </Text>
         </View>
@@ -56,26 +47,18 @@ export default function HomeScreen({ navigation }: any) {
 
   const GridBook = ({ book }: any) => (
     <TouchableOpacity
-      style={[styles.gridBook, { backgroundColor: theme.shelfColor }]}
+      style={[styles.gridBook, { backgroundColor: theme.shelfColor, borderColor: theme.accentColor }]}
       onPress={() => navigation.navigate('Reader', { bookId: book.id })}
     >
-      <View style={styles.gridCover}>
-        <Text style={styles.coverEmoji}>📖</Text>
+      <View style={[styles.gridCover, { borderColor: theme.accentColor }]}>
+        <Text style={[styles.coverTextLarge, { color: theme.accentColor }]}>✦</Text>
       </View>
       <Text style={[styles.gridTitle, { color: theme.textColor }]} numberOfLines={2}>
         {book.title}
       </Text>
-      <View style={styles.gridProgress}>
-        <View style={[styles.progressBar, { backgroundColor: theme.accentColor }]}>
-          <View
-            style={{
-              height: '100%',
-              backgroundColor: theme.accentColor,
-              width: `${(book.currentProgress / book.totalPages) * 100}%`,
-            }}
-          />
-        </View>
-      </View>
+      <Text style={[styles.gridAuthor, { color: theme.accentColor }]} numberOfLines={1}>
+        {book.author || '—'}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -83,42 +66,34 @@ export default function HomeScreen({ navigation }: any) {
     const bookWidth = (width - 48) / 3;
 
     return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: theme.backgroundColor },
-        ]}
-      >
+      <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.backgroundColor }]}>
-          <Text style={[styles.headerTitle, { color: theme.textColor }]}>
-            📚 My Library
-          </Text>
-          <View style={styles.headerControls}>
-            <TouchableOpacity
-              onPress={() => setShowKidsMode(!showKidsMode)}
-              style={[styles.kidsBtn, showKidsMode && styles.kidsBtnActive]}
-            >
-              <Text style={styles.kidsBtnText}>{showKidsMode ? '👧' : '👤'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setViewMode('grid')}>
-              <Text style={[styles.viewIcon, { color: theme.textColor }]}>⊞</Text>
-            </TouchableOpacity>
+        <View style={[styles.header, { borderBottomColor: theme.accentColor }]}>
+          <View>
+            <Text style={[styles.headerTitle, { color: theme.accentColor }]}>
+              ✦ Library ✦
+            </Text>
+            <Text style={[styles.headerSub, { color: theme.accentColor }]}>
+              A Sacred Collection
+            </Text>
           </View>
+          <TouchableOpacity onPress={() => setViewMode('grid')} style={styles.headerBtn}>
+            <Text style={[styles.headerBtnText, { color: theme.accentColor }]}>≡</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search */}
-        <View style={[styles.searchBar, { backgroundColor: theme.shelfColor }]}>
+        <View style={[styles.searchBar, { borderBottomColor: theme.accentColor }]}>
           <TextInput
             style={[
               styles.searchInput,
               {
-                backgroundColor: theme.backgroundColor,
+                backgroundColor: theme.shelfColor,
                 color: theme.textColor,
                 borderColor: theme.accentColor,
               },
             ]}
-            placeholder="Search books..."
+            placeholder="Seek a manuscript..."
             placeholderTextColor={theme.accentColor}
             value={searchText}
             onChangeText={setSearchText}
@@ -130,10 +105,10 @@ export default function HomeScreen({ navigation }: any) {
           {/* Currently Reading */}
           {recentBooks.length > 0 && (
             <View style={styles.shelfSection}>
-              <Text style={[styles.shelfLabel, { color: theme.textColor }]}>
-                📖 Currently Reading
+              <Text style={[styles.shelfLabel, { color: theme.accentColor }]}>
+                ✦ Currently Reading
               </Text>
-              <View style={[styles.shelf, { backgroundColor: theme.shelfColor }]}>
+              <View style={[styles.shelf, { borderTopColor: theme.accentColor, borderTopWidth: 1 }]}>
                 {recentBooks.map(book => (
                   <ShelfBook key={book.id} book={book} width={bookWidth} />
                 ))}
@@ -144,13 +119,13 @@ export default function HomeScreen({ navigation }: any) {
           {/* All Books */}
           {filteredBooks.length > 0 && (
             <View style={styles.shelfSection}>
-              <Text style={[styles.shelfLabel, { color: theme.textColor }]}>
-                📚 All Books ({filteredBooks.length})
+              <Text style={[styles.shelfLabel, { color: theme.accentColor }]}>
+                ✦ Complete Collection ({filteredBooks.length})
               </Text>
               {Array.from({
                 length: Math.ceil(filteredBooks.length / 3),
               }).map((_, shelfIndex) => (
-                <View key={shelfIndex} style={[styles.shelf, { backgroundColor: theme.shelfColor }]}>
+                <View key={shelfIndex} style={[styles.shelf, { borderTopColor: theme.accentColor, borderTopWidth: 1 }]}>
                   {filteredBooks
                     .slice(shelfIndex * 3, (shelfIndex + 1) * 3)
                     .map(book => (
@@ -164,12 +139,14 @@ export default function HomeScreen({ navigation }: any) {
           {/* Empty State */}
           {books.length === 0 && (
             <View style={styles.emptyState}>
-              <Text style={[styles.emptyIcon, { color: theme.textColor }]}>📚</Text>
-              <Text style={[styles.emptyText, { color: theme.textColor }]}>
-                No books yet
+              <Text style={[styles.emptyText, { color: theme.accentColor }]}>
+                ✦ ✦ ✦
+              </Text>
+              <Text style={[styles.emptyTitle, { color: theme.textColor }]}>
+                Your Library Awaits
               </Text>
               <Text style={[styles.emptySubtext, { color: theme.accentColor }]}>
-                Add your first ebook to begin
+                Begin your sacred journey with a manuscript
               </Text>
             </View>
           )}
@@ -180,32 +157,32 @@ export default function HomeScreen({ navigation }: any) {
 
   // Grid View
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: theme.backgroundColor },
-      ]}
-    >
-      <View style={[styles.header, { backgroundColor: theme.backgroundColor }]}>
-        <Text style={[styles.headerTitle, { color: theme.textColor }]}>
-          📚 My Library
-        </Text>
-        <TouchableOpacity onPress={() => setViewMode('shelf')}>
-          <Text style={[styles.viewIcon, { color: theme.textColor }]}>≡</Text>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+      <View style={[styles.header, { borderBottomColor: theme.accentColor }]}>
+        <View>
+          <Text style={[styles.headerTitle, { color: theme.accentColor }]}>
+            ✦ Library ✦
+          </Text>
+          <Text style={[styles.headerSub, { color: theme.accentColor }]}>
+            A Sacred Collection
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => setViewMode('shelf')} style={styles.headerBtn}>
+          <Text style={[styles.headerBtnText, { color: theme.accentColor }]}>⊞</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.searchBar, { backgroundColor: theme.shelfColor }]}>
+      <View style={[styles.searchBar, { borderBottomColor: theme.accentColor }]}>
         <TextInput
           style={[
             styles.searchInput,
             {
-              backgroundColor: theme.backgroundColor,
+              backgroundColor: theme.shelfColor,
               color: theme.textColor,
               borderColor: theme.accentColor,
             },
           ]}
-          placeholder="Search books..."
+          placeholder="Seek a manuscript..."
           placeholderTextColor={theme.accentColor}
           value={searchText}
           onChangeText={setSearchText}
@@ -228,56 +205,67 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomWidth: 2,
   },
-  headerTitle: { fontSize: 24, fontWeight: 'bold' },
-  headerControls: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  kidsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2a2a2a',
-    justifyContent: 'center',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '500',
+    letterSpacing: 3,
+    fontFamily: 'Georgia',
   },
-  kidsBtnActive: { backgroundColor: '#4A90E2' },
-  kidsBtnText: { fontSize: 20 },
-  viewIcon: { fontSize: 20 },
+  headerSub: {
+    fontSize: 11,
+    marginTop: 4,
+    letterSpacing: 2,
+    fontStyle: 'italic',
+  },
+  headerBtn: {
+    padding: 8,
+  },
+  headerBtnText: {
+    fontSize: 20,
+    fontWeight: '300',
+  },
   searchBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   searchInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 2,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
+    paddingVertical: 10,
+    fontSize: 13,
+    fontFamily: 'Georgia',
+    letterSpacing: 1,
   },
   shelfContainer: { padding: 16, paddingBottom: 32 },
-  shelfSection: { marginBottom: 24 },
-  shelfLabel: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  shelfSection: { marginBottom: 32 },
+  shelfLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+    marginBottom: 16,
+    letterSpacing: 2,
+    fontFamily: 'Georgia',
+  },
   shelf: {
     flexDirection: 'row',
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 8,
-    minHeight: 140,
+    paddingVertical: 20,
+    paddingHorizontal: 0,
+    gap: 12,
+    marginBottom: 0,
+    minHeight: 160,
   },
   shelfBook: {
-    borderRadius: 8,
     borderWidth: 1,
+    borderRadius: 0,
     padding: 8,
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -285,46 +273,51 @@ const styles = StyleSheet.create({
   bookCover: {
     width: '100%',
     aspectRatio: 3 / 4,
-    borderRadius: 4,
-    backgroundColor: '#333',
+    borderRadius: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     position: 'relative',
   },
-  coverEmoji: { fontSize: 32 },
+  coverText: {
+    fontSize: 36,
+    fontWeight: '300',
+  },
   progressOverlay: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
+    bottom: 6,
+    right: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
-  progressPercent: { fontSize: 10, color: '#fff', fontWeight: '600' },
-  bookSpine: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  progressPercent: { fontSize: 9, fontWeight: '400', letterSpacing: 1 },
+  bookSpine: { fontSize: 11, fontWeight: '400', textAlign: 'center', letterSpacing: 0.5, fontFamily: 'Georgia' },
   gridRow: { justifyContent: 'space-between', marginBottom: 16 },
-  gridContent: { paddingHorizontal: 12, paddingVertical: 16 },
+  gridContent: { paddingHorizontal: 16, paddingVertical: 16 },
   gridBook: {
     width: '48%',
-    borderRadius: 12,
+    borderRadius: 2,
+    borderWidth: 1,
     padding: 12,
   },
   gridCover: {
     width: '100%',
     aspectRatio: 3 / 4,
-    backgroundColor: '#333',
-    borderRadius: 8,
+    borderRadius: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  gridTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  gridProgress: { height: 4, borderRadius: 2, backgroundColor: '#333', overflow: 'hidden' },
-  progressBar: { height: '100%' },
-  emptyState: { alignItems: 'center', paddingTop: 60 },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyText: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptySubtext: { fontSize: 14 },
+  coverTextLarge: {
+    fontSize: 40,
+    fontWeight: '300',
+  },
+  gridTitle: { fontSize: 12, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia', letterSpacing: 0.5 },
+  gridAuthor: { fontSize: 10, letterSpacing: 1, fontStyle: 'italic' },
+  emptyState: { alignItems: 'center', paddingTop: 80 },
+  emptyText: { fontSize: 28, marginBottom: 20, letterSpacing: 4 },
+  emptyTitle: { fontSize: 18, fontWeight: '300', marginBottom: 12, fontFamily: 'Georgia' },
+  emptySubtext: { fontSize: 11, letterSpacing: 1, fontStyle: 'italic' },
 });
