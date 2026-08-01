@@ -1,30 +1,34 @@
 {
   "expo": {
-    "name": "BookVoiceReader",
-    "slug": "book-voice-reader",
-    "version": "1.0.0",
+    "name": "BookVoice Pro",
+    "slug": "book-voice-pro",
+    "version": "2.0.0",
     "assetBundlePatterns": ["**/*"],
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a1a"
-      },
-      "package": "com.bookvr.reader",
-      "permissions": [
-        "android.permission.INTERNET",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
-      ]
-    },
+    "orientation": "portrait",
     "plugins": [
+      ["expo-font", {}],
+      ["expo-screen-brightness", {}],
       [
         "expo-document-picker",
         {
           "iCloudContainerEnvironment": "Production"
         }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a1a"
+      },
+      "package": "com.bookvpro.reader",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
-      "expo-av"
-    ]
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "scheme": "bookvoicepro"
   }
 }

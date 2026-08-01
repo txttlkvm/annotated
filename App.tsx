@@ -1,45 +1,111 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StatusBar } from 'expo-status-bar';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Font from 'expo-font';
+
+import { AppProvider, useApp } from './src/context/AppContext';
+import { DatabaseService } from './src/services/DatabaseService';
+import { TTSService } from './src/services/TTSService';
+import { AudioService } from './src/services/AudioService';
+
 import LibraryScreen from './src/screens/LibraryScreen';
 import ReaderScreen from './src/screens/ReaderScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import { BookProvider } from './src/context/BookContext';
+import StatsScreen from './src/screens/StatsScreen';
+import BookDetailsScreen from './src/screens/BookDetailsScreen';
+import HighlightsScreen from './src/screens/HighlightsScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-export default function App() {
+function LibraryNavigator() {
   return (
-    <BookProvider>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="LibraryHome" component={LibraryScreen} />
+      <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function ReaderNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ReaderHome" component={ReaderScreen} />
+      <Stack.Screen name="Highlights" component={HighlightsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function MainApp() {
+  const { settings } = useApp();
+
+  useEffect(() => {
+    initializeServices();
+  }, []);
+
+  const initializeServices = async () => {
+    try {
+      await DatabaseService.init();
+      await TTSService.init();
+      await AudioService.init();
+      await Font.loadAsync({
+        Georgia: require('./assets/fonts/Georgia.ttf'),
+        'Georgia-Bold': require('./assets/fonts/Georgia-Bold.ttf'),
+      }).catch(() => {});
+    } catch (error) {
+      console.error('Initialization error:', error);
+    }
+  };
+
+  return (
+    <>
+      <StatusBar
+        barStyle={settings.theme === 'light' ? 'dark-content' : 'light-content'}
+        backgroundColor="transparent"
+        translucent
+      />
       <NavigationContainer>
-        <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
         <Tab.Navigator
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: '#1a1a1a',
-              borderTopColor: '#333',
+              backgroundColor: settings.theme === 'light' ? '#f5f5f5' : '#1a1a1a',
+              borderTopColor: settings.theme === 'light' ? '#e0e0e0' : '#333',
               borderTopWidth: 1,
+              paddingBottom: 4,
             },
             tabBarActiveTintColor: '#4A90E2',
-            tabBarInactiveTintColor: '#666',
+            tabBarInactiveTintColor: settings.theme === 'light' ? '#999' : '#666',
           }}
         >
           <Tab.Screen
             name="Library"
-            component={LibraryScreen}
+            component={LibraryNavigator}
             options={{
               tabBarLabel: 'Library',
-              tabBarIcon: ({ color }) => <LibraryIcon color={color} />,
+              tabBarIcon: ({ color }) => <Icon name="📚" color={color} />,
             }}
           />
           <Tab.Screen
-            name="Reader"
-            component={ReaderScreen}
+            name="Reading"
+            component={ReaderNavigator}
             options={{
               tabBarLabel: 'Reading',
-              tabBarIcon: ({ color }) => <ReaderIcon color={color} />,
+              tabBarIcon: ({ color }) => <Icon name="📖" color={color} />,
+            }}
+          />
+          <Tab.Screen
+            name="Stats"
+            component={StatsScreen}
+            options={{
+              tabBarLabel: 'Stats',
+              tabBarIcon: ({ color }) => <Icon name="📊" color={color} />,
             }}
           />
           <Tab.Screen
@@ -47,25 +113,23 @@ export default function App() {
             component={SettingsScreen}
             options={{
               tabBarLabel: 'Settings',
-              tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
+              tabBarIcon: ({ color }) => <Icon name="⚙️" color={color} />,
             }}
           />
         </Tab.Navigator>
       </NavigationContainer>
-    </BookProvider>
+    </>
   );
 }
 
-const LibraryIcon = ({ color }: { color: string }) => (
-  <Text style={{ color, fontSize: 20 }}>📚</Text>
-);
+function Icon({ name }: { name: string; color: string }) {
+  return <>{name}</>;
+}
 
-const ReaderIcon = ({ color }: { color: string }) => (
-  <Text style={{ color, fontSize: 20 }}>📖</Text>
-);
-
-const SettingsIcon = ({ color }: { color: string }) => (
-  <Text style={{ color, fontSize: 20 }}>⚙️</Text>
-);
-
-import { Text } from 'react-native';
+export default function App() {
+  return (
+    <AppProvider>
+      <MainApp />
+    </AppProvider>
+  );
+}

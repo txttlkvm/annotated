@@ -1,19 +1,40 @@
 import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
+
+export interface PlaybackState {
+  isPlaying: boolean;
+  position: number;
+  duration: number;
+  rate: number;
+}
+
+type PlaybackStatusCallback = (state: PlaybackState) => void;
 
 export class AudioService {
   private static sound: Audio.Sound | null = null;
-  private static isPlaying: boolean = false;
+  private static playbackStatusCallback: PlaybackStatusCallback | null = null;
+  private static updateInterval: NodeJS.Timeout | null = null;
 
-  static async loadAudio(uri: string): Promise<void> {
+  static async init() {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      interruptionHandlingIOS: Audio.InterruptionHandlingIOS.DoNotMix,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
+  }
+
+  static async load(uri: string): Promise<void> {
     try {
       if (this.sound) {
         await this.sound.unloadAsync();
       }
-
       const { sound } = await Audio.Sound.createAsync({ uri });
       this.sound = sound;
+      this.startStatusUpdates();
     } catch (error) {
-      console.error('Error loading audio:', error);
+      console.error('Load error:', error);
       throw error;
     }
   }
@@ -21,20 +42,22 @@ export class AudioService {
   static async play(): Promise<void> {
     if (!this.sound) return;
     try {
+      await Haptics.selectionAsync();
       await this.sound.playAsync();
-      this.isPlaying = true;
+      this.startStatusUpdates();
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('Play error:', error);
     }
   }
 
   static async pause(): Promise<void> {
     if (!this.sound) return;
     try {
+      await Haptics.selectionAsync();
       await this.sound.pauseAsync();
-      this.isPlaying = false;
+      this.stopStatusUpdates();
     } catch (error) {
-      console.error('Error pausing audio:', error);
+      console.error('Pause error:', error);
     }
   }
 
@@ -42,9 +65,9 @@ export class AudioService {
     if (!this.sound) return;
     try {
       await this.sound.stopAsync();
-      this.isPlaying = false;
+      this.stopStatusUpdates();
     } catch (error) {
-      console.error('Error stopping audio:', error);
+      console.error('Stop error:', error);
     }
   }
 
@@ -53,7 +76,7 @@ export class AudioService {
     try {
       await this.sound.setPositionAsync(position);
     } catch (error) {
-      console.error('Error seeking audio:', error);
+      console.error('Seek error:', error);
     }
   }
 
@@ -62,41 +85,48 @@ export class AudioService {
     try {
       await this.sound.setRateAsync(rate, true);
     } catch (error) {
-      console.error('Error setting rate:', error);
+      console.error('Rate error:', error);
     }
-  }
-
-  static async getDuration(): Promise<number | null> {
-    if (!this.sound) return null;
-    try {
-      const status = await this.sound.getStatusAsync();
-      return status.durationMillis || null;
-    } catch (error) {
-      console.error('Error getting duration:', error);
-      return null;
-    }
-  }
-
-  static async getPosition(): Promise<number | null> {
-    if (!this.sound) return null;
-    try {
-      const status = await this.sound.getStatusAsync();
-      return status.positionMillis || null;
-    } catch (error) {
-      console.error('Error getting position:', error);
-      return null;
-    }
-  }
-
-  static getIsPlaying(): boolean {
-    return this.isPlaying;
   }
 
   static async cleanup(): Promise<void> {
+    this.stopStatusUpdates();
     if (this.sound) {
       await this.sound.unloadAsync();
       this.sound = null;
-      this.isPlaying = false;
+    }
+  }
+
+  static onPlaybackStatus(callback: PlaybackStatusCallback) {
+    this.playbackStatusCallback = callback;
+  }
+
+  private static startStatusUpdates() {
+    this.stopStatusUpdates();
+    this.updateInterval = setInterval(() => this.updateStatus(), 500);
+  }
+
+  private static stopStatusUpdates() {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+  }
+
+  private static async updateStatus() {
+    if (!this.sound || !this.playbackStatusCallback) return;
+    try {
+      const status = await this.sound.getStatusAsync();
+      if (status.isLoaded) {
+        this.playbackStatusCallback({
+          isPlaying: status.isPlaying,
+          position: status.positionMillis || 0,
+          duration: status.durationMillis || 0,
+          rate: status.rate || 1,
+        });
+      }
+    } catch (error) {
+      console.error('Status update error:', error);
     }
   }
 }

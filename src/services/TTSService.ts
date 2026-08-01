@@ -1,40 +1,77 @@
 import * as FileSystem from 'expo-file-system';
+import * as SecureStore from 'expo-secure-store';
+import { TTSConfig } from '../types';
 
-export interface Voice {
+export interface TTSVoice {
   name: string;
-  ssmlGender: 'MALE' | 'FEMALE' | 'NEUTRAL';
-  naturalSampleRateHertz?: number;
-}
-
-export interface TTSConfig {
-  apiKey: string;
-  pitch?: number;
-  speakingRate?: number;
+  displayName: string;
+  gender: 'MALE' | 'FEMALE' | 'NEUTRAL';
   language: string;
+  isNeural: boolean;
 }
 
 export class TTSService {
   private static config: TTSConfig | null = null;
-  private static audioCache = new Map<string, string>();
+  private static voiceCache = new Map<string, string>();
 
-  static setConfig(config: TTSConfig) {
-    this.config = config;
+  static async init() {
+    try {
+      const apiKey = await SecureStore.getItemAsync('google_tts_api_key');
+      if (apiKey) {
+        this.config = {
+          apiKey,
+          languageCode: 'en-US',
+          voiceGender: 'NEUTRAL',
+          voiceName: 'en-US-Neural2-C',
+          pitch: 1.0,
+          speakingRate: 1.0,
+          useNeuralVoices: true,
+        };
+      }
+    } catch (error) {
+      console.error('TTS init error:', error);
+    }
   }
 
-  static async getAvailableVoices(language: string = 'en-US'): Promise<Voice[]> {
-    if (!this.config) {
-      throw new Error('TTS config not set. Call setConfig first.');
+  static async setApiKey(apiKey: string): Promise<void> {
+    try {
+      await SecureStore.setItemAsync('google_tts_api_key', apiKey);
+      this.config = {
+        apiKey,
+        languageCode: 'en-US',
+        voiceGender: 'NEUTRAL',
+        voiceName: 'en-US-Neural2-C',
+        pitch: 1.0,
+        speakingRate: 1.0,
+        useNeuralVoices: true,
+      };
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      throw error;
+    }
+  }
+
+  static async getAvailableVoices(): Promise<TTSVoice[]> {
+    if (!this.config?.apiKey) {
+      return this.getDefaultVoices();
     }
 
     try {
       const response = await fetch(
-        `https://texttospeech.googleapis.com/v1/voices?languageCode=${language}&key=${this.config.apiKey}`
+        `https://texttospeech.googleapis.com/v1/voices?languageCode=en-US&key=${this.config.apiKey}`
       );
       const data = await response.json();
-      return data.voices || [];
+
+      return data.voices?.map((v: any) => ({
+        name: v.name,
+        displayName: v.name.split('-').slice(0, 2).join(' '),
+        gender: v.ssmlGender,
+        language: v.languageCodes?.[0] || 'en-US',
+        isNeural: v.name.includes('Neural'),
+      })) || this.getDefaultVoices();
     } catch (error) {
       console.error('Error fetching voices:', error);
-      return [];
+      return this.getDefaultVoices();
     }
   }
 
@@ -44,14 +81,13 @@ export class TTSService {
     pitch: number = 1.0,
     rate: number = 1.0
   ): Promise<string> {
-    if (!this.config) {
-      throw new Error('TTS config not set. Call setConfig first.');
+    if (!this.config?.apiKey) {
+      throw new Error('API key not configured. Set it in settings first.');
     }
 
-    // Check cache
-    const cacheKey = `${text}:${voiceName}`;
-    if (this.audioCache.has(cacheKey)) {
-      return this.audioCache.get(cacheKey)!;
+    const cacheKey = `${text}:${voiceName}:${pitch}:${rate}`;
+    if (this.voiceCache.has(cacheKey)) {
+      return this.voiceCache.get(cacheKey)!;
     }
 
     try {
@@ -59,13 +95,11 @@ export class TTSService {
         `https://texttospeech.googleapis.com/v1/text:synthesize?key=${this.config.apiKey}`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            input: { text },
+            input: { text: text.substring(0, 5000) },
             voice: {
-              languageCode: this.config.language,
+              languageCode: 'en-US',
               name: voiceName,
             },
             audioConfig: {
@@ -78,45 +112,60 @@ export class TTSService {
       );
 
       const data = await response.json();
-      if (data.audioContent) {
-        // Save to file
-        const fileName = `audio_${Date.now()}.mp3`;
-        const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(filePath, data.audioContent, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+      if (!data.audioContent) throw new Error('No audio in response');
 
-        this.audioCache.set(cacheKey, filePath);
-        return filePath;
-      }
+      const fileName = `audio_${Date.now()}.mp3`;
+      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+      await FileSystem.writeAsStringAsync(filePath, data.audioContent, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      throw new Error('No audio content in response');
+      this.voiceCache.set(cacheKey, filePath);
+      return filePath;
     } catch (error) {
-      console.error('Error synthesizing speech:', error);
+      console.error('TTS error:', error);
       throw error;
     }
   }
 
-  static async synthesizeChunk(
-    text: string,
-    voiceName: string,
-    pitch: number,
-    rate: number,
-    chunkIndex: number
-  ): Promise<string> {
-    // For long texts, break into smaller chunks
-    const maxChunkLength = 5000; // Google TTS has limits
-    if (text.length > maxChunkLength) {
-      const chunk = text.substring(
-        chunkIndex * maxChunkLength,
-        Math.min((chunkIndex + 1) * maxChunkLength, text.length)
-      );
-      return this.synthesize(chunk, voiceName, pitch, rate);
-    }
-    return this.synthesize(text, voiceName, pitch, rate);
+  static hasApiKey(): boolean {
+    return !!this.config?.apiKey;
   }
 
   static clearCache() {
-    this.audioCache.clear();
+    this.voiceCache.clear();
+  }
+
+  private static getDefaultVoices(): TTSVoice[] {
+    return [
+      {
+        name: 'en-US-Neural2-A',
+        displayName: 'Natural A (Female)',
+        gender: 'FEMALE',
+        language: 'en-US',
+        isNeural: true,
+      },
+      {
+        name: 'en-US-Neural2-C',
+        displayName: 'Natural C (Male)',
+        gender: 'MALE',
+        language: 'en-US',
+        isNeural: true,
+      },
+      {
+        name: 'en-US-Neural2-E',
+        displayName: 'Natural E (Female)',
+        gender: 'FEMALE',
+        language: 'en-US',
+        isNeural: true,
+      },
+      {
+        name: 'en-US-Standard-A',
+        displayName: 'Standard A',
+        gender: 'FEMALE',
+        language: 'en-US',
+        isNeural: false,
+      },
+    ];
   }
 }
