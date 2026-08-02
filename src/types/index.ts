@@ -19,6 +19,7 @@ export interface Book {
   publishedDate?: string;
   itemType?: 'book' | 'music' | 'art' | 'resource';
   coverColor?: string;
+  content?: string;
 }
 
 export interface Bookmark {
@@ -91,14 +92,16 @@ export interface TTSConfig {
   useNeuralVoices: boolean;
 }
 
-export interface Collection {
+export interface ClassicalLibraryItem {
   id: string;
-  name: string;
-  description?: string;
-  bookIds: string[];
-  createdDate: number;
-  coverColor?: string;
-  category?: 'grammar' | 'logic' | 'rhetoric' | 'custom';
+  title: string;
+  author: string;
+  description: string;
+  category: string;
+  type: 'book' | 'music' | 'art' | 'resource';
+  tier?: number;
+  sourceUrl?: string;
+  format?: string;
 }
 
 export interface WordLookup {
@@ -209,10 +212,13 @@ export interface Collection {
   name: string;
   description?: string;
   bookIds: string[];
+  createdDate?: number;
+  createdAt?: number;
   coverImage?: string;
-  createdAt: number;
+  coverColor?: string;
   color?: string;
-  type: 'custom' | 'smart' | 'series' | 'author';
+  category?: 'grammar' | 'logic' | 'rhetoric' | 'custom';
+  type?: 'custom' | 'smart' | 'series' | 'author';
 }
 
 export interface BookshelfTheme {
