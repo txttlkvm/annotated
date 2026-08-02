@@ -91,6 +91,48 @@ export interface TTSConfig {
   useNeuralVoices: boolean;
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  bookIds: string[];
+  createdDate: number;
+  coverColor?: string;
+  category?: 'grammar' | 'logic' | 'rhetoric' | 'custom';
+}
+
+export interface WordLookup {
+  id: string;
+  word: string;
+  definition: string;
+  partOfSpeech?: string;
+  pronunciation?: string;
+  example?: string;
+  synonyms?: string[];
+  bookId?: string;
+  timestamp: number;
+  context?: string;
+}
+
+export interface ChapterEntry {
+  id: string;
+  bookId: string;
+  title: string;
+  startPage: number;
+  endPage?: number;
+  level: number; // For nested chapters
+}
+
+export interface BookProgress {
+  bookId: string;
+  currentPage: number;
+  totalPages: number;
+  progress: number; // 0-100
+  estimatedMinutesRemaining: number;
+  wordsPerMinute: number;
+  lastUpdated: number;
+}
+
 export interface DictionaryEntry {
   word: string;
   pronunciation?: string;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DatabaseService } from '../services/DatabaseService';
-import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS } from '../types';
+import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS, Collection, WordLookup, BookProgress } from '../types';
 import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
 
 interface AppContextType {
@@ -10,6 +10,9 @@ interface AppContextType {
   highlights: Highlight[];
   settings: ReaderSettings;
   isLoading: boolean;
+  collections: Collection[];
+  wordLookups: WordLookup[];
+  bookProgress: Map<string, BookProgress>;
 
   // Book operations
   addBook: (book: Omit<Book, 'id'>) => Promise<string>;
@@ -34,6 +37,24 @@ interface AppContextType {
   // Reading sessions
   addReadingSession: (session: Omit<ReadingSession, 'id'>) => Promise<void>;
 
+  // Collections
+  createCollection: (collection: Omit<Collection, 'id'>) => Promise<string>;
+  updateCollection: (id: string, updates: Partial<Collection>) => Promise<void>;
+  deleteCollection: (id: string) => Promise<void>;
+  addBookToCollection: (collectionId: string, bookId: string) => Promise<void>;
+  removeBookFromCollection: (collectionId: string, bookId: string) => Promise<void>;
+
+  // Dictionary/Word lookups
+  addWordLookup: (lookup: Omit<WordLookup, 'id' | 'timestamp'>) => Promise<string>;
+  getWordLookups: () => WordLookup[];
+  getWordLookupHistory: (word: string) => WordLookup[];
+  deleteWordLookup: (id: string) => Promise<void>;
+
+  // Book progress
+  updateBookProgress: (bookId: string, progress: BookProgress) => Promise<void>;
+  getBookProgress: (bookId: string) => BookProgress | undefined;
+  calculateEstimatedTimeRemaining: (bookId: string) => number;
+
   // Classical library
   getClassicalLibrary: () => ClassicalLibraryItem[];
   getClassicalLibraryByCategory: (category: string) => ClassicalLibraryItem[];
@@ -51,6 +72,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_READER_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [wordLookups, setWordLookups] = useState<WordLookup[]>([]);
+  const [bookProgress, setBookProgress] = useState<Map<string, BookProgress>>(new Map());
 
   useEffect(() => {
     loadBooks();
@@ -176,6 +200,77 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return addBook(book);
   };
 
+  // Collection operations
+  const createCollection = async (collection: Omit<Collection, 'id'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newCollection: Collection = { ...collection, id };
+    setCollections([newCollection, ...collections]);
+    return id;
+  };
+
+  const updateCollection = async (id: string, updates: Partial<Collection>) => {
+    setCollections(collections.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const deleteCollection = async (id: string) => {
+    setCollections(collections.filter(c => c.id !== id));
+  };
+
+  const addBookToCollection = async (collectionId: string, bookId: string) => {
+    setCollections(collections.map(c => {
+      if (c.id === collectionId && !c.bookIds.includes(bookId)) {
+        return { ...c, bookIds: [...c.bookIds, bookId] };
+      }
+      return c;
+    }));
+  };
+
+  const removeBookFromCollection = async (collectionId: string, bookId: string) => {
+    setCollections(collections.map(c => {
+      if (c.id === collectionId) {
+        return { ...c, bookIds: c.bookIds.filter(id => id !== bookId) };
+      }
+      return c;
+    }));
+  };
+
+  // Dictionary/Word lookups
+  const addWordLookup = async (lookup: Omit<WordLookup, 'id' | 'timestamp'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newLookup: WordLookup = { ...lookup, id, timestamp: Date.now() };
+    setWordLookups([newLookup, ...wordLookups]);
+    return id;
+  };
+
+  const getWordLookups = () => wordLookups;
+
+  const getWordLookupHistory = (word: string) => {
+    return wordLookups.filter(w => w.word.toLowerCase() === word.toLowerCase());
+  };
+
+  const deleteWordLookup = async (id: string) => {
+    setWordLookups(wordLookups.filter(w => w.id !== id));
+  };
+
+  // Book progress
+  const updateBookProgress = async (bookId: string, progress: BookProgress) => {
+    const newProgress = new Map(bookProgress);
+    newProgress.set(bookId, progress);
+    setBookProgress(newProgress);
+  };
+
+  const getBookProgress = (bookId: string) => {
+    return bookProgress.get(bookId);
+  };
+
+  const calculateEstimatedTimeRemaining = (bookId: string) => {
+    const progress = bookProgress.get(bookId);
+    if (!progress || progress.totalPages === 0) return 0;
+
+    const pagesRemaining = progress.totalPages - progress.currentPage;
+    return Math.ceil((pagesRemaining / progress.wordsPerMinute) / 60); // Hours
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -185,6 +280,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         highlights,
         settings,
         isLoading,
+        collections,
+        wordLookups,
+        bookProgress,
         addBook,
         updateBook,
         deleteBook,
@@ -198,6 +296,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         loadHighlights,
         updateSettings,
         addReadingSession,
+        createCollection,
+        updateCollection,
+        deleteCollection,
+        addBookToCollection,
+        removeBookFromCollection,
+        addWordLookup,
+        getWordLookups,
+        getWordLookupHistory,
+        deleteWordLookup,
+        updateBookProgress,
+        getBookProgress,
+        calculateEstimatedTimeRemaining,
         getClassicalLibrary,
         getClassicalLibraryByCategory,
         getClassicalLibraryByTier,

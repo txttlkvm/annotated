@@ -20,6 +20,9 @@ import CurriculumScreen from './src/screens/CurriculumScreen';
 import ClassicalLibraryReaderScreen from './src/screens/ClassicalLibraryReaderScreen';
 import MusicPlayerScreen from './src/screens/MusicPlayerScreen';
 import ArtViewerScreen from './src/screens/ArtViewerScreen';
+import DictionaryScreen from './src/screens/DictionaryScreen';
+import CollectionsScreen from './src/screens/CollectionsScreen';
+import BookshelfScreen from './src/screens/BookshelfScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -126,6 +129,30 @@ function MainApp() {
             options={{
               tabBarLabel: 'Curriculum',
               tabBarIcon: ({ color }) => <Icon name="✦" color={color} />,
+            }}
+          />
+          <Tab.Screen
+            name="Bookshelf"
+            component={BookshelfScreen}
+            options={{
+              tabBarLabel: 'Shelf',
+              tabBarIcon: ({ color }) => <Icon name="🏛" color={color} />,
+            }}
+          />
+          <Tab.Screen
+            name="Collections"
+            component={CollectionsScreen}
+            options={{
+              tabBarLabel: 'Collections',
+              tabBarIcon: ({ color }) => <Icon name="📑" color={color} />,
+            }}
+          />
+          <Tab.Screen
+            name="Dictionary"
+            component={DictionaryScreen}
+            options={{
+              tabBarLabel: 'Dictionary',
+              tabBarIcon: ({ color }) => <Icon name="📓" color={color} />,
             }}
           />
           <Tab.Screen
