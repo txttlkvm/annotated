@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Linking,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 
@@ -76,7 +77,7 @@ export default function CurriculumScreen() {
     return '✦ Text';
   };
 
-  const CurriculumItem = ({ id, title, author, category, tier, stage, description, type, grade }: any) => (
+  const CurriculumItem = ({ id, title, author, category, tier, stage, description, type, grade, sources }: any) => (
     <View style={[styles.itemCard, { backgroundColor: '#1a1328', borderColor: type === 'music' ? '#a8a478' : type === 'art' ? '#8b7355' : '#8b7355' }]}>
       <View style={styles.itemHeader}>
         <View style={styles.itemTitleSection}>
@@ -103,6 +104,28 @@ export default function CurriculumScreen() {
         <Text style={[styles.typeNote, { color: '#8b7355' }]}>
           Study this artwork in depth
         </Text>
+      )}
+      {sources && sources.length > 0 && (
+        <View style={styles.sourcesSection}>
+          <Text style={[styles.sourcesLabel, { color: '#c9a961' }]}>Free Online Access:</Text>
+          <View style={styles.sourcesList}>
+            {sources.slice(0, 2).map((source: any, idx: number) => (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.sourceButton, { borderColor: '#8b7355' }]}
+                onPress={() => {
+                  Linking.openURL(source.url).catch(err =>
+                    Alert.alert('Error', 'Could not open link')
+                  );
+                }}
+              >
+                <Text style={[styles.sourceButtonText, { color: '#c9a961' }]}>
+                  {source.provider === 'gutenberg' ? '📖 Gutenberg' : source.provider === 'archive' ? '📚 Archive' : source.provider === 'youtube' ? '▶ YouTube' : '🎨 View'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       )}
       <View style={styles.itemFooter}>
         <View style={styles.badges}>
@@ -275,6 +298,7 @@ export default function CurriculumScreen() {
               description={item.description}
               type={item.type}
               grade={item.grade}
+              sources={item.sources}
             />
           ))}
         </ScrollView>
@@ -341,6 +365,11 @@ const styles = StyleSheet.create({
   itemAuthor: { fontSize: 11, letterSpacing: 0.5 },
   itemDescription: { fontSize: 11, lineHeight: 16, marginBottom: 8 },
   typeNote: { fontSize: 10, fontStyle: 'italic', marginBottom: 8, letterSpacing: 0.5 },
+  sourcesSection: { marginVertical: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#8b7355' },
+  sourcesLabel: { fontSize: 10, fontWeight: '400', letterSpacing: 1, marginBottom: 6, fontFamily: 'Georgia' },
+  sourcesList: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  sourceButton: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 2, borderWidth: 1, backgroundColor: '#2d1b4e' },
+  sourceButtonText: { fontSize: 9, fontWeight: '400', letterSpacing: 0.5 },
   itemFooter: { marginTop: 8 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 2 },

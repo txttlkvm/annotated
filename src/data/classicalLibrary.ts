@@ -2,6 +2,12 @@
 // Source: Classical Christian Education: Complete 12-Year Map
 // Organized by category, tier, and stage
 
+export interface PublicDomainSource {
+  type: 'epub' | 'pdf' | 'html' | 'txt' | 'audio' | 'image';
+  url: string;
+  provider: string; // 'gutenberg', 'archive', 'wikimedia', 'youtube', etc.
+}
+
 export interface ClassicalLibraryItem {
   id: string;
   title: string;
@@ -13,6 +19,7 @@ export interface ClassicalLibraryItem {
   description: string;
   type: 'book' | 'music' | 'art' | 'resource';
   notes?: string;
+  sources?: PublicDomainSource[]; // Public domain URLs
 }
 
 export const classicalLibrary: ClassicalLibraryItem[] = [
@@ -28,7 +35,12 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     grade: 0,
     type: 'book',
     description: 'Genesis, Exodus, Gospels, Epistles — encountered every year at rising depth; the text all others answer to.',
-    notes: 'Foundation of the entire curriculum; revisited across all three stages'
+    notes: 'Foundation of the entire curriculum; revisited across all three stages',
+    sources: [
+      { type: 'html', url: 'https://www.gutenberg.org/ebooks/10', provider: 'gutenberg', },
+      { type: 'txt', url: 'https://www.gutenberg.org/cache/epub/10/pg10.txt', provider: 'gutenberg' },
+      { type: 'epub', url: 'https://www.gutenberg.org/cache/epub/10/pg10.epub', provider: 'gutenberg' }
+    ]
   },
 
   // Literature - Christian-First Ordering
@@ -42,7 +54,12 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     grade: 4,
     type: 'book',
     description: 'The pagan root Christian writers absorbed and answered.',
-    notes: 'Revisited in logic stage (6th gr.) for structure; rhetoric stage (10th gr.) for final synthesis'
+    notes: 'Revisited in logic stage (6th gr.) for structure; rhetoric stage (10th gr.) for final synthesis',
+    sources: [
+      { type: 'html', url: 'https://www.gutenberg.org/ebooks/6150', provider: 'gutenberg' },
+      { type: 'epub', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.epub', provider: 'gutenberg' },
+      { type: 'txt', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.txt', provider: 'gutenberg' }
+    ]
   },
 
   {
@@ -55,7 +72,12 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     grade: 4,
     type: 'book',
     description: 'Companion to the Iliad; completes Homer\'s foundational works.',
-    notes: 'Revisited in logic and rhetoric stages'
+    notes: 'Revisited in logic and rhetoric stages',
+    sources: [
+      { type: 'html', url: 'https://www.gutenberg.org/ebooks/1727', provider: 'gutenberg' },
+      { type: 'epub', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.epub', provider: 'gutenberg' },
+      { type: 'txt', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.txt', provider: 'gutenberg' }
+    ]
   },
 
   {
@@ -1525,3 +1547,21 @@ export const tier2Texts = classicalLibrary.filter(item => item.tier === 2);
 export const grammarStageMaterial = classicalLibrary.filter(item => item.stage === 'grammar' || !item.stage);
 export const logicStageMaterial = classicalLibrary.filter(item => item.stage === 'logic' || !item.stage);
 export const rhetoricStageMaterial = classicalLibrary.filter(item => item.stage === 'rhetoric' || !item.stage);
+
+// Function to add public domain sources to library items
+export function getClassicalLibraryWithSources(): ClassicalLibraryItem[] {
+  const { publicDomainSources, getPublicDomainSources } = require('./publicDomainSources');
+
+  return classicalLibrary.map(item => {
+    if (item.sources && item.sources.length > 0) {
+      return item; // Already has sources
+    }
+
+    const pdSources = getPublicDomainSources(item.title);
+    if (pdSources) {
+      return { ...item, sources: pdSources };
+    }
+
+    return item;
+  });
+}

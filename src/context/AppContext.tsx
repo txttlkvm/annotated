@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DatabaseService } from '../services/DatabaseService';
 import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS } from '../types';
-import { classicalLibrary, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
+import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
 
 interface AppContextType {
   books: Book[];
@@ -135,7 +135,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await DatabaseService.addReadingSession(session);
   };
 
-  const getClassicalLibrary = () => classicalLibrary;
+  const getClassicalLibrary = () => {
+    try {
+      return getClassicalLibraryWithSources();
+    } catch (error) {
+      console.error('Error loading classical library with sources:', error);
+      return classicalLibrary;
+    }
+  };
 
   const getClassicalLibraryByCategory = (category: string) => {
     const key = category as keyof typeof classicalLibraryByCategory;
