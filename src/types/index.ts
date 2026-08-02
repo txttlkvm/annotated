@@ -102,6 +102,11 @@ export interface ClassicalLibraryItem {
   tier?: number;
   sourceUrl?: string;
   format?: string;
+  sources?: Array<{
+    name: string;
+    url: string;
+    format?: string;
+  }>;
 }
 
 export interface WordLookup {

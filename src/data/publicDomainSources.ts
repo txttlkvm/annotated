@@ -280,14 +280,6 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
     { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=%22Toccata%20and%20Fugue%22%20Bach&mediatype=audio' },
     { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=Toccata+and+Fugue+Bach+classical' },
   ],
-  'Well-Tempered Clavier': [
-    { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=%22Well-Tempered%20Clavier%22&mediatype=audio' },
-    { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=Well+Tempered+Clavier+Bach' },
-  ],
-  'Gregorian Chant': [
-    { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=gregorian%20chant&mediatype=audio' },
-    { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=gregorian+chant' },
-  ],
   'Polyphony - Palestrina': [
     { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=Palestrina%20polyphony&mediatype=audio' },
     { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=Palestrina+Renaissance+music' },

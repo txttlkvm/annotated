@@ -32,7 +32,11 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
       }
     });
 
-    return unsubscribe;
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [itemId]);
 
   const initializeScreen = async () => {
