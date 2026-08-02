@@ -271,25 +271,57 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/24268/pg24268.epub' },
   ],
 
+  // Music - Public Domain Recordings and Scores
+  'Toccata and Fugue in D minor': [
+    { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=%22Toccata%20and%20Fugue%22%20Bach&mediatype=audio' },
+    { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=Toccata+and+Fugue+Bach+classical' },
+  ],
+  'Well-Tempered Clavier': [
+    { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=%22Well-Tempered%20Clavier%22&mediatype=audio' },
+    { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=Well+Tempered+Clavier+Bach' },
+  ],
+  'Gregorian Chant': [
+    { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=gregorian%20chant&mediatype=audio' },
+    { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=gregorian+chant' },
+  ],
+  'Polyphony - Palestrina': [
+    { type: 'html', provider: 'archive.org', url: 'https://archive.org/search.php?query=Palestrina%20polyphony&mediatype=audio' },
+    { type: 'html', provider: 'youtube', url: 'https://www.youtube.com/results?search_query=Palestrina+Renaissance+music' },
+  ],
+
   // Art - Wikimedia Commons public domain images
   'The Trinity (Rublev)': [
-    { type: 'image', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Rublev_Trinity.jpg' },
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Rublev_Trinity.jpg' },
   ],
   'Sistine Chapel Ceiling': [
-    { type: 'image', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/Category:Sistine_Chapel_ceiling' },
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/Category:Sistine_Chapel_ceiling' },
   ],
   'Pietà': [
-    { type: 'image', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg' },
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg' },
   ],
   'David': [
-    { type: 'image', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Michelangelo%27s_David_1504.jpg' },
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Michelangelo%27s_David_1504.jpg' },
   ],
   'Annunciation (Fra Angelico)': [
-    { type: 'image', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Fra_Angelico_-_The_Annunciation.jpg' },
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/File:Fra_Angelico_-_The_Annunciation.jpg' },
   ],
   'Scrovegni Chapel Frescoes': [
-    { type: 'image', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/Category:Scrovegni_Chapel' },
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/Category:Scrovegni_Chapel' },
   ],
+  'Hagia Sophia': [
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/Category:Hagia_Sophia' },
+  ],
+  'Byzantine Icons': [
+    { type: 'html', provider: 'wikimedia', url: 'https://commons.wikimedia.org/wiki/Category:Byzantine_icons' },
+  ],
+};
+
+// Wikimedia Commons direct image download URLs for public domain artwork
+const wikimediaArtwork: Record<string, string> = {
+  'The Trinity (Rublev)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Rublev_Trinity.jpg/1200px-Rublev_Trinity.jpg',
+  'Pietà': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg/800px-Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg',
+  'David': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Michelangelo%27s_David_1504.jpg/536px-Michelangelo%27s_David_1504.jpg',
+  'Annunciation (Fra Angelico)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Fra_Angelico_-_The_Annunciation.jpg/880px-Fra_Angelico_-_The_Annunciation.jpg',
 };
 
 // Helper to generate Anna's Archive search URL
@@ -326,17 +358,76 @@ function getStandardEbooksSource(title: string) {
   };
 }
 
+function getArchiveOrgMusicSource(title: string, artist?: string) {
+  const query = artist ? `${title} ${artist}` : title;
+  const encoded = encodeURIComponent(query);
+  return {
+    type: 'html' as const,
+    provider: 'archive.org' as const,
+    url: `https://archive.org/search.php?query=${encoded}&mediatype=audio`,
+  };
+}
+
+function getYouTubeMusicSource(title: string, artist?: string) {
+  const query = artist ? `${title} ${artist}` : title;
+  const encoded = encodeURIComponent(query);
+  return {
+    type: 'html' as const,
+    provider: 'youtube' as const,
+    url: `https://www.youtube.com/results?search_query=${encoded}+classical+music`,
+  };
+}
+
+function getWikimediaArtSource(title: string) {
+  // Check if we have a direct image URL
+  const directUrl = wikimediaArtwork[title];
+  if (directUrl) {
+    return {
+      type: 'html' as const,
+      provider: 'wikimedia' as const,
+      url: directUrl,
+    };
+  }
+
+  // Otherwise provide search
+  const encoded = encodeURIComponent(title);
+  return {
+    type: 'html' as const,
+    provider: 'wikimedia' as const,
+    url: `https://commons.wikimedia.org/w/index.php?search=${encoded}&title=Special:MediaSearch&go=Go`,
+  };
+}
+
 // Helper function to get sources by title (handles variations)
-export function getPublicDomainSources(title: string, author?: string) {
+export function getPublicDomainSources(
+  title: string,
+  author?: string,
+  itemType: 'book' | 'music' | 'art' | 'resource' = 'book'
+) {
   // Try exact match first
   if (publicDomainSources[title]) {
     const sources = publicDomainSources[title];
-    // Add multiple fallback sources in priority order
+
+    // For music and art, include appropriate search sources
+    if (itemType === 'music') {
+      return [
+        ...sources,
+        getArchiveOrgMusicSource(title, author),
+        getYouTubeMusicSource(title, author),
+      ];
+    } else if (itemType === 'art') {
+      return [
+        ...sources,
+        getWikimediaArtSource(title),
+      ];
+    }
+
+    // For books, add multiple fallback sources
     return [
       ...sources,
-      getStandardEbooksSource(title), // High-quality EPUB formatting
-      getOpenLibrarySource(title, author), // Millions of books with API access
-      getAnnaArchiveSource(title, author), // Universal search fallback
+      getStandardEbooksSource(title),
+      getOpenLibrarySource(title, author),
+      getAnnaArchiveSource(title, author),
     ];
   }
 
@@ -344,6 +435,20 @@ export function getPublicDomainSources(title: string, author?: string) {
   for (const [key, value] of Object.entries(publicDomainSources)) {
     if (key.toLowerCase().includes(title.toLowerCase()) || title.toLowerCase().includes(key.toLowerCase())) {
       const sources = value;
+
+      if (itemType === 'music') {
+        return [
+          ...sources,
+          getArchiveOrgMusicSource(title, author),
+          getYouTubeMusicSource(title, author),
+        ];
+      } else if (itemType === 'art') {
+        return [
+          ...sources,
+          getWikimediaArtSource(title),
+        ];
+      }
+
       return [
         ...sources,
         getStandardEbooksSource(title),
@@ -353,11 +458,23 @@ export function getPublicDomainSources(title: string, author?: string) {
     }
   }
 
-  // If no direct source found, return multiple search options
+  // If no direct source found, return appropriate search options based on type
+  if (itemType === 'music') {
+    return [
+      getArchiveOrgMusicSource(title, author),
+      getYouTubeMusicSource(title, author),
+    ];
+  } else if (itemType === 'art') {
+    return [
+      getWikimediaArtSource(title),
+    ];
+  }
+
+  // For books and resources, return book search options
   return [
-    getStandardEbooksSource(title), // Try Standard Ebooks first (best quality)
-    getOpenLibrarySource(title, author), // Then Open Library (most books)
-    getAnnaArchiveSource(title, author), // Finally Anna's Archive (broadest)
+    getStandardEbooksSource(title),
+    getOpenLibrarySource(title, author),
+    getAnnaArchiveSource(title, author),
   ];
 }
 

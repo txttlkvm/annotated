@@ -1557,7 +1557,7 @@ export function getClassicalLibraryWithSources(): ClassicalLibraryItem[] {
       return item; // Already has sources
     }
 
-    const pdSources = getPublicDomainSources(item.title);
+    const pdSources = getPublicDomainSources(item.title, item.author, item.type);
     if (pdSources) {
       return { ...item, sources: pdSources };
     }
