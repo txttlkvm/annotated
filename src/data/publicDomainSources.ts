@@ -1,17 +1,24 @@
 // Public Domain Sources for Classical Library Items
-// Sources: Project Gutenberg, Internet Archive, Wikimedia Commons, YouTube (public domain content)
+// Sources: Project Gutenberg, Internet Archive, Standard Ebooks, Open Library, Wikimedia Commons, YouTube
+// All sources provide direct download links for EPUB/PDF/TXT formats
+
+// Priority order for book formats:
+// 1. Standard Ebooks (EPUB) - highest quality, best formatting
+// 2. Project Gutenberg (EPUB) - direct download, reliable
+// 3. Internet Archive (EPUB/PDF) - large collection, multiple formats
+// 4. Open Library API - searches millions of books
 
 export const publicDomainSources: Record<string, Array<{ type: string; url: string; provider: string }>> = {
   // Literature - Texts
   'Iliad': [
-    { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/6150' },
+    { type: 'epub', provider: 'standard-ebooks', url: 'https://standardebooks.org/ebooks/homer--iliad--samuel-butler/downloads/homer--iliad--samuel-butler.epub' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.epub' },
-    { type: 'txt', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.txt' },
+    { type: 'pdf', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.pdf' },
   ],
   'Odyssey': [
-    { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/1727' },
+    { type: 'epub', provider: 'standard-ebooks', url: 'https://standardebooks.org/ebooks/homer--odyssey--samuel-butler/downloads/homer--odyssey--samuel-butler.epub' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.epub' },
-    { type: 'txt', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.txt' },
+    { type: 'pdf', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.pdf' },
   ],
   'The Divine Comedy': [
     { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/8800' },
@@ -19,9 +26,9 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
     { type: 'txt', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/8800/pg8800.txt' },
   ],
   'Hamlet': [
-    { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/1524' },
+    { type: 'epub', provider: 'standard-ebooks', url: 'https://standardebooks.org/ebooks/william-shakespeare--hamlet/downloads/william-shakespeare--hamlet.epub' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1524/pg1524.epub' },
-    { type: 'txt', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1524/pg1524.txt' },
+    { type: 'pdf', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1524/pg1524.pdf' },
   ],
   'King Lear': [
     { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/1533' },
@@ -300,26 +307,58 @@ function getAnnaArchiveSource(title: string, author?: string) {
   };
 }
 
+function getOpenLibrarySource(title: string, author?: string) {
+  const query = author ? `${title} ${author}` : title;
+  const encoded = encodeURIComponent(query);
+  return {
+    type: 'html' as const,
+    provider: 'open-library' as const,
+    url: `https://openlibrary.org/search?title=${encoded}&has_fulltext=true`,
+  };
+}
+
+function getStandardEbooksSource(title: string) {
+  const encoded = encodeURIComponent(title);
+  return {
+    type: 'html' as const,
+    provider: 'standard-ebooks' as const,
+    url: `https://standardebooks.org/search?query=${encoded}`,
+  };
+}
+
 // Helper function to get sources by title (handles variations)
 export function getPublicDomainSources(title: string, author?: string) {
   // Try exact match first
   if (publicDomainSources[title]) {
     const sources = publicDomainSources[title];
-    // Always add Anna's Archive as fallback source
-    return [...sources, getAnnaArchiveSource(title, author)];
+    // Add multiple fallback sources in priority order
+    return [
+      ...sources,
+      getStandardEbooksSource(title), // High-quality EPUB formatting
+      getOpenLibrarySource(title, author), // Millions of books with API access
+      getAnnaArchiveSource(title, author), // Universal search fallback
+    ];
   }
 
   // Try partial match (case-insensitive)
   for (const [key, value] of Object.entries(publicDomainSources)) {
     if (key.toLowerCase().includes(title.toLowerCase()) || title.toLowerCase().includes(key.toLowerCase())) {
       const sources = value;
-      // Always add Anna's Archive as fallback
-      return [...sources, getAnnaArchiveSource(title, author)];
+      return [
+        ...sources,
+        getStandardEbooksSource(title),
+        getOpenLibrarySource(title, author),
+        getAnnaArchiveSource(title, author),
+      ];
     }
   }
 
-  // If no Gutenberg source found, return Anna's Archive search as default
-  return [getAnnaArchiveSource(title, author)];
+  // If no direct source found, return multiple search options
+  return [
+    getStandardEbooksSource(title), // Try Standard Ebooks first (best quality)
+    getOpenLibrarySource(title, author), // Then Open Library (most books)
+    getAnnaArchiveSource(title, author), // Finally Anna's Archive (broadest)
+  ];
 }
 
 /*

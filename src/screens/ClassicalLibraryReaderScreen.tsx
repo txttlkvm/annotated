@@ -262,14 +262,25 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
                   <Text
                     style={[
                       styles.sourceButtonText,
-                      { color: source.provider === 'annas-archive' ? '#a8a478' : '#c9a961' },
+                      {
+                        color:
+                          source.provider === 'annas-archive' ||
+                          source.provider === 'open-library' ||
+                          source.provider === 'standard-ebooks'
+                            ? '#a8a478'
+                            : '#c9a961',
+                      },
                     ]}
                   >
-                    {source.provider === 'annas-archive' ? '🔍 ' : '⬇ '}
-                    {source.provider === 'gutenberg'
+                    {source.type === 'html' ? '🔍 ' : '⬇ '}
+                    {source.provider === 'standard-ebooks'
+                      ? 'Download from Standard Ebooks (Best Quality EPUB)'
+                      : source.provider === 'gutenberg'
                       ? `Download from Project Gutenberg (${source.type.toUpperCase()})`
                       : source.provider === 'archive'
-                      ? `Download from Archive.org (${source.type.toUpperCase()})`
+                      ? `Download from Internet Archive (${source.type.toUpperCase()})`
+                      : source.provider === 'open-library'
+                      ? 'Search Open Library (Millions of Books)'
                       : source.provider === 'youtube'
                       ? 'Listen on YouTube'
                       : source.provider === 'wikimedia'
