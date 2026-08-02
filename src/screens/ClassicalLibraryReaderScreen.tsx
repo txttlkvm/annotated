@@ -76,7 +76,7 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
       let path: string;
 
       if (item.type === 'book') {
-        path = await ContentDownloadService.downloadBook(item, sourceUrl, source.type as 'epub' | 'pdf' | 'txt');
+        path = await ContentDownloadService.downloadBook(item, sourceUrl, source.type as 'epub' | 'pdf' | 'txt' | 'mobi');
       } else if (item.type === 'music') {
         path = await ContentDownloadService.downloadMusic(item, sourceUrl);
       } else if (item.type === 'art') {

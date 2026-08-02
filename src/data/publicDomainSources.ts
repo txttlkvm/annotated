@@ -13,11 +13,13 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
   'Iliad': [
     { type: 'epub', provider: 'standard-ebooks', url: 'https://standardebooks.org/ebooks/homer--iliad--samuel-butler/downloads/homer--iliad--samuel-butler.epub' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.epub' },
+    { type: 'mobi', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.kindle.images' },
     { type: 'pdf', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/6150/pg6150.pdf' },
   ],
   'Odyssey': [
     { type: 'epub', provider: 'standard-ebooks', url: 'https://standardebooks.org/ebooks/homer--odyssey--samuel-butler/downloads/homer--odyssey--samuel-butler.epub' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.epub' },
+    { type: 'mobi', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.kindle.images' },
     { type: 'pdf', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1727/pg1727.pdf' },
   ],
   'The Divine Comedy': [
@@ -28,6 +30,7 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
   'Hamlet': [
     { type: 'epub', provider: 'standard-ebooks', url: 'https://standardebooks.org/ebooks/william-shakespeare--hamlet/downloads/william-shakespeare--hamlet.epub' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1524/pg1524.epub' },
+    { type: 'mobi', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1524/pg1524.kindle.images' },
     { type: 'pdf', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1524/pg1524.pdf' },
   ],
   'King Lear': [
@@ -61,6 +64,7 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
   'The Republic': [
     { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/1497' },
     { type: 'epub', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1497/pg1497.epub' },
+    { type: 'mobi', provider: 'gutenberg', url: 'https://www.gutenberg.org/cache/epub/1497/pg1497.kindle.images' },
   ],
   'Metaphysics': [
     { type: 'html', provider: 'gutenberg', url: 'https://www.gutenberg.org/ebooks/8014' },

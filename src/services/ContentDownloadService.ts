@@ -46,7 +46,7 @@ export class ContentDownloadService {
   static async downloadBook(
     item: ClassicalLibraryItem,
     sourceUrl: string,
-    format: 'epub' | 'pdf' | 'txt' = 'epub'
+    format: 'epub' | 'pdf' | 'txt' | 'mobi' = 'epub'
   ): Promise<string> {
     const fileName = `${item.id}.${format}`;
     const filePath = `${BOOKS_DIR}${fileName}`;
