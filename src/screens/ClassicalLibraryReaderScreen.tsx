@@ -109,15 +109,16 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
     ]);
   };
 
-  const handleOpen = () => {
+  const handleOpen = async () => {
     if (!localPath) return;
 
     if (item.type === 'book') {
-      // Navigate to book reader with local file
-      navigation.navigate('Reading', {
-        screen: 'ReaderHome',
-        params: { localPath, title: item.title },
-      });
+      // Open downloaded book file with system default reader
+      try {
+        await Linking.openURL(`file://${localPath}`);
+      } catch (error) {
+        Alert.alert('Error', 'Could not open file. Please ensure you have a compatible reader app installed.');
+      }
     } else if (item.type === 'music') {
       // Navigate to music player
       navigation.navigate('MusicPlayer', {
@@ -229,7 +230,7 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
             disabled={isLoading}
           >
             <Text style={[styles.buttonText, { color: '#c9a961' }]}>
-              {item.type === 'music' ? '▶ Listen Now' : item.type === 'art' ? '👁 View Art' : '📖 Read Now'}
+              {item.type === 'music' ? '▶ Listen Now' : item.type === 'art' ? '👁 View Art' : '📖 Open Book'}
             </Text>
           </TouchableOpacity>
 
