@@ -252,8 +252,8 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
                   style={[
                     styles.sourceButton,
                     {
-                      backgroundColor: source.provider === 'annas-archive' ? '#1a1328' : '#2d1b4e',
-                      borderColor: source.provider === 'annas-archive' ? '#a8a478' : '#8b7355',
+                      backgroundColor: ['annas-archive', 'archive.org', 'wikimedia'].includes(source.provider) ? '#1a1328' : '#2d1b4e',
+                      borderColor: ['annas-archive', 'archive.org', 'wikimedia'].includes(source.provider) ? '#a8a478' : '#8b7355',
                     },
                   ]}
                   onPress={() => handleDownload(source.url, source)}
@@ -264,9 +264,9 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
                       styles.sourceButtonText,
                       {
                         color:
-                          source.provider === 'annas-archive' ||
-                          source.provider === 'open-library' ||
-                          source.provider === 'standard-ebooks'
+                          ['annas-archive', 'open-library', 'standard-ebooks', 'archive.org', 'wikimedia'].includes(
+                            source.provider
+                          )
                             ? '#a8a478'
                             : '#c9a961',
                       },
@@ -279,6 +279,8 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
                       ? `Download from Project Gutenberg (${source.type.toUpperCase()})`
                       : source.provider === 'archive'
                       ? `Download from Internet Archive (${source.type.toUpperCase()})`
+                      : source.provider === 'archive.org'
+                      ? 'Browse Archive.org Classical Music'
                       : source.provider === 'open-library'
                       ? 'Search Open Library (Millions of Books)'
                       : source.provider === 'youtube'
