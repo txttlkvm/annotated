@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "plugins": [
       ["expo-font", {}],
-      ["expo-screen-brightness", {}],
       [
         "expo-document-picker",
         {
