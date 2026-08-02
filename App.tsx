@@ -18,6 +18,8 @@ import BookDetailsScreen from './src/screens/BookDetailsScreen';
 import HighlightsScreen from './src/screens/HighlightsScreen';
 import CurriculumScreen from './src/screens/CurriculumScreen';
 import ClassicalLibraryReaderScreen from './src/screens/ClassicalLibraryReaderScreen';
+import MusicPlayerScreen from './src/screens/MusicPlayerScreen';
+import ArtViewerScreen from './src/screens/ArtViewerScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -45,6 +47,8 @@ function CurriculumNavigator() {
     >
       <Stack.Screen name="CurriculumHome" component={CurriculumScreen} />
       <Stack.Screen name="ClassicalLibraryReader" component={ClassicalLibraryReaderScreen} />
+      <Stack.Screen name="MusicPlayer" component={MusicPlayerScreen} />
+      <Stack.Screen name="ArtViewer" component={ArtViewerScreen} />
     </Stack.Navigator>
   );
 }
