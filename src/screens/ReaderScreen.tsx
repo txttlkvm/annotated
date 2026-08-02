@@ -12,7 +12,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import * as ScreenBrightness from 'expo-screen-brightness';
+// import * as ScreenBrightness from 'expo-screen-brightness'; // Not available
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
 import { AudioService, PlaybackState } from '../services/AudioService';
@@ -55,7 +55,8 @@ export default function ReaderScreen() {
   const updateBrightness = async () => {
     try {
       if (!settings.autoBrightnessEnabled) {
-        await ScreenBrightness.setBrightnessAsync(settings.brightness);
+        // Screen brightness control not available
+        // await ScreenBrightness.setBrightnessAsync(settings.brightness);
       }
     } catch (error) {
       console.error('Brightness error:', error);
