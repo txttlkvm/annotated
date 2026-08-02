@@ -23,6 +23,8 @@ import ArtViewerScreen from './src/screens/ArtViewerScreen';
 import DictionaryScreen from './src/screens/DictionaryScreen';
 import CollectionsScreen from './src/screens/CollectionsScreen';
 import BookshelfScreen from './src/screens/BookshelfScreen';
+import TableOfContentsScreen from './src/screens/TableOfContentsScreen';
+import CatalogScreen from './src/screens/CatalogScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -61,6 +63,7 @@ function ReaderNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ReaderHome" component={ReaderScreen} />
       <Stack.Screen name="Highlights" component={HighlightsScreen} />
+      <Stack.Screen name="TableOfContents" component={TableOfContentsScreen} />
     </Stack.Navigator>
   );
 }
@@ -153,6 +156,14 @@ function MainApp() {
             options={{
               tabBarLabel: 'Dictionary',
               tabBarIcon: ({ color }) => <Icon name="📓" color={color} />,
+            }}
+          />
+          <Tab.Screen
+            name="Catalog"
+            component={CatalogScreen}
+            options={{
+              tabBarLabel: 'Catalog',
+              tabBarIcon: ({ color }) => <Icon name="📕" color={color} />,
             }}
           />
           <Tab.Screen
