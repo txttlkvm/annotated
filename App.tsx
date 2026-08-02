@@ -17,6 +17,7 @@ import StatsScreen from './src/screens/StatsScreen';
 import BookDetailsScreen from './src/screens/BookDetailsScreen';
 import HighlightsScreen from './src/screens/HighlightsScreen';
 import CurriculumScreen from './src/screens/CurriculumScreen';
+import ClassicalLibraryReaderScreen from './src/screens/ClassicalLibraryReaderScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -30,6 +31,20 @@ function LibraryNavigator() {
     >
       <Stack.Screen name="LibraryHome" component={LibraryScreen} />
       <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
+      <Stack.Screen name="ClassicalLibraryReader" component={ClassicalLibraryReaderScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function CurriculumNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="CurriculumHome" component={CurriculumScreen} />
+      <Stack.Screen name="ClassicalLibraryReader" component={ClassicalLibraryReaderScreen} />
     </Stack.Navigator>
   );
 }
@@ -103,7 +118,7 @@ function MainApp() {
           />
           <Tab.Screen
             name="Curriculum"
-            component={CurriculumScreen}
+            component={CurriculumNavigator}
             options={{
               tabBarLabel: 'Curriculum',
               tabBarIcon: ({ color }) => <Icon name="✦" color={color} />,

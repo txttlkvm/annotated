@@ -35,8 +35,8 @@ const stages = [
   { id: 'rhetoric', label: 'Rhetoric Stage' },
 ];
 
-export default function CurriculumScreen() {
-  const { getClassicalLibrary, getClassicalLibraryByCategory, getClassicalLibraryByTier, getClassicalLibraryByStage, addClassicalLibraryItem, settings } = useApp();
+export default function CurriculumScreen({ navigation }: any) {
+  const { getClassicalLibrary, getClassicalLibraryByCategory, getClassicalLibraryByTier, getClassicalLibraryByStage, settings } = useApp();
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
@@ -60,14 +60,8 @@ export default function CurriculumScreen() {
     );
   }
 
-  const handleAddItem = async (item: any) => {
-    try {
-      await addClassicalLibraryItem(item);
-      Alert.alert('Added', `"${item.title}" added to your library`);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to add item');
-      console.error(error);
-    }
+  const handleViewItem = (item: any) => {
+    navigation.navigate('ClassicalLibraryReader', { itemId: item.id });
   };
 
   const getTypeLabel = (type: string) => {
@@ -88,10 +82,10 @@ export default function CurriculumScreen() {
           <Text style={[styles.itemAuthor, { color: '#8b7355' }]}>{author}</Text>
         </View>
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
-          onPress={() => handleAddItem({ id, title, author, category, tier, stage, description, type, grade })}
+          style={[styles.viewButton, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
+          onPress={() => handleViewItem({ id, title, author, category, tier, stage, description, type, grade })}
         >
-          <Text style={[styles.addButtonText, { color: '#c9a961' }]}>+</Text>
+          <Text style={[styles.viewButtonText, { color: '#c9a961' }]}>→</Text>
         </TouchableOpacity>
       </View>
       <Text style={[styles.itemDescription, { color: '#8b7355' }]}>{description}</Text>
@@ -374,8 +368,8 @@ const styles = StyleSheet.create({
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 2 },
   badgeText: { fontSize: 10, fontWeight: '400', letterSpacing: 0.5 },
-  addButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 2, borderWidth: 1 },
-  addButtonText: { fontSize: 18, fontWeight: '300' },
+  viewButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 2, borderWidth: 1 },
+  viewButtonText: { fontSize: 18, fontWeight: '300' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyIcon: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 15, fontWeight: '400', fontFamily: 'Georgia', letterSpacing: 1 },
