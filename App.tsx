@@ -16,6 +16,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import StatsScreen from './src/screens/StatsScreen';
 import BookDetailsScreen from './src/screens/BookDetailsScreen';
 import HighlightsScreen from './src/screens/HighlightsScreen';
+import CurriculumScreen from './src/screens/CurriculumScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -98,6 +99,14 @@ function MainApp() {
             options={{
               tabBarLabel: 'Reading',
               tabBarIcon: ({ color }) => <Icon name="📖" color={color} />,
+            }}
+          />
+          <Tab.Screen
+            name="Curriculum"
+            component={CurriculumScreen}
+            options={{
+              tabBarLabel: 'Curriculum',
+              tabBarIcon: ({ color }) => <Icon name="✦" color={color} />,
             }}
           />
           <Tab.Screen

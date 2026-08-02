@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DatabaseService } from '../services/DatabaseService';
 import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS } from '../types';
+import { classicalLibrary, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
 
 interface AppContextType {
   books: Book[];
@@ -32,6 +33,13 @@ interface AppContextType {
 
   // Reading sessions
   addReadingSession: (session: Omit<ReadingSession, 'id'>) => Promise<void>;
+
+  // Classical library
+  getClassicalLibrary: () => ClassicalLibraryItem[];
+  getClassicalLibraryByCategory: (category: string) => ClassicalLibraryItem[];
+  getClassicalLibraryByTier: (tier: 1 | 2) => ClassicalLibraryItem[];
+  getClassicalLibraryByStage: (stage: 'grammar' | 'logic' | 'rhetoric') => ClassicalLibraryItem[];
+  addClassicalLibraryItem: (item: ClassicalLibraryItem) => Promise<string>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -127,6 +135,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await DatabaseService.addReadingSession(session);
   };
 
+  const getClassicalLibrary = () => classicalLibrary;
+
+  const getClassicalLibraryByCategory = (category: string) => {
+    const key = category as keyof typeof classicalLibraryByCategory;
+    return classicalLibraryByCategory[key] || [];
+  };
+
+  const getClassicalLibraryByTier = (tier: 1 | 2) => {
+    return tier === 1 ? tier1Texts : tier2Texts;
+  };
+
+  const getClassicalLibraryByStage = (stage: 'grammar' | 'logic' | 'rhetoric') => {
+    if (stage === 'grammar') return grammarStageMaterial;
+    if (stage === 'logic') return logicStageMaterial;
+    return rhetoricStageMaterial;
+  };
+
+  const addClassicalLibraryItem = async (item: ClassicalLibraryItem) => {
+    const book: Omit<Book, 'id'> = {
+      title: item.title,
+      author: item.author,
+      currentProgress: 0,
+      totalPages: 0,
+      fileSize: 0,
+      isFavorite: false,
+      isFinished: false,
+      coverColor: '#2d1b4e',
+      addedDate: new Date().toISOString(),
+    };
+    return addBook(book);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -149,6 +189,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         loadHighlights,
         updateSettings,
         addReadingSession,
+        getClassicalLibrary,
+        getClassicalLibraryByCategory,
+        getClassicalLibraryByTier,
+        getClassicalLibraryByStage,
+        addClassicalLibraryItem,
       }}
     >
       {children}
