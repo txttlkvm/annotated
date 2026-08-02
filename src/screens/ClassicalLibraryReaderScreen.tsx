@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
+  Linking,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { ContentDownloadService, DownloadProgress } from '../services/ContentDownloadService';
@@ -53,15 +54,29 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
     }
   };
 
-  const handleDownload = async (sourceUrl: string) => {
+  const handleDownload = async (sourceUrl: string, source: any) => {
     if (!item) return;
 
+    // If it's a web source (HTML), open in browser
+    if (source.type === 'html') {
+      try {
+        await Linking.openURL(sourceUrl);
+        Alert.alert('Search Anna\'s Archive',
+          `Browse available formats for "${item.title}".\n\nYou can download EPUB, PDF, MOBI, or other formats and add them to the app.`
+        );
+      } catch (error) {
+        Alert.alert('Error', 'Could not open link');
+      }
+      return;
+    }
+
+    // Otherwise, download file
     try {
       setIsLoading(true);
       let path: string;
 
       if (item.type === 'book') {
-        path = await ContentDownloadService.downloadBook(item, sourceUrl, 'epub');
+        path = await ContentDownloadService.downloadBook(item, sourceUrl, source.type as 'epub' | 'pdf' | 'txt');
       } else if (item.type === 'music') {
         path = await ContentDownloadService.downloadMusic(item, sourceUrl);
       } else if (item.type === 'art') {
@@ -230,16 +245,36 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
         <>
           {item.sources && item.sources.length > 0 ? (
             <>
-              <Text style={[styles.sourcesTitle, { color: '#c9a961' }]}>Available Formats:</Text>
-              {item.sources.slice(0, 3).map((source: any, idx: number) => (
+              <Text style={[styles.sourcesTitle, { color: '#c9a961' }]}>Available Sources:</Text>
+              {item.sources.slice(0, 4).map((source: any, idx: number) => (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.sourceButton, { backgroundColor: '#2d1b4e', borderColor: '#8b7355' }]}
-                  onPress={() => handleDownload(source.url)}
+                  style={[
+                    styles.sourceButton,
+                    {
+                      backgroundColor: source.provider === 'annas-archive' ? '#1a1328' : '#2d1b4e',
+                      borderColor: source.provider === 'annas-archive' ? '#a8a478' : '#8b7355',
+                    },
+                  ]}
+                  onPress={() => handleDownload(source.url, source)}
                   disabled={isLoading || downloadProgress?.status === 'downloading'}
                 >
-                  <Text style={[styles.sourceButtonText, { color: '#c9a961' }]}>
-                    ⬇ Download from {source.provider} ({source.type.toUpperCase()})
+                  <Text
+                    style={[
+                      styles.sourceButtonText,
+                      { color: source.provider === 'annas-archive' ? '#a8a478' : '#c9a961' },
+                    ]}
+                  >
+                    {source.provider === 'annas-archive' ? '🔍 ' : '⬇ '}
+                    {source.provider === 'gutenberg'
+                      ? `Download from Project Gutenberg (${source.type.toUpperCase()})`
+                      : source.provider === 'archive'
+                      ? `Download from Archive.org (${source.type.toUpperCase()})`
+                      : source.provider === 'youtube'
+                      ? 'Listen on YouTube'
+                      : source.provider === 'wikimedia'
+                      ? 'View on Wikimedia Commons'
+                      : 'Search Anna\'s Archive'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -247,7 +282,7 @@ export default function ClassicalLibraryReaderScreen({ route, navigation }: any)
           ) : (
             <View style={[styles.noSourcesBox, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}>
               <Text style={[styles.noSourcesText, { color: '#8b7355' }]}>
-                No public domain sources available for this item
+                Search Anna's Archive to find this item
               </Text>
             </View>
           )}

@@ -285,21 +285,41 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
   ],
 };
 
+// Helper to generate Anna's Archive search URL
+function getAnnaArchiveSearchUrl(title: string, author?: string): string {
+  const query = author ? `${title} ${author}` : title;
+  const encoded = encodeURIComponent(query);
+  return `https://annas-archive.gl/search?q=${encoded}`;
+}
+
+function getAnnaArchiveSource(title: string, author?: string) {
+  return {
+    type: 'html' as const,
+    provider: 'annas-archive' as const,
+    url: getAnnaArchiveSearchUrl(title, author),
+  };
+}
+
 // Helper function to get sources by title (handles variations)
-export function getPublicDomainSources(title: string) {
+export function getPublicDomainSources(title: string, author?: string) {
   // Try exact match first
   if (publicDomainSources[title]) {
-    return publicDomainSources[title];
+    const sources = publicDomainSources[title];
+    // Always add Anna's Archive as fallback source
+    return [...sources, getAnnaArchiveSource(title, author)];
   }
 
   // Try partial match (case-insensitive)
   for (const [key, value] of Object.entries(publicDomainSources)) {
     if (key.toLowerCase().includes(title.toLowerCase()) || title.toLowerCase().includes(key.toLowerCase())) {
-      return value;
+      const sources = value;
+      // Always add Anna's Archive as fallback
+      return [...sources, getAnnaArchiveSource(title, author)];
     }
   }
 
-  return undefined;
+  // If no Gutenberg source found, return Anna's Archive search as default
+  return [getAnnaArchiveSource(title, author)];
 }
 
 /*
