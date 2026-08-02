@@ -31,9 +31,25 @@ export default function BookDetailsScreen({ route, navigation }: any) {
     );
   }
 
-  const progress = (book.currentProgress / book.totalPages) * 100;
+  const progress = book.totalPages > 0 ? (book.currentProgress / book.totalPages) * 100 : 0;
+
+  const getItemTypeDisplay = () => {
+    if (book.itemType === 'music') return 'Music Composition';
+    if (book.itemType === 'art') return 'Artwork';
+    if (book.itemType === 'resource') return 'Study Resource';
+    return 'Manuscript';
+  };
 
   const handleStartReading = () => {
+    if (book.itemType === 'music' || book.itemType === 'art') {
+      Alert.alert(
+        'Curriculum Item',
+        book.itemType === 'music'
+          ? 'Find and listen to this composition. Take notes on its structure and emotional impact.'
+          : 'Study this artwork in depth. Consider its composition, symbolism, and historical significance.'
+      );
+      return;
+    }
     setCurrentBook(book);
     navigation.navigate('Reading', { screen: 'ReaderHome' });
   };
@@ -81,18 +97,48 @@ export default function BookDetailsScreen({ route, navigation }: any) {
 
       {/* Book Info */}
       <View style={styles.infoSection}>
-        <Text style={[styles.title, { color: '#c9a961' }]}>{book.title}</Text>
-        <Text style={[styles.author, { color: '#8b7355' }]}>{book.author || '—'}</Text>
-
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { backgroundColor: '#3d3730', borderColor: '#8b7355' }]}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        <View style={styles.headerRow}>
+          <View style={styles.titleColumn}>
+            <Text style={[styles.title, { color: '#c9a961' }]}>{book.title}</Text>
+            <Text style={[styles.author, { color: '#8b7355' }]}>{book.author || '—'}</Text>
           </View>
-          <Text style={[styles.progressText, { color: '#c9a961' }]}>
-            {Math.round(progress)}% • Page {book.currentProgress} of {book.totalPages}
-          </Text>
+          {book.itemType && book.itemType !== 'book' && (
+            <View style={[styles.typeTag, { backgroundColor: '#2d1b4e', borderColor: book.itemType === 'music' ? '#a8a478' : '#8b7355' }]}>
+              <Text style={[styles.typeTagText, { color: book.itemType === 'music' ? '#a8a478' : '#8b7355' }]}>
+                {book.itemType === 'music' ? '♪\nMusic' : book.itemType === 'art' ? '✎\nArt' : '◆\nResource'}
+              </Text>
+            </View>
+          )}
         </View>
+
+        {book.itemType === 'music' && (
+          <View style={[styles.infoBox, { backgroundColor: '#2d1b4e', borderColor: '#a8a478' }]}>
+            <Text style={[styles.infoLabel, { color: '#a8a478' }]}>Study Guide</Text>
+            <Text style={[styles.infoText, { color: '#c9a961' }]}>
+              Listen to this composition attentively. Study its structure, harmony, and emotional progression. Consider how it reflects the compositional principles of its era.
+            </Text>
+          </View>
+        )}
+
+        {book.itemType === 'art' && (
+          <View style={[styles.infoBox, { backgroundColor: '#2d1b4e', borderColor: '#8b7355' }]}>
+            <Text style={[styles.infoLabel, { color: '#8b7355' }]}>Study Guide</Text>
+            <Text style={[styles.infoText, { color: '#c9a961' }]}>
+              Examine this artwork in depth. Notice the composition, use of color and light, symbolic elements, and historical context. Reflect on its spiritual and artistic significance.
+            </Text>
+          </View>
+        )}
+
+        {book.totalPages > 0 && (
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressBar, { backgroundColor: '#3d3730', borderColor: '#8b7355' }]}>
+              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            </View>
+            <Text style={[styles.progressText, { color: '#c9a961' }]}>
+              {Math.round(progress)}% • Page {book.currentProgress} of {book.totalPages}
+            </Text>
+          </View>
+        )}
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
@@ -121,7 +167,9 @@ export default function BookDetailsScreen({ route, navigation }: any) {
           style={[styles.primaryButton, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}
           onPress={handleStartReading}
         >
-          <Text style={[styles.buttonText, { color: '#c9a961' }]}>✦ Continue Reading</Text>
+          <Text style={[styles.buttonText, { color: '#c9a961' }]}>
+            {book.itemType === 'music' ? '✦ Listen & Study' : book.itemType === 'art' ? '✦ Study & Reflect' : '✦ Continue Reading'}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.buttonRow}>
@@ -192,8 +240,15 @@ const styles = StyleSheet.create({
   cover: { width: 120, height: 160, borderRadius: 2, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   coverSymbol: { fontSize: 60, fontWeight: '300' },
   infoSection: { marginBottom: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  titleColumn: { flex: 1 },
   title: { fontSize: 20, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia', letterSpacing: 1 },
   author: { fontSize: 13, marginBottom: 16, letterSpacing: 0.5 },
+  typeTag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 2, borderWidth: 1, alignItems: 'center' },
+  typeTagText: { fontSize: 8, fontWeight: '400', textAlign: 'center', lineHeight: 12 },
+  infoBox: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 2, marginBottom: 16, borderLeftWidth: 2, borderWidth: 1 },
+  infoLabel: { fontSize: 11, fontWeight: '400', marginBottom: 6, letterSpacing: 1, fontFamily: 'Georgia' },
+  infoText: { fontSize: 11, lineHeight: 16, letterSpacing: 0.5 },
   progressContainer: { marginBottom: 20 },
   progressBar: { height: 3, borderRadius: 1, overflow: 'hidden', marginBottom: 8, borderWidth: 1 },
   progressFill: { height: '100%', backgroundColor: '#c9a961' },

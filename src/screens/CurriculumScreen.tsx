@@ -69,11 +69,21 @@ export default function CurriculumScreen() {
     }
   };
 
+  const getTypeLabel = (type: string) => {
+    if (type === 'music') return '♪ Music';
+    if (type === 'art') return '✎ Art';
+    if (type === 'resource') return '◆ Resource';
+    return '✦ Text';
+  };
+
   const CurriculumItem = ({ id, title, author, category, tier, stage, description, type, grade }: any) => (
-    <View style={[styles.itemCard, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}>
+    <View style={[styles.itemCard, { backgroundColor: '#1a1328', borderColor: type === 'music' ? '#a8a478' : type === 'art' ? '#8b7355' : '#8b7355' }]}>
       <View style={styles.itemHeader}>
         <View style={styles.itemTitleSection}>
-          <Text style={[styles.itemTitle, { color: '#c9a961' }]}>{title}</Text>
+          <View style={styles.itemTitleRow}>
+            <Text style={[styles.itemTitle, { color: '#c9a961' }]}>{title}</Text>
+            <Text style={[styles.typeLabel, { color: '#8b7355' }]}>{getTypeLabel(type)}</Text>
+          </View>
           <Text style={[styles.itemAuthor, { color: '#8b7355' }]}>{author}</Text>
         </View>
         <TouchableOpacity
@@ -84,6 +94,16 @@ export default function CurriculumScreen() {
         </TouchableOpacity>
       </View>
       <Text style={[styles.itemDescription, { color: '#8b7355' }]}>{description}</Text>
+      {type === 'music' && (
+        <Text style={[styles.typeNote, { color: '#a8a478' }]}>
+          Listen to this composition as part of your studies
+        </Text>
+      )}
+      {type === 'art' && (
+        <Text style={[styles.typeNote, { color: '#8b7355' }]}>
+          Study this artwork in depth
+        </Text>
+      )}
       <View style={styles.itemFooter}>
         <View style={styles.badges}>
           <View style={[styles.badge, { backgroundColor: '#2d1b4e' }]}>
@@ -315,9 +335,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemTitleSection: { flex: 1, marginRight: 12 },
-  itemTitle: { fontSize: 14, fontWeight: '400', marginBottom: 2, fontFamily: 'Georgia', letterSpacing: 0.5 },
+  itemTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 },
+  itemTitle: { fontSize: 14, fontWeight: '400', fontFamily: 'Georgia', letterSpacing: 0.5, flex: 1 },
+  typeLabel: { fontSize: 10, letterSpacing: 0.5, marginLeft: 8 },
   itemAuthor: { fontSize: 11, letterSpacing: 0.5 },
   itemDescription: { fontSize: 11, lineHeight: 16, marginBottom: 8 },
+  typeNote: { fontSize: 10, fontStyle: 'italic', marginBottom: 8, letterSpacing: 0.5 },
   itemFooter: { marginTop: 8 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 2 },

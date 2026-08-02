@@ -157,12 +157,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       title: item.title,
       author: item.author,
       currentProgress: 0,
-      totalPages: 0,
+      totalPages: item.type === 'book' ? 100 : 0,
       fileSize: 0,
       isFavorite: false,
       isFinished: false,
       coverColor: '#2d1b4e',
       addedDate: new Date().toISOString(),
+      itemType: item.type,
+      description: item.description,
     };
     return addBook(book);
   };

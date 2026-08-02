@@ -3,20 +3,22 @@ export interface Book {
   title: string;
   author?: string;
   cover?: string;
-  filePath: string;
-  fileName: string;
-  fileFormat: 'epub' | 'mobi' | 'pdf' | 'txt';
+  filePath?: string;
+  fileName?: string;
+  fileFormat?: 'epub' | 'mobi' | 'pdf' | 'txt';
   fileSize: number;
   currentProgress: number;
   totalPages: number;
-  addedDate: number;
-  lastReadDate: number;
-  readingTimeMinutes: number;
+  addedDate: string | number;
+  lastReadDate?: number;
+  readingTimeMinutes?: number;
   isFinished: boolean;
   isFavorite: boolean;
   description?: string;
   language?: string;
   publishedDate?: string;
+  itemType?: 'book' | 'music' | 'art' | 'resource';
+  coverColor?: string;
 }
 
 export interface Bookmark {

@@ -91,8 +91,22 @@ export default function LibraryScreen({ navigation }: any) {
     }
   };
 
+  const getItemTypeIcon = (type?: string) => {
+    if (type === 'music') return '♪';
+    if (type === 'art') return '✎';
+    if (type === 'resource') return '◆';
+    return '✦';
+  };
+
+  const getItemTypeMeta = (book: Book) => {
+    if (book.itemType === 'music') return `${book.author} • Composition`;
+    if (book.itemType === 'art') return `${book.author} • Artwork`;
+    if (book.itemType === 'resource') return 'Reference • Study Material';
+    return `${book.totalPages} pages • ${(book.fileSize / 1024 / 1024).toFixed(1)}MB`;
+  };
+
   const BookCard = ({ book }: { book: Book }) => {
-    const progress = (book.currentProgress / book.totalPages) * 100;
+    const progress = book.totalPages > 0 ? (book.currentProgress / book.totalPages) * 100 : 0;
 
     if (viewMode === 'grid') {
       return (
@@ -101,7 +115,7 @@ export default function LibraryScreen({ navigation }: any) {
           onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
         >
           <View style={[styles.gridCover, { borderColor: '#c9a961' }]}>
-            <Text style={styles.coverSymbol}>✦</Text>
+            <Text style={styles.coverSymbol}>{getItemTypeIcon(book.itemType)}</Text>
           </View>
           <Text style={[styles.gridTitle, { color: '#c9a961' }]} numberOfLines={2}>
             {book.title}
@@ -109,12 +123,21 @@ export default function LibraryScreen({ navigation }: any) {
           <Text style={[styles.gridAuthor, { color: '#8b7355' }]} numberOfLines={1}>
             {book.author || '—'}
           </Text>
-          <View style={[styles.progressBar, { borderColor: '#8b7355' }]}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-          <Text style={[styles.progressText, { color: '#8b7355' }]}>
-            {Math.round(progress)}%
-          </Text>
+          {book.totalPages > 0 && (
+            <>
+              <View style={[styles.progressBar, { borderColor: '#8b7355' }]}>
+                <View style={[styles.progressFill, { width: `${progress}%` }]} />
+              </View>
+              <Text style={[styles.progressText, { color: '#8b7355' }]}>
+                {Math.round(progress)}%
+              </Text>
+            </>
+          )}
+          {book.itemType !== 'book' && (
+            <Text style={[styles.typeTag, { color: '#8b7355' }]}>
+              {book.itemType === 'music' ? 'Music' : book.itemType === 'art' ? 'Art' : 'Resource'}
+            </Text>
+          )}
         </TouchableOpacity>
       );
     }
@@ -125,7 +148,7 @@ export default function LibraryScreen({ navigation }: any) {
         onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
       >
         <View style={[styles.listCover, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}>
-          <Text style={styles.coverSymbolList}>✦</Text>
+          <Text style={styles.coverSymbolList}>{getItemTypeIcon(book.itemType)}</Text>
         </View>
         <View style={styles.listInfo}>
           <Text style={[styles.listTitle, { color: '#c9a961' }]} numberOfLines={1}>
@@ -136,16 +159,24 @@ export default function LibraryScreen({ navigation }: any) {
           </Text>
           <View style={styles.listMeta}>
             <Text style={[styles.metaText, { color: '#8b7355' }]}>
-              {book.totalPages} pages • {(book.fileSize / 1024 / 1024).toFixed(1)}MB
+              {getItemTypeMeta(book)}
             </Text>
           </View>
-          <View style={[styles.progressBar, { borderColor: '#8b7355' }]}>
-            <View style={[styles.progressFill, { width: `${(book.currentProgress / book.totalPages) * 100}%` }]} />
-          </View>
+          {book.totalPages > 0 && (
+            <View style={[styles.progressBar, { borderColor: '#8b7355' }]}>
+              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            </View>
+          )}
         </View>
         <View style={styles.listStatus}>
-          <Text style={[styles.pageNumber, { color: '#c9a961' }]}>{book.currentProgress}</Text>
-          <Text style={[styles.pageLabel, { color: '#8b7355' }]}>p.</Text>
+          {book.totalPages > 0 ? (
+            <>
+              <Text style={[styles.pageNumber, { color: '#c9a961' }]}>{book.currentProgress}</Text>
+              <Text style={[styles.pageLabel, { color: '#8b7355' }]}>p.</Text>
+            </>
+          ) : (
+            <Text style={[styles.pageLabel, { color: '#8b7355' }]}>{book.itemType === 'music' ? '♪' : book.itemType === 'art' ? '✎' : '◆'}</Text>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -343,6 +374,7 @@ const styles = StyleSheet.create({
   gridTitle: { fontSize: 12, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
   gridAuthor: { fontSize: 10, marginBottom: 8, letterSpacing: 0.5 },
   progressText: { fontSize: 10, marginTop: 4, letterSpacing: 0.5 },
+  typeTag: { fontSize: 9, marginTop: 4, fontStyle: 'italic', letterSpacing: 0.5 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyIcon: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 16, fontWeight: '400', marginBottom: 8, fontFamily: 'Georgia', letterSpacing: 1 },

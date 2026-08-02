@@ -26,9 +26,9 @@ export class DatabaseService {
         title TEXT NOT NULL,
         author TEXT,
         cover TEXT,
-        filePath TEXT NOT NULL,
-        fileName TEXT NOT NULL,
-        fileFormat TEXT NOT NULL,
+        filePath TEXT,
+        fileName TEXT,
+        fileFormat TEXT,
         fileSize INTEGER,
         currentProgress REAL DEFAULT 0,
         totalPages INTEGER,
@@ -40,6 +40,8 @@ export class DatabaseService {
         description TEXT,
         language TEXT,
         publishedDate TEXT,
+        itemType TEXT DEFAULT 'book',
+        coverColor TEXT DEFAULT '#2d1b4e',
         createdAt INTEGER DEFAULT CURRENT_TIMESTAMP
       );
 
