@@ -92,8 +92,7 @@ function MainApp() {
   return (
     <>
       <StatusBar
-        barStyle={settings.theme === 'light' ? 'dark-content' : 'light-content'}
-        backgroundColor="transparent"
+        style={settings.theme === 'light' ? 'dark' : 'light'}
         translucent
       />
       <NavigationContainer>
