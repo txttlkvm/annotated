@@ -9,7 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { READER_THEMES } from '../types';
 
 const categories = [
   'literature',
