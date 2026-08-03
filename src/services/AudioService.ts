@@ -1,4 +1,5 @@
-import { Audio } from 'expo-av';
+import { Platform } from 'react-native';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 
 export interface PlaybackState {
@@ -13,13 +14,16 @@ type PlaybackStatusCallback = (state: PlaybackState) => void;
 export class AudioService {
   private static sound: Audio.Sound | null = null;
   private static playbackStatusCallback: PlaybackStatusCallback | null = null;
-  private static updateInterval: NodeJS.Timeout | null = null;
+  private static updateInterval: ReturnType<typeof setInterval> | null = null;
 
   static async init() {
+    if (Platform.OS === 'web') return;
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
-      interruptionHandlingIOS: Audio.InterruptionHandlingIOS.DoNotMix,
+      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
       playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       shouldDuckAndroid: true,
       playThroughEarpieceAndroid: false,
     });

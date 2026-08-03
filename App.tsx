@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import * as Font from 'expo-font';
 
 import { AppProvider, useApp } from './src/context/AppContext';
 import { DatabaseService } from './src/services/DatabaseService';
@@ -80,10 +79,6 @@ function MainApp() {
       await DatabaseService.init();
       await TTSService.init();
       await AudioService.init();
-      await Font.loadAsync({
-        Georgia: require('./assets/fonts/Georgia.ttf'),
-        'Georgia-Bold': require('./assets/fonts/Georgia-Bold.ttf'),
-      }).catch(() => {});
     } catch (error) {
       console.error('Initialization error:', error);
     }

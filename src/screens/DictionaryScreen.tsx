@@ -132,7 +132,7 @@ export default function DictionaryScreen() {
         {filteredWords.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: accentColor, borderColor }]}>
             <Text style={[styles.emptyText, { color: secondaryColor }]}>
-              No words in your vocabulary yet.\n\nStart by adding words you encounter while reading.
+              No words in your vocabulary yet.{'\n\n'}Start by adding words you encounter while reading.
             </Text>
           </View>
         ) : (

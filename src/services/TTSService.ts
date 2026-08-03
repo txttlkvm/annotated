@@ -1,6 +1,22 @@
+import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import { TTSConfig } from '../types';
+
+const isWeb = Platform.OS === 'web';
+
+async function getSecureItem(key: string): Promise<string | null> {
+  if (isWeb) return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+  return SecureStore.getItemAsync(key);
+}
+
+async function setSecureItem(key: string, value: string): Promise<void> {
+  if (isWeb) {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+    return;
+  }
+  await SecureStore.setItemAsync(key, value);
+}
 
 export interface TTSVoice {
   name: string;
@@ -16,7 +32,7 @@ export class TTSService {
 
   static async init() {
     try {
-      const apiKey = await SecureStore.getItemAsync('google_tts_api_key');
+      const apiKey = await getSecureItem('google_tts_api_key');
       if (apiKey) {
         this.config = {
           apiKey,
@@ -35,7 +51,7 @@ export class TTSService {
 
   static async setApiKey(apiKey: string): Promise<void> {
     try {
-      await SecureStore.setItemAsync('google_tts_api_key', apiKey);
+      await setSecureItem('google_tts_api_key', apiKey);
       this.config = {
         apiKey,
         languageCode: 'en-US',

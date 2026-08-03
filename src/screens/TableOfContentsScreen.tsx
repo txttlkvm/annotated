@@ -154,7 +154,7 @@ export default function TableOfContentsScreen({ route, navigation }: any) {
         {chapters.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: accentColor, borderColor }]}>
             <Text style={[styles.emptyText, { color: secondaryColor }]}>
-              No chapters found.\n\nThis feature works with books that have chapter information.
+              No chapters found.{'\n\n'}This feature works with books that have chapter information.
             </Text>
           </View>
         ) : (

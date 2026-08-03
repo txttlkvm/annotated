@@ -84,7 +84,7 @@ export default function CollectionsScreen() {
         {collections.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: accentColor, borderColor }]}>
             <Text style={[styles.emptyText, { color: secondaryColor }]}>
-              No collections yet.\n\nCreate one to organize your books by topic, theme, or reading level.
+              No collections yet.{'\n\n'}Create one to organize your books by topic, theme, or reading level.
             </Text>
           </View>
         ) : (
