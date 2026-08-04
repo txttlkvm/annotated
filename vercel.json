@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm install --ignore-scripts && npx expo export --platform web",
+  "buildCommand": "bash build.sh",
   "outputDirectory": "dist",
-  "installCommand": "npm install --legacy-peer-deps",
   "env": {
     "NODE_OPTIONS": "--max_old_space_size=4096"
   }
