@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
   Alert,
   useWindowDimensions,
 } from 'react-native';
@@ -47,10 +48,22 @@ export default function BookDetailsScreen({ route, navigation }: any) {
     loadBookmarks,
     loadHighlights,
     updateBook,
+    openBook,
+    textLoad,
+    clearTextError,
   } = useApp();
   const [stats, setStats] = useState({ totalMinutes: 0, sessionCount: 0 });
   const { width: windowWidth } = useWindowDimensions();
   const book = books.find(b => b.id === bookId);
+
+  /** A download outlives a fast back-tap; never navigate after leaving. */
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (book) {
@@ -81,6 +94,14 @@ export default function BookDetailsScreen({ route, navigation }: any) {
     book.totalPages > 0 ? Math.min(100, (book.currentProgress / book.totalPages) * 100) : 0;
   const started = book.currentProgress > 0;
 
+  // Text state, but only when it is talking about THIS volume — a download
+  // running for another book must not spin or shout on this page.
+  const busy = textLoad.status === 'loading' && textLoad.bookId === bookId;
+  const loadError =
+    textLoad.status === 'error' && textLoad.bookId === bookId ? textLoad.error : null;
+  /** Nothing to download: an import that carries its own text, or no edition linked. */
+  const readsImmediately = !!book.content || !book.sourceUrl;
+
   /** Hero cover: generous but never wider than half the page. */
   const contentWidth = Math.min(windowWidth, 720) - space.xl * 2;
   const coverWidth = Math.max(140, Math.min(196, Math.round(contentWidth * 0.48)));
@@ -99,13 +120,18 @@ export default function BookDetailsScreen({ route, navigation }: any) {
   };
 
   const primaryHint = () => {
+    if (busy) return 'Downloading the full edition — a moment';
     if (book.itemType === 'music' || book.itemType === 'art') return 'Open the study guide';
     if (book.totalPages > 0 && started) return `Page ${book.currentProgress} of ${book.totalPages}`;
     if (book.totalPages > 0) return `${book.totalPages} pages ahead`;
-    return 'From the first page';
+    if (book.content) return 'From the first page';
+    if (book.sourceUrl) return 'Downloads on first open';
+    return 'No digital edition linked to this entry';
   };
 
-  const handleStartReading = () => {
+  const openReader = () => navigation.navigate('Reading', { screen: 'ReaderHome' });
+
+  const handleStartReading = async () => {
     if (book.itemType === 'music' || book.itemType === 'art') {
       Alert.alert(
         'Curriculum Item',
@@ -115,8 +141,23 @@ export default function BookDetailsScreen({ route, navigation }: any) {
       );
       return;
     }
-    setCurrentBook(book);
-    navigation.navigate('Reading', { screen: 'ReaderHome' });
+
+    // A download already running for this volume owns the request.
+    if (busy) return;
+    clearTextError();
+
+    if (readsImmediately) {
+      setCurrentBook(book);
+      openReader();
+      return;
+    }
+
+    // ~1MB over the wire: open the reader only once there is something to read.
+    // openBook reports its own failures through textLoad and never rejects.
+    const loaded = await openBook(book).catch(() => book);
+    if (!mountedRef.current) return;
+    if (loaded.content) openReader();
+    // On failure the card below the button carries the reason and a retry.
   };
 
   const handleToggleFavorite = async () => {
@@ -197,15 +238,40 @@ export default function BookDetailsScreen({ route, navigation }: any) {
 
         {/* Primary action */}
         <TouchableOpacity
-          style={styles.primaryButton}
+          style={[styles.primaryButton, busy && styles.primaryButtonBusy]}
           onPress={handleStartReading}
+          disabled={busy}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel={primaryLabel()}
+          accessibilityState={{ disabled: busy, busy }}
+          accessibilityLabel={busy ? 'Fetching the text' : primaryLabel()}
         >
-          <Text style={styles.primaryLabel}>{primaryLabel()}</Text>
+          {busy ? (
+            <View style={styles.primaryBusyRow}>
+              <ActivityIndicator size="small" color={colors.bg} />
+              <Text style={styles.primaryLabel}>Fetching the text…</Text>
+            </View>
+          ) : (
+            <Text style={styles.primaryLabel}>{primaryLabel()}</Text>
+          )}
           <Text style={styles.primaryHint}>{primaryHint()}</Text>
         </TouchableOpacity>
+
+        {/* Download failure — legible, and recoverable without leaving the page */}
+        {!!loadError && (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorLabel}>COULD NOT OPEN</Text>
+            <Text style={styles.errorText}>{loadError}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={handleStartReading}
+              accessibilityRole="button"
+              accessibilityLabel="Try the download again"
+            >
+              <Text style={styles.retryLabel}>Try again</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Progress */}
         {book.totalPages > 0 && (
@@ -421,6 +487,40 @@ const styles = StyleSheet.create({
     color: 'rgba(15, 10, 26, 0.72)',
     marginTop: space.xs,
   },
+  /** Held, not greyed out: the action is still the one thing to do here. */
+  primaryButtonBusy: { opacity: 0.78 },
+  primaryBusyRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+
+  errorCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.danger,
+    padding: space.lg,
+    marginTop: -space.md,
+    marginBottom: space.xl,
+  },
+  errorLabel: { ...type.overline, color: colors.danger, marginBottom: space.sm },
+  errorText: {
+    ...type.body,
+    fontFamily: fonts.reading,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.ink,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    marginTop: space.md,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: colors.surfaceRaised,
+  },
+  retryLabel: { ...type.caption, color: colors.goldBright, letterSpacing: 0.6 },
 
   progressBlock: { marginBottom: space.xl },
   progressHeader: {

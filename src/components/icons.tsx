@@ -100,6 +100,29 @@ function seg(
   );
 }
 
+/**
+ * A round line-join. A segment's stadium tip only reaches its endpoint along the
+ * centreline, so two segments meeting at a vertex leave a notch on the outside
+ * of the corner. Dropping a disc of the stroke's diameter on the vertex fills it
+ * exactly, which is what SVG's stroke-linejoin="round" does.
+ */
+function joint(key: string, x: number, y: number, u: number, t: number, color: string) {
+  return (
+    <View
+      key={key}
+      style={{
+        position: 'absolute',
+        left: x * u - t / 2,
+        top: y * u - t / 2,
+        width: t,
+        height: t,
+        borderRadius: t / 2,
+        backgroundColor: color,
+      }}
+    />
+  );
+}
+
 function renderShape(s: Shape, i: number, u: number, t: number, color: string): React.ReactNode {
   switch (s.k) {
     case 'line':
@@ -118,21 +141,34 @@ function renderShape(s: Shape, i: number, u: number, t: number, color: string): 
           seg(`p${i}-c`, s.p[(n - 1) * 2], s.p[(n - 1) * 2 + 1], s.p[0], s.p[1], u, t, color),
         );
       }
+      // Round the corners. A closed shape joins at every vertex; an open one
+      // joins everywhere except its two free ends, which stay capped.
+      const firstJoin = s.close ? 0 : 1;
+      const lastJoin = s.close ? n : n - 1;
+      for (let j = firstJoin; j < lastJoin; j++) {
+        out.push(joint(`p${i}-j${j}`, s.p[j * 2], s.p[j * 2 + 1], u, t, color));
+      }
       return out;
     }
 
     case 'box': {
       const [x, y, w, h] = s.p;
+      // An outline's stroke STRADDLES the path, exactly like an SVG <rect>. RN
+      // borders are drawn inside the box, so the View is inflated by the stroke
+      // weight and offset by half of it. Without this a `box` renders a full
+      // stroke smaller than a `poly` drawn on the same coordinates — which is
+      // why `dictionary` and `note` used to disagree despite sharing a bounds.
+      const out = s.fill ? 0 : t / 2;
       return (
         <View
           key={`b${i}`}
           style={{
             position: 'absolute',
-            left: x * u,
-            top: y * u,
-            width: w * u,
-            height: h * u,
-            borderRadius: (s.r ?? 0) * u,
+            left: x * u - out,
+            top: y * u - out,
+            width: w * u + out * 2,
+            height: h * u + out * 2,
+            borderRadius: (s.r ?? 0) * u + out,
             ...(s.fill
               ? { backgroundColor: color }
               : { borderWidth: t, borderColor: color, borderStyle: 'solid' as const }),
@@ -144,16 +180,18 @@ function renderShape(s: Shape, i: number, u: number, t: number, color: string): 
 
     case 'ring': {
       const [cx, cy, r] = s.p;
+      // Same straddling rule as `box`.
+      const d = r * 2 * u + t;
       return (
         <View
           key={`r${i}`}
           style={{
             position: 'absolute',
-            left: (cx - r) * u,
-            top: (cy - r) * u,
-            width: r * 2 * u,
-            height: r * 2 * u,
-            borderRadius: r * u,
+            left: (cx - r) * u - t / 2,
+            top: (cy - r) * u - t / 2,
+            width: d,
+            height: d,
+            borderRadius: d / 2,
             borderWidth: t,
             borderColor: color,
             borderStyle: 'solid',
@@ -217,103 +255,121 @@ function renderShape(s: Shape, i: number, u: number, t: number, color: string): 
 // ---------------------------------------------------------------------------
 // Artwork
 //
-// All coordinates are on the 0–24 grid, kept inside ~2.5–21.5 so every icon
-// carries the same optical padding and they line up in a row.
+// All coordinates are on the 0–24 grid. Because every primitive now straddles
+// its path, "the 24 grid" means one thing for all of them and the coordinates
+// below can be read as an SVG viewBox.
+//
+// OPTICAL BOX: full-bleed icons run 3.6–20.4 on their dominant axis, so they
+// paint 2.7–21.3 once the stroke is counted. Holding all of them to that band
+// is what makes a row of them look like a set — before this was enforced,
+// `stats` painted 12.6 tall next to an 18.0 `catalog` in the same tab bar.
+// Icons that are inherently short (menu, sort, check, more) or that read
+// optically large because they are solid or diagonal (play, close, chevrons)
+// are deliberately drawn under the band rather than stretched to fill it.
 // ---------------------------------------------------------------------------
 
 const PATHS = {
-  /** Library — three books, the last one leaning. */
+  /** Library — two upright books plus one leaning, sharing a baseline. The
+   *  lean is what separates this from `collections` at 22px. */
   library: [
-    { k: 'box', p: [3.2, 5.0, 4.6, 14.8], r: 1.2 },
-    { k: 'box', p: [9.2, 5.0, 4.6, 14.8], r: 1.2 },
-    { k: 'box', p: [15.6, 5.1, 4.4, 14.0], r: 1.2, rot: 15 },
+    { k: 'box', p: [3.4, 3.9, 4.3, 16.5], r: 1.2 },
+    { k: 'box', p: [8.7, 3.9, 4.3, 16.5], r: 1.2 },
+    { k: 'box', p: [15.2, 6.6, 3.8, 13.2], r: 1.1, rot: 12 },
   ],
 
   /** Reading — an open book: two pages hinged on a centre spine. */
   read: [
-    { k: 'poly', p: [12, 7.6, 3.2, 5.4, 3.2, 17.4, 12, 19.6] },
-    { k: 'poly', p: [12, 7.6, 20.8, 5.4, 20.8, 17.4, 12, 19.6] },
-    { k: 'line', p: [12, 7.6, 12, 19.6] },
+    { k: 'poly', p: [12, 6.6, 3.6, 4.2, 3.6, 17.8, 12, 20.4] },
+    { k: 'poly', p: [12, 6.6, 20.4, 4.2, 20.4, 17.8, 12, 20.4] },
+    { k: 'line', p: [12, 6.6, 12, 20.4] },
   ],
 
-  /** Curriculum — a classical fluted column: capital, three flutes, base. */
+  /** Curriculum — a classical fluted column: capital, three flutes, base.
+   *  The base is drawn wider than the capital, as a real order is. Capital and
+   *  base are FILLED: outlined, a slab only ~2.6 units deep is thinner inside
+   *  than the stroke around it, so it rendered as a hollow double-line rather
+   *  than as entablature. */
   curriculum: [
-    { k: 'box', p: [4.0, 4.0, 16.0, 3.0], r: 1.0 },
-    { k: 'line', p: [8.6, 8.2, 8.6, 16.2] },
-    { k: 'line', p: [12.0, 8.2, 12.0, 16.2] },
-    { k: 'line', p: [15.4, 8.2, 15.4, 16.2] },
-    { k: 'box', p: [3.2, 17.2, 17.6, 3.0], r: 1.0 },
+    { k: 'box', p: [4.2, 3.9, 15.6, 2.6], r: 0.9, fill: true },
+    { k: 'line', p: [8.7, 8.0, 8.7, 16.4] },
+    { k: 'line', p: [12.0, 8.0, 12.0, 16.4] },
+    { k: 'line', p: [15.3, 8.0, 15.3, 16.4] },
+    { k: 'box', p: [3.4, 17.9, 17.2, 2.6], r: 0.9, fill: true },
   ],
 
   /** Catalog — a compass rose: browse/discover. */
   catalog: [
-    { k: 'ring', p: [12, 12, 9] },
-    { k: 'poly', p: [16.2, 7.8, 14.1, 14.1, 7.8, 16.2, 9.9, 9.9], close: true },
+    { k: 'ring', p: [12, 12, 8.4] },
+    { k: 'poly', p: [15.92, 8.08, 13.96, 13.96, 8.08, 15.92, 10.04, 10.04], close: true },
   ],
 
   /** More — horizontal ellipsis, for an overflow tab or row menu. */
   more: [
-    { k: 'dot', p: [5.4, 12, 1.7] },
-    { k: 'dot', p: [12, 12, 1.7] },
-    { k: 'dot', p: [18.6, 12, 1.7] },
+    { k: 'dot', p: [5.3, 12, 1.75] },
+    { k: 'dot', p: [12, 12, 1.75] },
+    { k: 'dot', p: [18.7, 12, 1.75] },
   ],
 
-  /** Shelf — books of differing widths on a board with turned-down ends.
-   *  The bracket matters: with a plain baseline this was indistinguishable
-   *  from `stats`, and the two can appear in the same nav. */
+  /** Shelf — books of differing widths standing ON a plank with turned-down
+   *  ends. The plank matters twice: without it this is `stats`, and the books
+   *  must actually meet it or they read as floating. */
   shelf: [
-    { k: 'box', p: [4.6, 8.2, 3.0, 9.6], r: 0.8 },
-    { k: 'box', p: [9.0, 5.6, 4.2, 12.2], r: 0.8 },
-    { k: 'box', p: [15.0, 6.6, 3.6, 11.4], r: 0.8, rot: 13 },
-    { k: 'poly', p: [3.2, 17.0, 3.2, 19.4, 20.8, 19.4, 20.8, 17.0] },
+    { k: 'box', p: [4.6, 6.4, 3.4, 11.2], r: 0.8 },
+    { k: 'box', p: [9.2, 4.0, 3.8, 13.6], r: 0.8 },
+    { k: 'box', p: [15.0, 5.9, 3.5, 11.6], r: 0.8, rot: 13 },
+    { k: 'poly', p: [3.4, 20.4, 3.4, 17.6, 20.6, 17.6, 20.6, 20.4] },
   ],
 
-  /** Collections — a grid of tiles. */
+  /** Collections — a grid of tiles. The gutter has to exceed the stroke or the
+   *  four tiles fuse into one lattice at tab-bar size. */
   collections: [
-    { k: 'box', p: [3.5, 3.5, 7.2, 7.2], r: 2.0 },
-    { k: 'box', p: [13.3, 3.5, 7.2, 7.2], r: 2.0 },
-    { k: 'box', p: [3.5, 13.3, 7.2, 7.2], r: 2.0 },
-    { k: 'box', p: [13.3, 13.3, 7.2, 7.2], r: 2.0 },
+    { k: 'box', p: [3.5, 3.5, 6.9, 6.9], r: 1.9 },
+    { k: 'box', p: [13.6, 3.5, 6.9, 6.9], r: 1.9 },
+    { k: 'box', p: [3.5, 13.6, 6.9, 6.9], r: 1.9 },
+    { k: 'box', p: [13.6, 13.6, 6.9, 6.9], r: 1.9 },
   ],
 
-  /** Dictionary — a bound reference volume: spine band plus entry lines. */
+  /** Dictionary — a bound reference volume: spine band plus entry lines. The
+   *  spine runs the full height so it meets both covers. */
   dictionary: [
-    { k: 'box', p: [4.0, 3.4, 16.0, 17.2], r: 2.2 },
-    { k: 'line', p: [7.8, 4.3, 7.8, 19.7] },
-    { k: 'line', p: [11.0, 8.4, 17.0, 8.4] },
-    { k: 'line', p: [11.0, 12.0, 17.0, 12.0] },
-    { k: 'line', p: [11.0, 15.6, 14.6, 15.6] },
+    { k: 'box', p: [4.2, 3.7, 15.6, 16.6], r: 2.2 },
+    { k: 'line', p: [7.9, 3.7, 7.9, 20.3] },
+    { k: 'line', p: [11.0, 8.6, 17.4, 8.6] },
+    { k: 'line', p: [11.0, 12.0, 17.4, 12.0] },
+    { k: 'line', p: [11.0, 15.4, 15.0, 15.4] },
   ],
 
   /** Highlights — a marker held on the diagonal, with the swipe it just laid
    *  down. Drawn as text-lines-with-a-bold-line this collided with `menu`. */
   highlights: [
-    { k: 'poly', p: [13.98, 4.96, 17.24, 8.22, 8.89, 16.57, 5.0, 17.2, 5.63, 13.31], close: true },
-    { k: 'line', p: [11.15, 7.79, 14.41, 11.05] },
-    { k: 'box', p: [11.0, 17.2, 9.6, 2.6], r: 1.3, fill: true },
+    { k: 'poly', p: [14.3, 3.9, 18.1, 7.7, 8.6, 17.2, 4.2, 18.0, 5.0, 13.6], close: true },
+    { k: 'line', p: [7.33, 11.18, 10.98, 14.83] },
+    { k: 'box', p: [10.6, 18.2, 10.0, 2.6], r: 1.3, fill: true },
   ],
 
   /** Note — a page with a folded corner, for annotations. */
   note: [
-    { k: 'poly', p: [5.6, 3.4, 14.0, 3.4, 18.4, 7.8, 18.4, 20.6, 5.6, 20.6], close: true },
-    { k: 'poly', p: [14.0, 3.4, 14.0, 7.8, 18.4, 7.8] },
+    { k: 'poly', p: [5.0, 3.7, 13.8, 3.7, 19.0, 8.9, 19.0, 20.3, 5.0, 20.3], close: true },
+    { k: 'poly', p: [13.8, 3.7, 13.8, 8.9, 19.0, 8.9] },
   ],
 
-  /** Stats — three bars. */
+  /** Stats — three bars on a shared baseline. A segment is not extended past
+   *  its endpoints, so these must be authored a stroke taller than a boxed
+   *  icon to occupy the same optical band. */
   stats: [
-    { k: 'line', p: [5.8, 20.0, 5.8, 13.4] },
-    { k: 'line', p: [12.0, 20.0, 12.0, 7.4] },
-    { k: 'line', p: [18.2, 20.0, 18.2, 10.4] },
+    { k: 'line', p: [4.8, 20.4, 4.8, 12.4] },
+    { k: 'line', p: [12.0, 20.4, 12.0, 4.0] },
+    { k: 'line', p: [19.2, 20.4, 19.2, 8.8] },
   ],
 
   /** Settings — sliders. Reads better than a gear at 22px and draws crisply. */
   settings: [
-    { k: 'line', p: [3.4, 6.6, 20.6, 6.6] },
-    { k: 'line', p: [16.0, 4.2, 16.0, 9.0] },
-    { k: 'line', p: [3.4, 12.0, 20.6, 12.0] },
-    { k: 'line', p: [8.6, 9.6, 8.6, 14.4] },
-    { k: 'line', p: [3.4, 17.4, 20.6, 17.4] },
-    { k: 'line', p: [14.4, 15.0, 14.4, 19.8] },
+    { k: 'line', p: [3.6, 6.2, 20.4, 6.2] },
+    { k: 'line', p: [16.0, 3.6, 16.0, 8.8] },
+    { k: 'line', p: [3.6, 12.0, 20.4, 12.0] },
+    { k: 'line', p: [8.4, 9.4, 8.4, 14.6] },
+    { k: 'line', p: [3.6, 17.8, 20.4, 17.8] },
+    { k: 'line', p: [14.2, 15.2, 14.2, 20.4] },
   ],
 
   search: [
@@ -322,42 +378,46 @@ const PATHS = {
   ],
 
   plus: [
-    { k: 'line', p: [12, 4.6, 12, 19.4] },
-    { k: 'line', p: [4.6, 12, 19.4, 12] },
+    { k: 'line', p: [12, 4.0, 12, 20.0] },
+    { k: 'line', p: [4.0, 12, 20.0, 12] },
   ],
 
-  minus: [{ k: 'line', p: [4.6, 12, 19.4, 12] }],
+  minus: [{ k: 'line', p: [4.0, 12, 20.0, 12] }],
 
-  chevronLeft: [{ k: 'poly', p: [15.0, 4.6, 8.0, 12.0, 15.0, 19.4] }],
-  chevronRight: [{ k: 'poly', p: [9.0, 4.6, 16.0, 12.0, 9.0, 19.4] }],
-  chevronUp: [{ k: 'poly', p: [4.6, 15.0, 12.0, 8.0, 19.4, 15.0] }],
-  chevronDown: [{ k: 'poly', p: [4.6, 9.0, 12.0, 16.0, 19.4, 9.0] }],
+  // Chevrons sit just under the optical band — a bare diagonal pair reads
+  // larger than it measures, and these are usually beside text.
+  chevronLeft: [{ k: 'poly', p: [14.8, 4.8, 8.2, 12.0, 14.8, 19.2] }],
+  chevronRight: [{ k: 'poly', p: [9.2, 4.8, 15.8, 12.0, 9.2, 19.2] }],
+  chevronUp: [{ k: 'poly', p: [4.8, 14.8, 12.0, 8.2, 19.2, 14.8] }],
+  chevronDown: [{ k: 'poly', p: [4.8, 9.2, 12.0, 15.8, 19.2, 9.2] }],
 
   arrowLeft: [
     { k: 'line', p: [3.6, 12, 20.4, 12] },
-    { k: 'poly', p: [10.4, 5.2, 3.6, 12.0, 10.4, 18.8] },
+    { k: 'poly', p: [10.0, 5.6, 3.6, 12.0, 10.0, 18.4] },
   ],
   arrowRight: [
     { k: 'line', p: [3.6, 12, 20.4, 12] },
-    { k: 'poly', p: [13.6, 5.2, 20.4, 12.0, 13.6, 18.8] },
+    { k: 'poly', p: [14.0, 5.6, 20.4, 12.0, 14.0, 18.4] },
   ],
 
-  play: [{ k: 'tri', p: [7.6, 12, 12.0, 14.4] }],
+  /** Solid, so its bounding box is centred rather than its centroid — the same
+   *  convention every media player uses. */
+  play: [{ k: 'tri', p: [5.8, 12, 12.4, 15.6] }],
 
   pause: [
-    { k: 'box', p: [7.8, 5.0, 3.4, 14.0], r: 1.5, fill: true },
-    { k: 'box', p: [12.8, 5.0, 3.4, 14.0], r: 1.5, fill: true },
+    { k: 'box', p: [7.6, 4.4, 3.4, 15.2], r: 1.5, fill: true },
+    { k: 'box', p: [13.0, 4.4, 3.4, 15.2], r: 1.5, fill: true },
   ],
 
   bookmark: [
     { k: 'poly', p: [6.0, 3.6, 18.0, 3.6, 18.0, 20.4, 12.0, 15.2, 6.0, 20.4], close: true },
   ],
 
-  check: [{ k: 'poly', p: [4.6, 12.6, 9.8, 18.2, 19.4, 6.4] }],
+  check: [{ k: 'poly', p: [4.4, 12.4, 9.7, 18.3, 19.6, 5.9] }],
 
   close: [
-    { k: 'line', p: [5.6, 5.6, 18.4, 18.4] },
-    { k: 'line', p: [18.4, 5.6, 5.6, 18.4] },
+    { k: 'line', p: [5.0, 5.0, 19.0, 19.0] },
+    { k: 'line', p: [19.0, 5.0, 5.0, 19.0] },
   ],
 
   menu: [
@@ -367,8 +427,8 @@ const PATHS = {
   ],
 
   home: [
-    { k: 'poly', p: [2.8, 10.8, 12, 3.4, 21.2, 10.8] },
-    { k: 'poly', p: [5.2, 9.2, 5.2, 20.4, 18.8, 20.4, 18.8, 9.2] },
+    { k: 'poly', p: [3.6, 10.6, 12, 3.8, 20.4, 10.6] },
+    { k: 'poly', p: [5.4, 9.4, 5.4, 20.4, 18.6, 20.4, 18.6, 9.4] },
   ],
 
   trash: [
@@ -378,21 +438,21 @@ const PATHS = {
   ],
 
   download: [
-    { k: 'line', p: [12, 3.4, 12, 14.6] },
-    { k: 'poly', p: [7.0, 9.6, 12, 14.8, 17.0, 9.6] },
-    { k: 'poly', p: [3.8, 17.0, 3.8, 20.6, 20.2, 20.6, 20.2, 17.0] },
+    { k: 'line', p: [12, 3.6, 12, 14.8] },
+    { k: 'poly', p: [7.0, 9.8, 12, 14.8, 17.0, 9.8] },
+    { k: 'poly', p: [3.6, 17.0, 3.6, 20.4, 20.4, 20.4, 20.4, 17.0] },
   ],
 
   sort: [
-    { k: 'line', p: [3.8, 6.6, 20.2, 6.6] },
-    { k: 'line', p: [3.8, 12.0, 15.0, 12.0] },
-    { k: 'line', p: [3.8, 17.4, 10.0, 17.4] },
+    { k: 'line', p: [3.6, 6.4, 20.4, 6.4] },
+    { k: 'line', p: [3.6, 12.0, 14.8, 12.0] },
+    { k: 'line', p: [3.6, 17.6, 10.0, 17.6] },
   ],
 
   filter: [
     {
       k: 'poly',
-      p: [20.8, 4.2, 3.2, 4.2, 10.2, 12.5, 10.2, 18.3, 13.8, 20.0, 13.8, 12.5],
+      p: [20.4, 4.4, 3.6, 4.4, 10.3, 12.4, 10.3, 18.2, 13.7, 19.9, 13.7, 12.4],
       close: true,
     },
   ],

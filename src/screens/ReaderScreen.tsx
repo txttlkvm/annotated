@@ -5,7 +5,9 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
+  Animated,
   Share,
   Alert,
   Modal,
@@ -13,25 +15,45 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-// import * as ScreenBrightness from 'expo-screen-brightness'; // Not available
+import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
 import { AudioService, PlaybackState } from '../services/AudioService';
 import { GutenbergService, Paragraph } from '../services/GutenbergService';
 import BookCover from '../components/BookCover';
-import { colors, fonts, space, radius, elevation, readerPalettes } from '../theme';
+import Shell, { Column, useColumn } from '../components/Shell';
+import {
+  BookmarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MenuIcon,
+  PauseIcon,
+  PlayIcon,
+} from '../components/icons';
+import { colors, fonts, space, radius, elevation, layout, readerPalettes } from '../theme';
+import { DEFAULT_READER_SETTINGS } from '../types';
+import type { ReaderSettings } from '../types';
 
 /**
- * The reading surface.
+ * The reading surface — the most important screen in the app.
  *
  * Everything here serves one goal: a line of text that is comfortable to read
- * for an hour. That means a constrained measure (65-75 characters, which is
- * ~34em / 680px at our body size), a real book serif, 1.6-1.7 line-height, and
- * warm ink on a warm ground — never pure white on pure black.
+ * for an hour. That means
+ *
+ *   PAPER      cream ground, near-black serif. A book is not a terminal; dark
+ *              is an option the reader offers, not the state it opens in.
+ *   MEASURE    ~34em / 660px, centred. Uncapped, a 1365px desktop window ran
+ *              the text edge to edge at ~180 characters a line, which is
+ *              unreadable — the eye cannot find the next line's start.
+ *   NO CHROME  the page and a whisper of a page number. Header and controls
+ *              are hidden until the page is tapped.
+ *
+ * The chrome, when revealed, is capped to the same column as the text so it
+ * cannot spread two buttons across a desktop viewport either.
  */
 
 /** Optical maximum line length. Beyond this the eye loses the line return. */
-const MEASURE = 680;
+const MEASURE = layout.readerMaxWidth;
 
 /** Page margins, keyed off the user's marginSize setting. */
 const GUTTERS: Record<string, number> = {
@@ -47,6 +69,53 @@ const GUTTERS: Record<string, number> = {
  */
 const PAGE_BUDGET = { paginated: 1500, scroll: 3200 };
 
+/** Head margin, and the tail that keeps the last line clear of the controls. */
+const HEAD_SPACE = 88;
+const TAIL_SPACE = 112;
+
+/* ------------------------------------------------------------------ *
+ * READER DEFAULTS
+ *
+ * The reader opens on PAPER and JUSTIFIED. `DEFAULT_READER_SETTINGS` still
+ * ships `theme: 'dark'` / `textAlignment: 'left'` and that file is not this
+ * pass's to change, so the reader resolves the two itself — once — and then
+ * writes them into the store so the status bar and the Settings previews are
+ * describing the same page the reader is drawing.
+ *
+ * After that single push every value is obeyed verbatim: dark, night, ragged
+ * right and centred all stay fully available. The window in which the reader
+ * substitutes its own default is the first render of the session, and only for
+ * a setting still sitting on the shipped value.
+ *
+ * If the shipped defaults are later changed to match these, every branch below
+ * collapses to a no-op rather than fighting them.
+ * ------------------------------------------------------------------ */
+
+const READER_DEFAULTS = {
+  theme: 'light' as ReaderSettings['theme'],
+  textAlignment: 'justify' as ReaderSettings['textAlignment'],
+};
+
+/** Session flag: the reader's defaults are pushed into the store at most once. */
+let defaultsPushed = false;
+
+/**
+ * Substitute the reader's defaults for any setting still holding the shipped
+ * value. Value-based rather than identity-based on purpose: someone who nudges
+ * the font size in Settings has not thereby chosen to read on black.
+ */
+function withReaderDefaults(settings: ReaderSettings): ReaderSettings {
+  if (defaultsPushed) return settings;
+  const patch: Partial<ReaderSettings> = {};
+  if (settings.theme === DEFAULT_READER_SETTINGS.theme) patch.theme = READER_DEFAULTS.theme;
+  if (settings.textAlignment === DEFAULT_READER_SETTINGS.textAlignment) {
+    patch.textAlignment = READER_DEFAULTS.textAlignment;
+  }
+  return Object.keys(patch).length ? { ...settings, ...patch } : settings;
+}
+
+/** Themes that read as paper — used to label the light/dark toggle. */
+const PAPER_THEMES = new Set(['light', 'sepia']);
 
 /**
  * Highlight inks. The VALUE is what gets persisted on Highlight.color, so it
@@ -81,8 +150,22 @@ function formatClock(ms: number): string {
 }
 
 export default function ReaderScreen() {
-  const { currentBook, bookmarks, settings, updateSettings, addBookmark, addHighlight, addReadingSession } = useApp();
+  const {
+    currentBook,
+    bookmarks,
+    settings: storedSettings,
+    updateSettings,
+    addBookmark,
+    addHighlight,
+    addReadingSession,
+    textLoad,
+    isTextLoading,
+    retryTextLoad,
+  } = useApp();
+  const navigation = useNavigation<any>();
   const { width: windowWidth } = useWindowDimensions();
+
+  const settings = useMemo(() => withReaderDefaults(storedSettings), [storedSettings]);
 
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -93,6 +176,7 @@ export default function ReaderScreen() {
     duration: 0,
     rate: 1,
   });
+  const [chromeVisible, setChromeVisible] = useState(false);
   const [showMenus, setShowMenus] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [showHighlightColor, setShowHighlightColor] = useState(false);
@@ -100,11 +184,30 @@ export default function ReaderScreen() {
   const [bookmarkNote, setBookmarkNote] = useState('');
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT);
   const [sessionStartTime] = useState(Date.now());
-  const [headerHeight, setHeaderHeight] = useState(96);
+  const [headerHeight, setHeaderHeight] = useState(92);
 
   const scrollRef = useRef<ScrollView>(null);
 
-  const palette = readerPalettes[settings.theme] || readerPalettes.dark;
+  const palette = readerPalettes[settings.theme] || readerPalettes[READER_DEFAULTS.theme];
+  const onPaper = PAPER_THEMES.has(settings.theme);
+
+  /**
+   * Publish the reader's defaults to the store once, so the status bar, the
+   * Settings previews and the reader are all describing the same page — and so
+   * that from here on every setting is read back verbatim.
+   */
+  useEffect(() => {
+    if (defaultsPushed) return;
+    defaultsPushed = true;
+
+    const patch: Partial<ReaderSettings> = {};
+    if (storedSettings.theme !== settings.theme) patch.theme = settings.theme;
+    if (storedSettings.textAlignment !== settings.textAlignment) {
+      patch.textAlignment = settings.textAlignment;
+    }
+    if (Object.keys(patch).length) updateSettings(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     AudioService.onPlaybackStatus(setPlaybackState);
@@ -113,20 +216,31 @@ export default function ReaderScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    updateBrightness();
-  }, [settings.brightness]);
+  // --------------------------------------------------------------- chrome ----
 
-  const updateBrightness = async () => {
-    try {
-      if (!settings.autoBrightnessEnabled) {
-        // Screen brightness control not available
-        // await ScreenBrightness.setBrightnessAsync(settings.brightness);
-      }
-    } catch (error) {
-      console.error('Brightness error:', error);
+  const chromeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(chromeAnim, {
+      toValue: chromeVisible ? 1 : 0,
+      duration: 180,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
+    if (!chromeVisible) setShowMenus(false);
+  }, [chromeVisible, chromeAnim]);
+
+  /**
+   * Tap the page to reveal the furniture. On web a click that merely ends a
+   * text selection must not count — otherwise highlighting a sentence always
+   * throws the chrome up over the line you were reading.
+   */
+  const toggleChrome = useCallback(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const selection = window.getSelection?.();
+      if (selection && String(selection).trim().length > 0) return;
     }
-  };
+    setChromeVisible((visible) => !visible);
+  }, []);
 
   // ---------------------------------------------------------------- text ----
 
@@ -197,6 +311,7 @@ export default function ReaderScreen() {
   useEffect(() => {
     setCurrentPage(0);
     setIsPlaying(false);
+    setChromeVisible(false);
   }, [currentBook?.id]);
 
   // A page turn should land at the top of the new page, like a real book.
@@ -269,6 +384,7 @@ export default function ReaderScreen() {
     const onKey = (e: any) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown') handleNextPage();
       if (e.key === 'ArrowLeft' || e.key === 'PageUp') handlePreviousPage();
+      if (e.key === 'Escape') setChromeVisible(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -314,6 +430,11 @@ export default function ReaderScreen() {
     }
   };
 
+  /**
+   * `color` is a HEX STRING from HIGHLIGHT_SWATCHES and is persisted verbatim
+   * on Highlight.color. It must never become a semantic key ('rose', 'sage') —
+   * HighlightsScreen filters on the hex, and native cannot paint a keyword.
+   */
   const handleHighlight = async (color: string) => {
     if (!selectedText || !currentBook) return;
     try {
@@ -345,11 +466,53 @@ export default function ReaderScreen() {
     }
   };
 
+  // --------------------------------------------------------- typography ----
+  //
+  // Declared above the early returns so no hook below is called conditionally.
+
+  // The stored setting is a UI slider value; the reader floors it at a size
+  // that is actually comfortable for sustained reading.
+  const fontSize = Math.round(Math.min(28, Math.max(17, settings.fontSize + 2)));
+  const lineHeight = Math.round(fontSize * Math.min(2.1, Math.max(1.6, settings.lineHeight)));
+  const gutter = GUTTERS[settings.marginSize] ?? space.xl;
+  const paragraphGap = Math.round(fontSize * 0.8);
+  const textAlign = settings.textAlignment === 'justify' ? 'justify' : settings.textAlignment;
+  const chapterSize = Math.min(34, Math.max(24, Math.round(fontSize * 1.5)));
+
+  /**
+   * The column cap. The gutter lives INSIDE it, so the measure itself stays at
+   * MEASURE (~34em, 65–75 characters) whatever margin width the user picked —
+   * on a wide screen the margin setting widens the paper, not the line.
+   */
+  const columnCap = MEASURE + gutter * 2;
+  const column = useColumn(columnCap, gutter);
+
+  /**
+   * Dead space either side of the column on a desktop viewport. It is the one
+   * place a tap target can live without ever covering a word, so that is where
+   * the page-turn zones go. On a phone it is 0 and none are rendered.
+   */
+  const railWidth = Math.min(200, Math.max(0, Math.floor((windowWidth - columnCap) / 2)));
+  const showRails = railWidth >= 56;
+
+  const bodyStyle = {
+    fontFamily: fonts.reading,
+    fontSize,
+    lineHeight,
+    color: palette.text,
+    textAlign: textAlign as any,
+    letterSpacing: settings.letterSpacing,
+  };
+
+  const chromeStyle = {
+    opacity: chromeAnim,
+  };
+
   // -------------------------------------------------------------- states ----
 
   if (!currentBook) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Shell background={colors.bg} contentContainerStyle={styles.emptyShell}>
         <View style={styles.emptyState}>
           <View style={styles.emptyOrnament}>
             <View style={[styles.ornamentRule, { backgroundColor: colors.rule }]} />
@@ -361,14 +524,17 @@ export default function ReaderScreen() {
             Choose a volume from your library and it will open here, set in the hand of a book.
           </Text>
         </View>
-      </View>
+      </Shell>
     );
   }
 
   if (!parsed) {
-    const coverWidth = Math.min(160, Math.max(112, windowWidth * 0.34));
+    const coverWidth = Math.min(176, Math.max(120, Math.round(column.width * 0.4)));
+    const loadingThisBook = isTextLoading && textLoad.bookId === currentBook.id;
+    const failedThisBook = textLoad.status === 'error' && textLoad.bookId === currentBook.id;
+
     return (
-      <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Shell background={colors.bg} contentContainerStyle={styles.emptyShell}>
         <View style={styles.emptyState}>
           <BookCover
             uri={currentBook.cover}
@@ -380,124 +546,64 @@ export default function ReaderScreen() {
           <Text style={[styles.emptyTitle, { color: colors.gold, marginTop: space.xl }]}>
             {currentBook.title}
           </Text>
-          <Text style={[styles.emptyBody, { color: colors.inkMuted }]}>
-            The text of this volume has not been downloaded yet. Open it from the library to fetch
-            the full edition.
-          </Text>
+
+          {loadingThisBook ? (
+            <>
+              <ActivityIndicator color={colors.gold} style={{ marginBottom: space.md }} />
+              <Text style={[styles.emptyBody, { color: colors.inkMuted }]}>
+                Fetching the full edition from the archive…
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.emptyBody, { color: colors.inkMuted }]}>
+                {failedThisBook && textLoad.error
+                  ? textLoad.error
+                  : 'The text of this volume has not been downloaded yet. Open it from the library to fetch the full edition.'}
+              </Text>
+              {failedThisBook && (
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => {
+                    retryTextLoad().catch(() => {});
+                  }}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.retryLabel}>Try again</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
-      </View>
+      </Shell>
     );
   }
 
-  // --------------------------------------------------------- typography ----
-
-  // The stored setting is a UI slider value; the reader floors it at a size
-  // that is actually comfortable for sustained reading.
-  const fontSize = Math.round(Math.min(28, Math.max(17, settings.fontSize + 2)));
-  const lineHeight = Math.round(fontSize * Math.min(2.0, Math.max(1.6, settings.lineHeight)));
-  const gutter = GUTTERS[settings.marginSize] ?? space.xl;
-  const paragraphGap = Math.round(fontSize * 0.85);
-  const textAlign = settings.textAlignment === 'justify' ? 'justify' : settings.textAlignment;
-
-  const bodyStyle = {
-    fontFamily: fonts.reading,
-    fontSize,
-    lineHeight,
-    color: palette.text,
-    textAlign: textAlign as any,
-    letterSpacing: settings.letterSpacing,
-  };
+  const pageIndicator = `${safePage + 1} of ${totalPages}`;
 
   return (
-    <View style={[styles.container, { backgroundColor: palette.bg }]}>
-      {/* ------------------------------------------------------- header --- */}
-      <View
-        style={[styles.header, { backgroundColor: palette.surface, borderBottomColor: palette.rule }]}
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+    <View style={[styles.root, { backgroundColor: palette.bg }]}>
+      {/* ---------------------------------------------------------- page --- */}
+      <Shell
+        scroll
+        scrollRef={scrollRef}
+        maxWidth={columnCap}
+        gutter={gutter}
+        background="transparent"
+        tailSpace={0}
+        contentContainerStyle={{ paddingTop: HEAD_SPACE, paddingBottom: TAIL_SPACE }}
       >
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            {!!chapterTitle && (
-              <Text style={[styles.overline, { color: palette.accentSoft }]} numberOfLines={1}>
-                {chapterTitle.toUpperCase()}
-              </Text>
-            )}
-            <Text style={[styles.bookTitle, { color: palette.accent }]} numberOfLines={1}>
-              {currentBook.title}
-            </Text>
-            <Text style={[styles.meta, { color: palette.muted }]} numberOfLines={1}>
-              {currentBook.author ? `${currentBook.author}   ·   ` : ''}
-              {safePage + 1} of {totalPages}
-              {minutesLeft > 0 ? `   ·   ${minutesLeft} min left` : ''}
-              {bookBookmarks > 0 ? `   ·   ${bookBookmarks} marked` : ''}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.menuButton, { borderColor: palette.border, backgroundColor: showMenus ? palette.raised : 'transparent' }]}
-            onPress={() => setShowMenus(!showMenus)}
-            accessibilityLabel="Reading menu"
-          >
-            <Text style={[styles.menuIcon, { color: palette.accent }]}>≡</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Reading progress, as a bound-in ribbon rather than a web progress bar. */}
-        <View style={[styles.progressTrack, { backgroundColor: palette.rule }]}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${Math.round(progress * 100)}%`, backgroundColor: palette.accent },
-            ]}
-          />
-        </View>
-      </View>
-
-      {/* --------------------------------------------------------- menu --- */}
-      {showMenus && (
-        <View
-          style={[
-            styles.menu,
-            elevation.card,
-            { top: headerHeight + space.sm, backgroundColor: palette.raised, borderColor: palette.border },
-          ]}
-        >
-          {[
-            { label: 'Add bookmark', onPress: () => { setShowMenus(false); setShowBookmarkModal(true); } },
-            { label: 'Share this passage', onPress: () => { setShowMenus(false); handleShare(); } },
-            {
-              label: settings.pageMode === 'scroll' ? 'Switch to page mode' : 'Switch to scroll mode',
-              onPress: () => {
-                updateSettings({ pageMode: settings.pageMode === 'scroll' ? 'paginated' : 'scroll' });
-                setCurrentPage(0);
-                setShowMenus(false);
-              },
-            },
-            { label: 'Close menu', onPress: () => setShowMenus(false) },
-          ].map((item, i) => (
-            <TouchableOpacity
-              key={item.label}
-              onPress={item.onPress}
-              style={[styles.menuItem, i > 0 && { borderTopWidth: 1, borderTopColor: palette.rule }]}
-            >
-              <Text style={[styles.menuLabel, { color: palette.accent }]}>{item.label}</Text>
-              <Text style={[styles.menuChevron, { color: palette.accentSoft }]}>›</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      {/* --------------------------------------------------------- page --- */}
-      <ScrollView
-        ref={scrollRef}
-        style={[styles.textContainer, { backgroundColor: palette.bg }]}
-        contentContainerStyle={[styles.textContent, { paddingHorizontal: gutter }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.measure}>
+        <Pressable onPress={toggleChrome} accessibilityLabel="Show reading controls">
           {page?.startsChapter && !!chapterTitle && (
             <View style={styles.chapterOpener}>
-              <Text style={[styles.chapterTitle, { color: palette.accent }]}>{chapterTitle}</Text>
+              <Text
+                style={[
+                  styles.chapterTitle,
+                  { color: palette.text, fontSize: chapterSize, lineHeight: Math.round(chapterSize * 1.25) },
+                ]}
+              >
+                {chapterTitle}
+              </Text>
               <View style={styles.ornament}>
                 <View style={[styles.ornamentRule, { backgroundColor: palette.rule }]} />
                 <View style={[styles.ornamentDiamond, { borderColor: palette.accentSoft }]} />
@@ -529,73 +635,259 @@ export default function ReaderScreen() {
             <View style={[styles.ornamentDiamond, { borderColor: palette.accentSoft }]} />
             <View style={[styles.ornamentRule, { backgroundColor: palette.rule }]} />
           </View>
-        </View>
-      </ScrollView>
+        </Pressable>
+      </Shell>
 
-      {/* -------------------------------------------------------- audio --- */}
-      {isPlaying && (
-        <View style={[styles.audioBar, { backgroundColor: palette.surface, borderTopColor: palette.rule }]}>
-          <View style={[styles.audioTrack, { backgroundColor: palette.rule }]}>
-            <View
-              style={[
-                styles.audioFill,
-                {
-                  backgroundColor: palette.accent,
-                  width: `${playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0}%`,
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.audioTime, { color: palette.muted }]}>
-            {formatClock(playbackState.position)} / {formatClock(playbackState.duration)}
-          </Text>
+      {/* --------------------------------------------------------- rails --- */}
+      {/* Desktop only: the empty margin turns the page, so a mouse never has to
+          go hunting for chrome that is deliberately hidden. */}
+      {showRails && (
+        <>
+          <Pressable
+            style={[styles.rail, { left: 0, width: railWidth }]}
+            onPress={handlePreviousPage}
+            disabled={safePage === 0}
+            accessibilityLabel="Previous page"
+          >
+            {safePage > 0 && (
+              <View style={styles.railGlyph}>
+                <ChevronLeftIcon size={22} color={palette.muted} strokeWidth={1.6} />
+              </View>
+            )}
+          </Pressable>
+          <Pressable
+            style={[styles.rail, { right: 0, width: railWidth }]}
+            onPress={handleNextPage}
+            disabled={safePage >= totalPages - 1}
+            accessibilityLabel="Next page"
+          >
+            {safePage < totalPages - 1 && (
+              <View style={styles.railGlyph}>
+                <ChevronRightIcon size={22} color={palette.muted} strokeWidth={1.6} />
+              </View>
+            )}
+          </Pressable>
+        </>
+      )}
+
+      {/* ------------------------------------------------- quiet indicator --- */}
+      {/* "4 of 1049", centred, barely there. The only mark on a bare page. */}
+      {!chromeVisible && (
+        <View pointerEvents="none" style={styles.quietFolio}>
+          <Text style={[styles.folio, { color: palette.muted }]}>{pageIndicator}</Text>
+          {isPlaying && (
+            <View style={[styles.hairline, { backgroundColor: palette.rule }]}>
+              <View
+                style={[
+                  styles.hairlineFill,
+                  {
+                    backgroundColor: palette.accent,
+                    width: `${playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0}%`,
+                  },
+                ]}
+              />
+            </View>
+          )}
         </View>
       )}
 
-      {/* ----------------------------------------------------- controls --- */}
-      <View style={[styles.controls, { backgroundColor: palette.surface, borderTopColor: palette.rule }]}>
-        <TouchableOpacity
-          style={[
-            styles.pageButton,
-            { borderColor: palette.border, backgroundColor: palette.raised },
-            safePage === 0 && styles.disabled,
-          ]}
-          onPress={handlePreviousPage}
-          disabled={safePage === 0}
-        >
-          <Text style={[styles.pageButtonText, { color: palette.accent }]}>‹  Previous</Text>
-        </TouchableOpacity>
+      {/* -------------------------------------------------------- header --- */}
+      <Animated.View
+        pointerEvents={chromeVisible ? 'auto' : 'none'}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+        style={[
+          styles.chromeTop,
+          chromeStyle,
+          { backgroundColor: palette.surface, borderBottomColor: palette.rule },
+        ]}
+      >
+        <Column maxWidth={columnCap} gutter={gutter}>
+          <View style={styles.chromeTopRow}>
+            <View style={styles.chromeTitles}>
+              {!!chapterTitle && (
+                <Text style={[styles.overline, { color: palette.accentSoft }]} numberOfLines={1}>
+                  {chapterTitle.toUpperCase()}
+                </Text>
+              )}
+              <Text style={[styles.bookTitle, { color: palette.accent }]} numberOfLines={1}>
+                {currentBook.title}
+              </Text>
+              <Text style={[styles.meta, { color: palette.muted }]} numberOfLines={1}>
+                {currentBook.author ? `${currentBook.author}   ·   ` : ''}
+                {minutesLeft > 0 ? `${minutesLeft} min left` : 'Last page'}
+                {bookBookmarks > 0 ? `   ·   ${bookBookmarks} marked` : ''}
+              </Text>
+            </View>
 
-        <TouchableOpacity
-          style={[
-            styles.playButton,
-            { borderColor: palette.accent, backgroundColor: isPlaying ? palette.accent : palette.raised },
-          ]}
-          onPress={isPlaying ? handlePause : handleReadAloud}
-          disabled={isLoadingAudio}
-          accessibilityLabel={isPlaying ? 'Pause reading' : 'Read aloud'}
-        >
-          {isLoadingAudio ? (
-            <ActivityIndicator color={palette.accent} />
-          ) : (
-            <Text style={[styles.playIcon, { color: isPlaying ? palette.surface : palette.accent }]}>
-              {isPlaying ? '❙❙' : '▶'}
-            </Text>
+            <TouchableOpacity
+              style={[styles.iconButton, { borderColor: palette.border }]}
+              onPress={() => setShowBookmarkModal(true)}
+              accessibilityLabel="Add bookmark"
+            >
+              <BookmarkIcon size={17} color={palette.accent} strokeWidth={1.7} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.iconButton,
+                { borderColor: palette.border, backgroundColor: showMenus ? palette.raised : 'transparent' },
+              ]}
+              onPress={() => setShowMenus(!showMenus)}
+              accessibilityLabel="Reading menu"
+            >
+              <MenuIcon size={17} color={palette.accent} strokeWidth={1.7} />
+            </TouchableOpacity>
+          </View>
+        </Column>
+
+        {/* Reading progress, as a bound-in ribbon rather than a web progress bar. */}
+        <View style={[styles.progressTrack, { backgroundColor: palette.rule }]}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${Math.round(progress * 100)}%`, backgroundColor: palette.accent },
+            ]}
+          />
+        </View>
+      </Animated.View>
+
+      {/* ---------------------------------------------------------- menu --- */}
+      {chromeVisible && showMenus && (
+        <View style={[styles.menuLayer, { top: headerHeight + space.sm }]} pointerEvents="box-none">
+          <Column maxWidth={columnCap} gutter={gutter}>
+            <View
+              style={[
+                styles.menu,
+                elevation.card,
+                { backgroundColor: palette.raised, borderColor: palette.border },
+              ]}
+            >
+              {[
+                {
+                  label: onPaper ? 'Read in the dark' : 'Read on paper',
+                  onPress: () => {
+                    updateSettings({ theme: onPaper ? 'dark' : READER_DEFAULTS.theme });
+                    setShowMenus(false);
+                  },
+                },
+                {
+                  label: settings.pageMode === 'scroll' ? 'Switch to page mode' : 'Switch to scroll mode',
+                  onPress: () => {
+                    updateSettings({ pageMode: settings.pageMode === 'scroll' ? 'paginated' : 'scroll' });
+                    setCurrentPage(0);
+                    setShowMenus(false);
+                  },
+                },
+                {
+                  label: 'Contents',
+                  onPress: () => {
+                    setShowMenus(false);
+                    navigation.navigate('TableOfContents');
+                  },
+                },
+                {
+                  label: 'Highlights',
+                  onPress: () => {
+                    setShowMenus(false);
+                    navigation.navigate('Highlights');
+                  },
+                },
+                { label: 'Share this passage', onPress: () => { setShowMenus(false); handleShare(); } },
+                { label: 'Close menu', onPress: () => setShowMenus(false) },
+              ].map((item, i) => (
+                <TouchableOpacity
+                  key={item.label}
+                  onPress={item.onPress}
+                  style={[styles.menuItem, i > 0 && { borderTopWidth: 1, borderTopColor: palette.rule }]}
+                >
+                  <Text style={[styles.menuLabel, { color: palette.accent }]}>{item.label}</Text>
+                  <Text style={[styles.menuChevron, { color: palette.accentSoft }]}>›</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Column>
+        </View>
+      )}
+
+      {/* ------------------------------------------------------ controls --- */}
+      <Animated.View
+        pointerEvents={chromeVisible ? 'auto' : 'none'}
+        style={[
+          styles.chromeBottom,
+          chromeStyle,
+          { backgroundColor: palette.surface, borderTopColor: palette.rule },
+        ]}
+      >
+        <Column maxWidth={columnCap} gutter={gutter}>
+          {isPlaying && (
+            <View style={styles.audioBar}>
+              <View style={[styles.audioTrack, { backgroundColor: palette.rule }]}>
+                <View
+                  style={[
+                    styles.audioFill,
+                    {
+                      backgroundColor: palette.accent,
+                      width: `${playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.audioTime, { color: palette.muted }]}>
+                {formatClock(playbackState.position)} / {formatClock(playbackState.duration)}
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.pageButton,
-            { borderColor: palette.border, backgroundColor: palette.raised },
-            safePage >= totalPages - 1 && styles.disabled,
-          ]}
-          onPress={handleNextPage}
-          disabled={safePage >= totalPages - 1}
-        >
-          <Text style={[styles.pageButtonText, { color: palette.accent }]}>Next  ›</Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={[styles.folio, styles.folioInChrome, { color: palette.muted }]}>
+            {pageIndicator}
+          </Text>
+
+          <View style={styles.controlRow}>
+            <TouchableOpacity
+              style={[
+                styles.roundButton,
+                { borderColor: palette.border, backgroundColor: palette.raised },
+                safePage === 0 && styles.disabled,
+              ]}
+              onPress={handlePreviousPage}
+              disabled={safePage === 0}
+              accessibilityLabel="Previous page"
+            >
+              <ChevronLeftIcon size={19} color={palette.accent} strokeWidth={1.9} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
+              onPress={isPlaying ? handlePause : handleReadAloud}
+              disabled={isLoadingAudio}
+              accessibilityLabel={isPlaying ? 'Pause reading' : 'Read aloud'}
+            >
+              {isLoadingAudio ? (
+                <ActivityIndicator color={palette.accent} size="small" />
+              ) : isPlaying ? (
+                <PauseIcon size={17} color={palette.accent} />
+              ) : (
+                <PlayIcon size={17} color={palette.accent} />
+              )}
+            </TouchableOpacity>
+
+            {/* The one saturated control on the page: the next thing to do. */}
+            <TouchableOpacity
+              style={[
+                styles.nextButton,
+                { backgroundColor: colors.action },
+                safePage >= totalPages - 1 && styles.disabled,
+              ]}
+              onPress={handleNextPage}
+              disabled={safePage >= totalPages - 1}
+              accessibilityLabel="Next page"
+            >
+              <Text style={styles.nextLabel}>Next</Text>
+              <ChevronRightIcon size={15} color={colors.actionInk} strokeWidth={2.1} />
+            </TouchableOpacity>
+          </View>
+        </Column>
+      </Animated.View>
 
       {/* ------------------------------------------------------ bookmark --- */}
       <Modal visible={showBookmarkModal} transparent animationType="fade">
@@ -604,37 +896,37 @@ export default function ReaderScreen() {
             style={[
               styles.modalCard,
               elevation.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: colors.gold }]}>Add a bookmark</Text>
-            <Text style={[styles.modalCaption, { color: colors.inkMuted }]}>
+            <Text style={[styles.modalTitle, { color: palette.accent }]}>Add a bookmark</Text>
+            <Text style={[styles.modalCaption, { color: palette.muted }]}>
               Page {safePage + 1} of {totalPages}
               {chapterTitle ? ` · ${chapterTitle}` : ''}
             </Text>
             <TextInput
               style={[
                 styles.bookmarkInput,
-                { color: colors.ink, borderColor: colors.border, backgroundColor: colors.bg },
+                { color: palette.text, borderColor: palette.border, backgroundColor: palette.bg },
               ]}
               placeholder="A note, if you wish"
-              placeholderTextColor={colors.bronze}
+              placeholderTextColor={palette.muted}
               value={bookmarkNote}
               onChangeText={setBookmarkNote}
               multiline
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, { borderColor: colors.border }]}
+                style={[styles.modalButton, { borderColor: palette.border }]}
                 onPress={() => setShowBookmarkModal(false)}
               >
-                <Text style={[styles.modalButtonText, { color: colors.inkMuted }]}>Cancel</Text>
+                <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.surfaceRaised, borderColor: colors.gold }]}
+                style={[styles.modalButton, styles.modalButtonPrimary, { backgroundColor: colors.action }]}
                 onPress={handleAddBookmark}
               >
-                <Text style={[styles.modalButtonText, { color: colors.goldBright }]}>Save</Text>
+                <Text style={[styles.modalButtonText, { color: colors.actionInk }]}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -648,11 +940,11 @@ export default function ReaderScreen() {
             style={[
               styles.modalCard,
               elevation.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: colors.gold }]}>Mark this passage</Text>
-            <Text style={[styles.modalExcerpt, { color: colors.ink }]} numberOfLines={4}>
+            <Text style={[styles.modalTitle, { color: palette.accent }]}>Mark this passage</Text>
+            <Text style={[styles.modalExcerpt, { color: palette.text }]} numberOfLines={4}>
               {selectedText}
             </Text>
             <View style={styles.swatchRow}>
@@ -662,23 +954,23 @@ export default function ReaderScreen() {
                   accessibilityLabel={s.label}
                   style={[
                     styles.swatch,
-                    { borderColor: highlightColor === s.value ? colors.goldBright : colors.border },
+                    { borderColor: highlightColor === s.value ? palette.accent : palette.border },
                   ]}
                   onPress={() => handleHighlight(s.value)}
                 >
                   <View style={[styles.swatchDot, { backgroundColor: s.value }]} />
-                  <Text style={[styles.swatchLabel, { color: colors.inkMuted }]}>{s.label}</Text>
+                  <Text style={[styles.swatchLabel, { color: palette.muted }]}>{s.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <TouchableOpacity
-              style={[styles.modalButton, { borderColor: colors.border, marginTop: space.md }]}
+              style={[styles.modalButton, { borderColor: palette.border, marginTop: space.md }]}
               onPress={() => {
                 setSelectedText('');
                 setShowHighlightColor(false);
               }}
             >
-              <Text style={[styles.modalButtonText, { color: colors.inkMuted }]}>Cancel</Text>
+              <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -688,49 +980,170 @@ export default function ReaderScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  root: { flex: 1 },
 
-  header: {
+  // --- chrome --------------------------------------------------------------
+
+  chromeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
     paddingTop: space.lg,
-    paddingHorizontal: space.xl,
     borderBottomWidth: 1,
+    alignItems: 'center',
   },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.lg },
-  headerText: { flex: 1, paddingBottom: space.md },
+  chromeTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.sm,
+    paddingBottom: space.md,
+  },
+  chromeTitles: { flex: 1, minWidth: 0 },
   overline: {
     fontFamily: fonts.ui,
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 1.4,
     marginBottom: space.xs,
   },
   bookTitle: {
     fontFamily: fonts.display,
-    fontSize: 20,
+    fontSize: 19,
     letterSpacing: 0.3,
-    marginBottom: space.xs,
+    marginBottom: 2,
   },
   meta: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 0.3 },
-  menuButton: {
-    width: 40,
-    height: 40,
+  iconButton: {
+    width: 38,
+    height: 38,
     borderRadius: radius.pill,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: space.xs,
+    marginTop: 2,
   },
-  menuIcon: { fontSize: 18, lineHeight: 20 },
 
-  progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 1 },
+  progressTrack: { height: 2, width: '100%' },
+  progressFill: { height: '100%' },
 
-  menu: {
+  chromeBottom: {
     position: 'absolute',
-    right: space.lg,
-    left: space.lg,
-    maxWidth: 360,
-    alignSelf: 'flex-end',
+    bottom: 0,
+    left: 0,
+    right: 0,
     zIndex: 20,
+    paddingTop: space.md,
+    paddingBottom: space.lg,
+    borderTopWidth: 1,
+    alignItems: 'center',
+  },
+  controlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.md,
+  },
+  roundButton: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    height: 48,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.pill,
+    flexShrink: 1,
+  },
+  nextLabel: {
+    fontFamily: fonts.ui,
+    fontSize: 14,
+    letterSpacing: 0.6,
+    fontWeight: '600',
+    color: colors.actionInk,
+  },
+  disabled: { opacity: 0.32 },
+
+  // --- page furniture ------------------------------------------------------
+
+  /** "4 of 1049". Quiet, centred, the only mark on an otherwise bare page. */
+  quietFolio: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: space.lg,
+    alignItems: 'center',
+  },
+  folio: {
+    fontFamily: fonts.ui,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    opacity: 0.75,
+    textAlign: 'center',
+  },
+  folioInChrome: { marginBottom: space.md, opacity: 1 },
+
+  hairline: {
+    marginTop: space.sm,
+    height: 2,
+    width: 120,
+    borderRadius: 1,
+    overflow: 'hidden',
+  },
+  hairlineFill: { height: '100%' },
+
+  /** Desktop page-turn zones, living in the dead margin beside the column. */
+  rail: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  railGlyph: { opacity: 0.28 },
+
+  chapterOpener: { marginTop: space.lg, marginBottom: space.xxl, alignItems: 'center' },
+  chapterTitle: {
+    fontFamily: fonts.display,
+    letterSpacing: 0.4,
+    textAlign: 'center',
+    marginBottom: space.xl,
+  },
+
+  ornament: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md },
+  ornamentRule: { height: 1, width: 56 },
+  ornamentDiamond: {
+    width: 6,
+    height: 6,
+    borderWidth: 1,
+    transform: [{ rotate: '45deg' }],
+  },
+
+  audioBar: { paddingBottom: space.md },
+  audioTrack: { height: 3, borderRadius: 2, overflow: 'hidden', marginBottom: space.sm },
+  audioFill: { height: '100%', borderRadius: 2 },
+  audioTime: { fontFamily: fonts.ui, fontSize: 12, textAlign: 'center', letterSpacing: 0.6 },
+
+  // --- menu ----------------------------------------------------------------
+
+  menuLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 30,
+    alignItems: 'center',
+  },
+  menu: {
+    alignSelf: 'flex-end',
+    width: '100%',
+    maxWidth: 300,
     borderWidth: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
@@ -745,74 +1158,12 @@ const styles = StyleSheet.create({
   menuLabel: { fontFamily: fonts.ui, fontSize: 14, letterSpacing: 0.3 },
   menuChevron: { fontSize: 16 },
 
-  textContainer: { flex: 1 },
-  textContent: {
-    paddingTop: space.xxl,
-    paddingBottom: space.xxxl,
-  },
-  /** The measure: never wider than a comfortable line, always centred. */
-  measure: { width: '100%', maxWidth: MEASURE, alignSelf: 'center' },
+  // --- empty / loading states ---------------------------------------------
 
-  chapterOpener: { marginBottom: space.xxl, alignItems: 'center' },
-  chapterTitle: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    letterSpacing: 0.6,
-    textAlign: 'center',
-    marginBottom: space.lg,
-  },
-
-  ornament: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md },
-  ornamentRule: { height: 1, width: 56 },
-  ornamentDiamond: {
-    width: 6,
-    height: 6,
-    borderWidth: 1,
-    transform: [{ rotate: '45deg' }],
-  },
-
-  audioBar: {
-    paddingHorizontal: space.xl,
-    paddingVertical: space.md,
-    borderTopWidth: 1,
-  },
-  audioTrack: { height: 3, borderRadius: 2, overflow: 'hidden', marginBottom: space.sm },
-  audioFill: { height: '100%', borderRadius: 2 },
-  audioTime: { fontFamily: fonts.ui, fontSize: 12, textAlign: 'center', letterSpacing: 0.6 },
-
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: space.lg,
-    paddingVertical: space.lg,
-    borderTopWidth: 1,
-    gap: space.md,
-  },
-  pageButton: {
-    flex: 1,
-    paddingVertical: space.md + 2,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pageButtonText: { fontFamily: fonts.ui, fontSize: 13, letterSpacing: 0.8 },
-  disabled: { opacity: 0.35 },
-  playButton: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playIcon: { fontSize: 15, letterSpacing: 1 },
-
+  emptyShell: { flexGrow: 1, justifyContent: 'center' },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: space.xxl,
+    paddingVertical: space.xxxl,
   },
   emptyOrnament: {
     flexDirection: 'row',
@@ -835,16 +1186,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 380,
   },
+  retryButton: {
+    marginTop: space.xl,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
+    borderRadius: radius.pill,
+    backgroundColor: colors.action,
+  },
+  retryLabel: {
+    fontFamily: fonts.ui,
+    fontSize: 13,
+    letterSpacing: 0.6,
+    fontWeight: '600',
+    color: colors.actionInk,
+  },
+
+  // --- modals --------------------------------------------------------------
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(8, 5, 16, 0.72)',
+    backgroundColor: 'rgba(8, 5, 16, 0.62)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: space.xl,
   },
   modalCard: {
-    borderRadius: radius.lg,
+    borderRadius: radius.hero,
     borderWidth: 1,
     padding: space.xl,
     width: '100%',
@@ -877,6 +1244,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
+  modalButtonPrimary: { borderColor: 'transparent' },
   modalButtonText: { fontFamily: fonts.ui, fontSize: 13, letterSpacing: 0.8 },
 
   swatchRow: { flexDirection: 'row', gap: space.sm },

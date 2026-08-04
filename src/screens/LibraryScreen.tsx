@@ -1,4 +1,28 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+// LibraryScreen — the app's home.
+//
+// Rebuilt against the owner's reference apps. Four structural changes:
+//
+// 1. <Shell>. This screen was the worst full-bleed offender: with no cap, the
+//    four sort/view buttons were `flex: 1` inside a 1365px row, so each one
+//    rendered ~340–640px wide. Everything now lives in the centred phone-width
+//    column, and every cover size is computed from `useColumnWidth()` rather
+//    than from `Dimensions.get('window')`.
+//
+// 2. A HERO "Continue Reading" card. The signature move of every reference: a
+//    large cover, the title, a progress bar, "page X of Y", and the screen's
+//    ONE saturated action-coloured CTA. It is a panel, not a list row.
+//
+// 3. A <Carousel> of recent volumes under it, then the shelf itself with
+//    covers at 84–150px instead of the old 58px postage stamps.
+//
+// 4. An empty state that shows books rather than a lone ✦ glyph.
+//
+// The import flow — pickFile → importFile → the ImportStatus banner, its
+// phases, its percentages and its dismissal timing — is carried over verbatim.
+// It is the only honest feedback channel on web (react-native-web does not
+// implement Alert.alert) and nothing here changes its behaviour.
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,28 +31,39 @@ import {
   Text,
   TextInput,
   ActivityIndicator,
-  useWindowDimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { EbookService } from '../services/EbookService';
 import type { PickedFile } from '../services/EbookService';
 import { Book } from '../types';
 import BookCover from '../components/BookCover';
-import { colors, type as t, space, radius, elevation } from '../theme';
-
-const LIST_COVER_W = 58;
+import Shell, { useColumnWidth } from '../components/Shell';
+import Section from '../components/Section';
+import Carousel from '../components/Carousel';
+import {
+  PlusIcon,
+  SearchIcon,
+  CloseIcon,
+  CollectionsIcon,
+  MenuIcon,
+  PlayIcon,
+  ChevronRightIcon,
+} from '../components/icons';
+import { colors, type as t, space, radius, elevation, layout } from '../theme';
 
 /**
  * How many imported books get their full text restored automatically on
  * arrival. Each one is potentially megabytes of string held in memory, so the
- * rest are restored on tap instead (see `openBook`). Recently-read books come
- * first, which is what the shelf is sorted by anyway.
+ * rest are restored on tap instead (see `openDetails`). Recently-read books
+ * come first, which is what the shelf is sorted by anyway.
  */
 const MAX_AUTO_HYDRATE = 6;
 
 /** Success messages clear themselves; problems wait to be acknowledged. */
 const SUCCESS_DISMISS_MS = 6000;
+
+/** Most recent volumes shown in the carousel. */
+const MAX_RECENT = 12;
 
 type ImportPhase = 'idle' | 'working' | 'success' | 'partial' | 'error';
 
@@ -51,6 +86,13 @@ interface ImportStatus {
   percent: number;
   /** Current stage, e.g. "Extracting text — section 4 of 31". */
   stageLabel?: string;
+  /**
+   * Set when this status is about one shelved volume (opening it, restoring
+   * or downloading its text) rather than about an incoming file. It is what
+   * lets the hero CTA spin for its OWN book and stay still for an import
+   * running elsewhere on the screen.
+   */
+  bookId?: string;
 }
 
 const IDLE: ImportStatus = { phase: 'idle', title: '', percent: 0 };
@@ -69,6 +111,19 @@ const PHASE_GLYPH: Record<Exclude<ImportPhase, 'idle'>, string> = {
   error: '✕',
 };
 
+const SORTS: Array<{ key: 'recent' | 'title' | 'author'; label: string }> = [
+  { key: 'recent', label: 'Recent' },
+  { key: 'title', label: 'Title' },
+  { key: 'author', label: 'Author' },
+];
+
+/** The three ghost spines drawn on the empty shelf. Never a lone glyph. */
+const EMPTY_SHELF: Array<{ title: string; author: string; tilt: string }> = [
+  { title: 'Confessions', author: 'Augustine', tilt: '-7deg' },
+  { title: 'The Iliad', author: 'Homer', tilt: '0deg' },
+  { title: 'Consolation', author: 'Boethius', tilt: '7deg' },
+];
+
 /** '#c9a961' + 0.3 -> '#c9a9614d'. Eight-digit hex is fine on web and native. */
 function withAlpha(hex: string, alpha: number): string {
   const clamped = Math.max(0, Math.min(1, alpha));
@@ -78,28 +133,71 @@ function withAlpha(hex: string, alpha: number): string {
   return `${hex}${suffix}`;
 }
 
-export default function LibraryScreen({ navigation }: any) {
-  const { books, addBook, updateBook } = useApp();
-  const { width } = useWindowDimensions();
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>(books);
+/** `addedDate` is a string on imports and a number on catalogue entries. */
+function toMillis(value: string | number | undefined): number {
+  if (typeof value === 'number') return value;
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function progressPercent(book: Book): number {
+  if (!book.totalPages || book.totalPages <= 0) return 0;
+  return clamp((book.currentProgress / book.totalPages) * 100, 0, 100);
+}
+
+export default function LibraryScreen({ navigation }: any) {
+  const {
+    books,
+    addBook,
+    updateBook,
+    setCurrentBook,
+    openBook: openBookText,
+    clearTextError,
+  } = useApp();
+
+  // THE fix: content width comes from the capped column, never the window.
+  //
+  // The page gutter is applied by the FlatList's contentContainerStyle rather
+  // than by <Shell>, so the scroller's clip box is the FULL column: a vertical
+  // ScrollView compiles to `overflow-x: hidden` on web, and if the gutter sat
+  // outside the scroller that clip would land exactly on the covers' edges and
+  // shear the drop shadow off the outer grid column and off the carousel — the
+  // same defect Carousel.tsx documents at length. Clipping at the padding box
+  // instead means the shadows have the gutter to spill into.
+  //
+  // `useColumnWidth(undefined, layout.gutter)` therefore measures the column
+  // WITH the gutter subtracted, even though the Shell itself applies none.
+  const col = useColumnWidth(undefined, layout.gutter);
+
   const [searchText, setSearchText] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'title' | 'author'>('recent');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [importStatus, setImportStatus] = useState<ImportStatus>(IDLE);
 
   const isBusy = importStatus.phase === 'working';
+  const searching = searchText.trim().length > 0;
 
-  // Two columns inside listContent padding, minus card margins and padding.
-  const gridCoverWidth = Math.max(72, Math.floor((width - space.xl) / 2 - space.md - space.xl));
+  /* ------------------------------------------------------------- sizing */
 
-  useFocusEffect(
-    useCallback(() => {
-      updateFilteredBooks();
-    }, [books, searchText, sortBy])
-  );
+  // Covers are the hero object, so they are sized as a fraction of the column
+  // and only then clamped — a phone gets proportionally the same layout as a
+  // desktop, because the desktop is running the same 480px column.
+  const heroCoverW = clamp(Math.round(col * 0.3), 92, 136);
+  const carouselItemW = clamp(Math.round(col * 0.33), 104, 148);
+  const listCoverW = clamp(Math.round(col * 0.19), 70, 88);
 
-  const updateFilteredBooks = () => {
+  const gridCols = col >= 380 ? 3 : 2;
+  const gridGap = space.md;
+  const gridCellW = Math.floor((col - gridGap * (gridCols - 1)) / gridCols);
+
+  /* ------------------------------------------------------------ shelving */
+
+  const filteredBooks = useMemo(() => {
     const needle = searchText.trim().toLowerCase();
     const filtered = books.filter(
       b =>
@@ -108,7 +206,8 @@ export default function LibraryScreen({ navigation }: any) {
         (b.author?.toLowerCase().includes(needle) ?? false)
     );
 
-    filtered.sort((a, b) => {
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
       switch (sortBy) {
         case 'title':
           return a.title.localeCompare(b.title);
@@ -120,8 +219,35 @@ export default function LibraryScreen({ navigation }: any) {
       }
     });
 
-    setFilteredBooks(filtered);
-  };
+    return sorted;
+  }, [books, searchText, sortBy]);
+
+  /** The volume the hero card offers. Most recently opened, still unfinished. */
+  const heroBook = useMemo(() => {
+    const inProgress = books.filter(
+      b =>
+        !b.isFinished &&
+        b.itemType !== 'music' &&
+        b.itemType !== 'art' &&
+        (b.currentProgress > 0 || !!b.lastReadDate)
+    );
+    if (inProgress.length === 0) return null;
+    return inProgress.sort((a, b) => (b.lastReadDate || 0) - (a.lastReadDate || 0))[0];
+  }, [books]);
+
+  const recentBooks = useMemo(() => {
+    const rest = books.filter(b => b.id !== heroBook?.id);
+    rest.sort(
+      (a, b) =>
+        (b.lastReadDate || 0) - (a.lastReadDate || 0) ||
+        toMillis(b.addedDate) - toMillis(a.addedDate)
+    );
+    return rest.slice(0, MAX_RECENT);
+  }, [books, heroBook]);
+
+  const anyRead = recentBooks.some(b => !!b.lastReadDate);
+
+  const inProgressCount = books.filter(b => b.currentProgress > 0 && !b.isFinished).length;
 
   /* ------------------------------------------------------------- rehydrate */
 
@@ -154,6 +280,15 @@ export default function LibraryScreen({ navigation }: any) {
       cancelled = true;
     };
   }, [books]);
+
+  /** A download outlives a fast tab switch; never navigate after leaving. */
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   /* ---------------------------------------------------------------- import */
 
@@ -248,12 +383,14 @@ export default function LibraryScreen({ navigation }: any) {
     }
   };
 
+  /* ----------------------------------------------------------- navigation */
+
   /**
-   * Open a book, restoring an imported book's text first if this session has
-   * not loaded it yet. Navigation happens either way — the details screen is
-   * still worth showing when the text is gone.
+   * Open a book's page, restoring an imported book's text first if this
+   * session has not loaded it yet. Navigation happens either way — the details
+   * screen is still worth showing when the text is gone.
    */
-  const openBook = async (book: Book) => {
+  const openDetails = async (book: Book) => {
     if (book.content || !EbookService.hasStoredText(book)) {
       navigation.navigate('BookDetails', { bookId: book.id });
       return;
@@ -263,6 +400,7 @@ export default function LibraryScreen({ navigation }: any) {
       phase: 'working',
       title: 'Opening',
       detail: book.title,
+      bookId: book.id,
       percent: 40,
       stageLabel: 'Restoring text',
     });
@@ -281,6 +419,97 @@ export default function LibraryScreen({ navigation }: any) {
         hint: 'Import the file again to read it here.',
         percent: 0,
       });
+    }
+
+    if (!mountedRef.current) return;
+    navigation.navigate('BookDetails', { bookId: book.id });
+  };
+
+  const goToReader = () => navigation.navigate('Reading', { screen: 'ReaderHome' });
+
+  /**
+   * The hero CTA. Straight onto the page the reader left off at, restoring or
+   * downloading the text on the way — the same three routes BookDetails takes,
+   * reported through the same banner so there is never a silent wait.
+   */
+  const handleContinue = async (book: Book) => {
+    if (isBusy) return;
+
+    if (book.itemType === 'music' || book.itemType === 'art') {
+      navigation.navigate('BookDetails', { bookId: book.id });
+      return;
+    }
+
+    // Already in hand.
+    if (book.content) {
+      setCurrentBook(book);
+      goToReader();
+      return;
+    }
+
+    // An import: its text lives in this browser's store, not on the network.
+    if (EbookService.hasStoredText(book)) {
+      setImportStatus({
+        phase: 'working',
+        title: 'Opening',
+        detail: book.title,
+        bookId: book.id,
+        percent:40,
+        stageLabel: 'Restoring text',
+      });
+
+      const text = await EbookService.loadStoredText(book);
+      hydrationAttempts.current.add(book.id);
+      if (!mountedRef.current) return;
+
+      if (text) {
+        await updateBook(book.id, { content: text });
+        setCurrentBook({ ...book, content: text });
+        setImportStatus(IDLE);
+        goToReader();
+        return;
+      }
+
+      setImportStatus({
+        phase: 'error',
+        title: `The text of “${book.title}” is no longer stored`,
+        detail: 'Imported files are kept in this browser only, so clearing site data removes them.',
+        hint: 'Import the file again to read it here.',
+        percent: 0,
+      });
+      return;
+    }
+
+    // A catalogue edition: ~1MB over the wire. openBook reports its own
+    // failures through textLoad and never rejects.
+    if (book.sourceUrl) {
+      clearTextError();
+      setImportStatus({
+        phase: 'working',
+        title: 'Opening',
+        detail: book.title,
+        bookId: book.id,
+        percent:35,
+        stageLabel: 'Downloading the edition',
+      });
+
+      const loaded = await openBookText(book).catch(() => book);
+      if (!mountedRef.current) return;
+
+      if (loaded.content) {
+        setImportStatus(IDLE);
+        goToReader();
+        return;
+      }
+
+      setImportStatus({
+        phase: 'error',
+        title: `Could not open “${book.title}”`,
+        detail: 'The full text could not be downloaded.',
+        hint: 'Check the connection and try again from the book’s page.',
+        percent: 0,
+      });
+      return;
     }
 
     navigation.navigate('BookDetails', { bookId: book.id });
@@ -368,7 +597,10 @@ export default function LibraryScreen({ navigation }: any) {
         )}
 
         {phase === 'error' && (
-          <TouchableOpacity style={[styles.bannerAction, { borderColor: withAlpha(accent, 0.5) }]} onPress={handleUploadBook}>
+          <TouchableOpacity
+            style={[styles.bannerAction, { borderColor: withAlpha(accent, 0.5) }]}
+            onPress={handleUploadBook}
+          >
             <Text style={[styles.bannerActionText, { color: accent }]}>Try another file</Text>
           </TouchableOpacity>
         )}
@@ -376,273 +608,520 @@ export default function LibraryScreen({ navigation }: any) {
     );
   };
 
-  const renderBookCard = (book: Book) => {
-    const progress =
-      book.totalPages > 0 ? Math.min(100, (book.currentProgress / book.totalPages) * 100) : 0;
-
-    if (viewMode === 'grid') {
-      return (
-        <TouchableOpacity
-          style={[styles.gridCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => openBook(book)}
-        >
-          <View style={styles.gridCoverWrap}>
-            <BookCover
-              uri={book.cover}
-              title={book.title}
-              author={book.author}
-              itemType={book.itemType}
-              width={gridCoverWidth}
-            />
-          </View>
-          <Text style={[styles.gridTitle, { color: colors.gold }]} numberOfLines={2}>
-            {book.title}
-          </Text>
-          <Text style={[styles.gridAuthor, { color: colors.bronze }]} numberOfLines={1}>
-            {book.author || '—'}
-          </Text>
-          {book.totalPages > 0 && (
-            <>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
-              </View>
-              <Text style={[styles.progressText, { color: colors.bronze }]}>
-                {Math.round(progress)}%
-              </Text>
-            </>
-          )}
-          {book.itemType && book.itemType !== 'book' && (
-            <Text style={[styles.typeTag, { color: colors.bronze }]}>
-              {book.itemType === 'music' ? 'Music' : book.itemType === 'art' ? 'Art' : 'Resource'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      );
-    }
+  /**
+   * The hero. Deliberately two sibling touch targets rather than one nested
+   * inside the other: the panel opens the book's page, the CTA goes straight
+   * to the reader, and neither swallows the other's press.
+   */
+  const renderHero = (book: Book) => {
+    const pct = progressPercent(book);
+    const started = book.currentProgress > 0;
+    const page = book.totalPages > 0 ? clamp(book.currentProgress, 0, book.totalPages) : 0;
+    /** Spin for THIS volume only — an import running above must not spin here. */
+    const opening = isBusy && importStatus.bookId === book.id;
 
     return (
-      <TouchableOpacity
-        style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-        onPress={() => openBook(book)}
-      >
-        <View style={styles.listCoverWrap}>
+      <View style={styles.hero}>
+        <TouchableOpacity
+          style={styles.heroRow}
+          activeOpacity={0.85}
+          onPress={() => openDetails(book)}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${book.title}`}
+        >
           <BookCover
             uri={book.cover}
             title={book.title}
             author={book.author}
             itemType={book.itemType}
-            width={LIST_COVER_W}
+            width={heroCoverW}
           />
-        </View>
+
+          <View style={styles.heroBody}>
+            <Text style={styles.heroKicker}>
+              {started ? 'CONTINUE READING' : 'UP NEXT'}
+            </Text>
+            <Text style={styles.heroTitle} numberOfLines={3}>
+              {book.title}
+            </Text>
+            {!!book.author && (
+              <Text style={styles.heroAuthor} numberOfLines={1}>
+                {book.author}
+              </Text>
+            )}
+
+            <View style={styles.heroFoot}>
+              <View style={styles.heroTrack}>
+                <View style={[styles.heroFill, { width: `${Math.max(1.5, pct)}%` }]} />
+              </View>
+              <Text style={styles.heroMeta}>
+                {book.totalPages > 0
+                  ? `${page} of ${book.totalPages}  ·  ${Math.round(pct)}%`
+                  : 'Not yet paginated'}
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* The single accent on this screen. Nothing else may be this colour. */}
+        <TouchableOpacity
+          style={[styles.cta, isBusy && styles.ctaBusy]}
+          activeOpacity={0.9}
+          onPress={() => handleContinue(book)}
+          disabled={isBusy}
+          accessibilityRole="button"
+          accessibilityLabel={started ? `Continue reading ${book.title}` : `Begin ${book.title}`}
+        >
+          {opening ? (
+            <ActivityIndicator size="small" color={colors.actionInk} />
+          ) : (
+            <>
+              <PlayIcon size={15} color={colors.actionInk} />
+              <Text style={styles.ctaLabel}>{started ? 'Continue Reading' : 'Begin Reading'}</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  /** Carousel cell: the cover IS the card, with the caption beneath it. */
+  const renderCarouselItem = (book: Book) => {
+    const pct = progressPercent(book);
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => openDetails(book)}
+        accessibilityRole="button"
+        accessibilityLabel={book.title}
+      >
+        <BookCover
+          uri={book.cover}
+          title={book.title}
+          author={book.author}
+          itemType={book.itemType}
+          width={carouselItemW}
+        />
+        <Text style={styles.cellTitle} numberOfLines={2}>
+          {book.title}
+        </Text>
+        <Text style={styles.cellAuthor} numberOfLines={1}>
+          {book.author || '—'}
+        </Text>
+        {pct > 0 && (
+          <View style={styles.cellTrack}>
+            <View style={[styles.cellFill, { width: `${pct}%` }]} />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderGridCard = (book: Book, index: number) => {
+    const pct = progressPercent(book);
+    const isLastInRow = index % gridCols === gridCols - 1;
+
+    return (
+      <TouchableOpacity
+        style={[styles.gridCell, { width: gridCellW }, !isLastInRow && { marginRight: gridGap }]}
+        activeOpacity={0.85}
+        onPress={() => openDetails(book)}
+        accessibilityRole="button"
+        accessibilityLabel={book.title}
+      >
+        <BookCover
+          uri={book.cover}
+          title={book.title}
+          author={book.author}
+          itemType={book.itemType}
+          width={gridCellW}
+        />
+        <Text style={styles.cellTitle} numberOfLines={2}>
+          {book.title}
+        </Text>
+        <Text style={styles.cellAuthor} numberOfLines={1}>
+          {book.author || '—'}
+        </Text>
+        {pct > 0 ? (
+          <View style={styles.cellTrack}>
+            <View style={[styles.cellFill, { width: `${pct}%` }]} />
+          </View>
+        ) : (
+          book.itemType &&
+          book.itemType !== 'book' && (
+            <Text style={styles.cellTag}>
+              {book.itemType === 'music' ? 'MUSIC' : book.itemType === 'art' ? 'ART' : 'RESOURCE'}
+            </Text>
+          )
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderListRow = (book: Book) => {
+    const pct = progressPercent(book);
+
+    return (
+      <TouchableOpacity
+        style={styles.listCard}
+        activeOpacity={0.85}
+        onPress={() => openDetails(book)}
+        accessibilityRole="button"
+        accessibilityLabel={book.title}
+      >
+        <BookCover
+          uri={book.cover}
+          title={book.title}
+          author={book.author}
+          itemType={book.itemType}
+          width={listCoverW}
+        />
+
         <View style={styles.listInfo}>
-          <Text style={[styles.listTitle, { color: colors.gold }]} numberOfLines={1}>
+          <Text style={styles.listTitle} numberOfLines={2}>
             {book.title}
           </Text>
-          <Text style={[styles.listAuthor, { color: colors.bronze }]} numberOfLines={1}>
+          <Text style={styles.listAuthor} numberOfLines={1}>
             {book.author || '—'}
           </Text>
-          <View style={styles.listMeta}>
-            <Text style={[styles.metaText, { color: colors.bronze }]} numberOfLines={1}>
-              {getItemTypeMeta(book)}
-            </Text>
-          </View>
+          <Text style={styles.listMeta} numberOfLines={1}>
+            {getItemTypeMeta(book)}
+          </Text>
+
           {book.totalPages > 0 && (
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
-            </View>
+            <>
+              <View style={styles.cellTrack}>
+                <View style={[styles.cellFill, { width: `${pct}%` }]} />
+              </View>
+              <Text style={styles.listProgress}>
+                {pct > 0 ? `Page ${clamp(book.currentProgress, 0, book.totalPages)} · ${Math.round(pct)}%` : 'Not started'}
+              </Text>
+            </>
           )}
         </View>
-        <View style={styles.listStatus}>
-          {book.totalPages > 0 ? (
-            <>
-              <Text style={[styles.pageNumber, { color: colors.gold }]}>{book.currentProgress}</Text>
-              <Text style={[styles.pageLabel, { color: colors.bronze }]}>p.</Text>
-            </>
-          ) : (
-            <Text style={[styles.pageLabel, { color: colors.bronze }]}>
-              {book.itemType === 'music' ? '♪' : book.itemType === 'art' ? '✎' : '◆'}
-            </Text>
-          )}
+
+        <View style={styles.listChevron}>
+          <ChevronRightIcon size={15} color={colors.bronze} strokeWidth={2} />
         </View>
       </TouchableOpacity>
     );
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>✦ My Library</Text>
+  const renderEmpty = () => {
+    if (books.length > 0) {
+      // The shelf has books; this search simply found none of them.
+      return (
+        <View style={styles.empty}>
+          <SearchIcon size={30} color={colors.bronze} strokeWidth={1.6} />
+          <Text style={styles.emptyTitle}>Nothing by that name</Text>
+          <Text style={styles.emptyBody}>
+            No volume in your library matches “{searchText.trim()}”.
+          </Text>
+          <TouchableOpacity style={styles.ghostButton} onPress={() => setSearchText('')}>
+            <Text style={styles.ghostButtonText}>Clear search</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.empty}>
+        <View style={styles.emptyShelf}>
+          {EMPTY_SHELF.map(spine => (
+            <View
+              key={spine.title}
+              style={[styles.emptySpine, { transform: [{ rotate: spine.tilt }] }]}
+              pointerEvents="none"
+            >
+              <BookCover title={spine.title} author={spine.author} width={62} />
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.emptyTitle}>Your Library Awaits</Text>
+        <Text style={styles.emptyBody}>
+          Bring a manuscript in from this device, or add one from the classical catalogue.
+        </Text>
+
+        {/* With no book in progress there is no hero, so THIS is the screen's
+            single action and it carries the accent. */}
+        <TouchableOpacity
+          style={[styles.cta, styles.emptyCta, isBusy && styles.ctaBusy]}
+          onPress={handleUploadBook}
+          disabled={isBusy}
+          activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Import a book from this device"
+        >
+          {isBusy ? (
+            <ActivityIndicator size="small" color={colors.actionInk} />
+          ) : (
+            <>
+              <PlusIcon size={15} color={colors.actionInk} strokeWidth={2.2} />
+              <Text style={styles.ctaLabel}>Import a file</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.emptyFootnote}>
+          EPUB and TXT are read in full. PDF and MOBI can be shelved, but their text cannot be
+          extracted yet.
+        </Text>
+      </View>
+    );
+  };
+
+  const shelfSubtitle = () => {
+    if (searching) {
+      return `${filteredBooks.length} ${filteredBooks.length === 1 ? 'match' : 'matches'}`;
+    }
+    const volumes = `${books.length} ${books.length === 1 ? 'volume' : 'volumes'}`;
+    return inProgressCount > 0 ? `${volumes} · ${inProgressCount} in progress` : volumes;
+  };
+
+  // An ELEMENT, not a component type: passing a freshly-declared component to
+  // ListHeaderComponent remounts the search field (and drops its focus) on
+  // every keystroke.
+  const header = (
+    <View>
+      {/* Masthead */}
+      <View style={styles.masthead}>
+        <View style={styles.mastheadText}>
+          <Text style={styles.overline}>ANNOTATED</Text>
+          <Text style={styles.screenTitle}>Library</Text>
+        </View>
+
         <TouchableOpacity
           style={[styles.addButton, isBusy && styles.addButtonBusy]}
           onPress={handleUploadBook}
           disabled={isBusy}
+          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Import a book from this device"
         >
           {isBusy ? (
             <ActivityIndicator color={colors.gold} size="small" />
           ) : (
-            <Text style={styles.addButtonText}>+ Add</Text>
+            <>
+              <PlusIcon size={13} color={colors.gold} strokeWidth={2.2} />
+              <Text style={styles.addButtonText}>Add</Text>
+            </>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Search & Filters */}
-      <View style={styles.searchSection}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Seek a manuscript..."
-          placeholderTextColor={colors.bronze}
-          value={searchText}
-          onChangeText={setSearchText}
-        />
+      {/* Search + controls. An empty shelf has nothing to search or sort, so
+          they stay out of the way until there is something to find. */}
+      {books.length > 0 && (
+        <>
+          <View style={styles.searchRow}>
+            <SearchIcon size={16} color={colors.bronze} strokeWidth={1.8} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Seek a manuscript..."
+              placeholderTextColor={colors.bronze}
+              value={searchText}
+              onChangeText={setSearchText}
+              returnKeyType="search"
+              accessibilityLabel="Search your library"
+            />
+            {searching && (
+              <TouchableOpacity
+                onPress={() => setSearchText('')}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <CloseIcon size={14} color={colors.bronze} strokeWidth={1.8} />
+              </TouchableOpacity>
+            )}
+          </View>
 
-        <View style={styles.controls}>
-          <TouchableOpacity
-            style={[styles.sortButton, sortBy === 'recent' && styles.sortButtonActive]}
-            onPress={() => setSortBy('recent')}
-          >
-            <Text style={styles.sortButtonText}>Recent</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.sortButton, sortBy === 'title' && styles.sortButtonActive]}
-            onPress={() => setSortBy('title')}
-          >
-            <Text style={styles.sortButtonText}>Title</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.sortButton, sortBy === 'author' && styles.sortButtonActive]}
-            onPress={() => setSortBy('author')}
-          >
-            <Text style={styles.sortButtonText}>Author</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.viewButton, viewMode === 'grid' && styles.sortButtonActive]}
-            onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-            accessibilityLabel={viewMode === 'list' ? 'Switch to grid' : 'Switch to list'}
-          >
-            <Text style={styles.viewButtonText}>{viewMode === 'list' ? '⊞' : '≡'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+          {/* Sort + view mode. Pills size to their labels — never `flex: 1`,
+              which is what stretched them to ~640px each on a desktop. */}
+          <View style={styles.controls}>
+            {SORTS.map(s => {
+              const active = sortBy === s.key;
+              return (
+                <TouchableOpacity
+                  key={s.key}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setSortBy(s.key)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`Sort by ${s.label.toLowerCase()}`}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{s.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            <View style={styles.controlsSpacer} />
+
+            <TouchableOpacity
+              style={styles.viewButton}
+              onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={viewMode === 'list' ? 'Switch to grid' : 'Switch to list'}
+            >
+              {viewMode === 'list' ? (
+                <CollectionsIcon size={17} color={colors.gold} strokeWidth={1.7} />
+              ) : (
+                <MenuIcon size={17} color={colors.gold} strokeWidth={1.7} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       {renderImportBanner()}
 
-      {/* Books List/Grid */}
-      {filteredBooks.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>✦</Text>
-          <Text style={styles.emptyText}>
-            {books.length === 0 ? 'Your Library Awaits' : 'No results found'}
-          </Text>
-          <Text style={styles.emptySubtext}>
-            {books.length === 0
-              ? 'Bring a manuscript in from this device, or add one from the classical catalogue.'
-              : 'Try a different search'}
-          </Text>
-          {books.length === 0 && (
-            <>
-              <TouchableOpacity style={styles.emptyButton} onPress={handleUploadBook} disabled={isBusy}>
-                <Text style={styles.emptyButtonText}>Import a file</Text>
-              </TouchableOpacity>
-              <Text style={styles.emptyFootnote}>
-                EPUB and TXT are read in full. PDF and MOBI can be shelved, but their text cannot be
-                extracted yet.
-              </Text>
-            </>
-          )}
-        </View>
-      ) : (
-        <FlatList
-          // numColumns cannot change on a mounted list — remount on toggle.
-          key={viewMode}
-          data={filteredBooks}
-          renderItem={({ item }) => renderBookCard(item)}
-          keyExtractor={item => item.id}
-          numColumns={viewMode === 'grid' ? 2 : 1}
-          contentContainerStyle={styles.listContent}
-          scrollEnabled={true}
+      {/* Hero and carousel are about the shelf as a whole, so a search — which
+          is about one volume — hides them and gives the results the page. */}
+      {!searching && !!heroBook && <View style={styles.heroWrap}>{renderHero(heroBook)}</View>}
+
+      {!searching && recentBooks.length >= 2 && (
+        <Section
+          title={anyRead ? 'Recently Opened' : 'Recently Added'}
+          spacing={space.section}
+        >
+          <Carousel
+            data={recentBooks}
+            itemWidth={carouselItemW}
+            gap={space.lg}
+            bleed
+            keyExtractor={b => b.id}
+            renderItem={b => renderCarouselItem(b)}
+          />
+        </Section>
+      )}
+
+      {(books.length > 0 || searching) && (
+        <Section
+          title={searching ? 'Results' : 'All Manuscripts'}
+          subtitle={shelfSubtitle()}
+          spacing={space.heading}
         />
       )}
     </View>
   );
+
+  return (
+    // gutter={false}: the gutter is the list's own content padding — see the
+    // note on `col` above.
+    <Shell gutter={false} contentContainerStyle={styles.column}>
+      <FlatList
+        // numColumns cannot change on a mounted list — remount on toggle, and
+        // on a column-count change (phone rotation, desktop resize).
+        key={`${viewMode}-${gridCols}`}
+        data={filteredBooks}
+        renderItem={({ item, index }) =>
+          viewMode === 'grid' ? renderGridCard(item, index) : renderListRow(item)
+        }
+        keyExtractor={item => item.id}
+        numColumns={viewMode === 'grid' ? gridCols : 1}
+        columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
+        ListHeaderComponent={header}
+        ListEmptyComponent={renderEmpty()}
+        contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+      />
+    </Shell>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    paddingTop: space.lg,
-    paddingHorizontal: space.xl,
-    paddingBottom: space.lg,
+  /** Shell's centred column has to grow so the FlatList inside it can scroll. */
+  column: { flex: 1 },
+  /** The page gutter lives here, inside the scroller's clip box. */
+  listContent: { paddingHorizontal: layout.gutter, paddingBottom: space.xxxl },
+
+  /* masthead */
+  masthead: {
     flexDirection: 'row',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gold,
-    backgroundColor: colors.surface,
+    paddingTop: space.xl,
+    marginBottom: space.lg,
   },
-  headerTitle: { ...t.display, color: colors.gold },
+  mastheadText: { flexShrink: 1, minWidth: 0 },
+  overline: { ...t.overline, color: colors.bronze, textTransform: 'uppercase', marginBottom: 4 },
+  screenTitle: { ...t.display, color: colors.gold },
   addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: colors.surfaceRaised,
     paddingHorizontal: space.lg,
     paddingVertical: space.sm + 1,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.gold,
-    minWidth: 74,
-    alignItems: 'center',
+    borderColor: colors.border,
+    minHeight: 36,
   },
   addButtonBusy: { opacity: 0.6 },
-  addButtonText: { ...t.caption, letterSpacing: 0.8, color: colors.gold },
-  searchSection: {
-    paddingHorizontal: space.xl,
-    paddingVertical: space.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.rule,
+  addButtonText: { ...t.caption, letterSpacing: 0.8, color: colors.gold, fontWeight: '600' },
+
+  /* search */
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: space.lg,
+    height: 44,
+    marginBottom: space.md,
   },
   searchInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.board,
-    color: colors.gold,
-    borderRadius: radius.md,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    marginBottom: space.md,
+    flex: 1,
+    minWidth: 0,
+    color: colors.ink,
     ...t.body,
-  },
+    // RNW draws a focus ring and a default border on <input>; neither belongs
+    // inside a pill that already has its own.
+    borderWidth: 0,
+    outlineStyle: 'none',
+  } as any,
+
+  /* sort + view */
   controls: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: space.sm,
+    marginBottom: space.xl,
   },
-  sortButton: {
-    flex: 1,
-    paddingVertical: space.sm + 2,
+  chip: {
+    // NO flex. This is the line that used to be `flex: 1`.
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    alignItems: 'center',
   },
-  sortButtonActive: { backgroundColor: colors.board, borderColor: colors.gold },
-  sortButtonText: { ...t.caption, color: colors.gold },
+  chipActive: { backgroundColor: colors.surfaceRaised, borderColor: colors.gold },
+  chipText: { ...t.caption, color: colors.bronze },
+  chipTextActive: { color: colors.goldBright, fontWeight: '600' },
+  controlsSpacer: { flex: 1 },
   viewButton: {
-    width: 44,
-    paddingVertical: space.sm + 2,
+    width: 38,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    alignItems: 'center',
   },
-  viewButtonText: { fontSize: 15, color: colors.gold },
 
   /* import banner */
   banner: {
-    marginHorizontal: space.md,
-    marginTop: space.md,
+    marginBottom: space.xl,
     padding: space.lg,
     borderWidth: 1,
     borderRadius: radius.lg,
@@ -677,70 +1156,127 @@ const styles = StyleSheet.create({
   },
   bannerActionText: { ...t.caption, letterSpacing: 0.6 },
 
-  /* shelf */
-  listContent: { padding: space.md, paddingBottom: space.xxxl },
-  listCard: {
-    flexDirection: 'row',
-    marginBottom: space.md,
-    borderRadius: radius.lg,
+  /* hero — the reference's signature panel */
+  heroWrap: { marginBottom: space.section },
+  hero: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.hero,
     borderWidth: 1,
-    padding: space.md,
-    alignItems: 'center',
-    ...elevation.card,
+    borderColor: colors.border,
+    padding: space.lg,
+    ...elevation.hero,
   },
-  listCoverWrap: { marginRight: space.lg },
-  listInfo: { flex: 1, justifyContent: 'center' },
-  listTitle: { ...t.title, marginBottom: 3 },
-  listAuthor: { ...t.caption, marginBottom: 6, fontStyle: 'italic' },
-  listMeta: { marginBottom: space.sm },
-  metaText: { ...t.overline, textTransform: 'uppercase' },
-  progressBar: {
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+  heroRow: { flexDirection: 'row', alignItems: 'stretch' },
+  heroBody: { flex: 1, minWidth: 0, marginLeft: space.lg, justifyContent: 'flex-start' },
+  heroKicker: { ...t.overline, color: colors.action, marginBottom: 6 },
+  heroTitle: { ...t.display, fontSize: 22, lineHeight: 27, color: colors.goldBright },
+  heroAuthor: { ...t.caption, color: colors.bronze, fontStyle: 'italic', marginTop: 4 },
+  heroFoot: { marginTop: 'auto', paddingTop: space.md },
+  heroTrack: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: radius.pill,
     overflow: 'hidden',
-    borderColor: colors.border,
   },
-  progressFill: { height: '100%', backgroundColor: colors.gold, borderRadius: radius.pill },
-  listStatus: { alignItems: 'center', marginLeft: space.md, minWidth: 30 },
-  pageNumber: { ...t.heading, fontSize: 17 },
-  pageLabel: { ...t.overline, marginTop: 2 },
-  gridCard: {
-    flex: 1,
-    marginHorizontal: space.sm,
-    marginBottom: space.lg,
+  heroFill: { height: '100%', backgroundColor: colors.action, borderRadius: radius.pill },
+  heroMeta: { ...t.overline, color: colors.inkMuted, marginTop: 7, textTransform: 'uppercase' },
+
+  /* THE action. One per screen. */
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    marginTop: space.lg,
+    minHeight: 46,
+    borderRadius: radius.pill,
+    backgroundColor: colors.action,
+  },
+  ctaBusy: { opacity: 0.7 },
+  ctaLabel: {
+    ...t.caption,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    color: colors.actionInk,
+  },
+
+  /* cover cells, shared by the carousel and the grid */
+  cellTitle: { ...t.title, fontSize: 13, lineHeight: 17, color: colors.gold, marginTop: space.sm },
+  cellAuthor: { ...t.caption, fontSize: 11, color: colors.bronze, fontStyle: 'italic', marginTop: 2 },
+  cellTrack: {
+    height: 3,
+    marginTop: 7,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
+  cellFill: { height: '100%', backgroundColor: colors.gold, borderRadius: radius.pill },
+  cellTag: { ...t.overline, color: colors.bronze, marginTop: 6 },
+
+  /* grid */
+  gridRow: { justifyContent: 'flex-start' },
+  gridCell: { marginBottom: space.xl },
+
+  /* list */
+  listCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: space.md,
+    padding: space.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    padding: space.md,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     ...elevation.card,
   },
-  gridCoverWrap: { alignItems: 'center', marginBottom: space.md },
-  gridTitle: { ...t.title, fontSize: 14, marginBottom: 3 },
-  gridAuthor: { ...t.caption, marginBottom: space.sm, fontStyle: 'italic' },
-  progressText: { ...t.overline, marginTop: 5 },
-  typeTag: { ...t.overline, marginTop: 5, textTransform: 'uppercase' },
+  listInfo: { flex: 1, minWidth: 0, marginLeft: space.lg, justifyContent: 'center' },
+  listTitle: { ...t.title, color: colors.gold },
+  listAuthor: { ...t.caption, color: colors.bronze, fontStyle: 'italic', marginTop: 3 },
+  listMeta: { ...t.overline, color: colors.bronze, textTransform: 'uppercase', marginTop: 6 },
+  listProgress: { ...t.overline, color: colors.inkMuted, marginTop: 6 },
+  listChevron: { marginLeft: space.md },
 
-  /* empty state */
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space.xl },
-  emptyIcon: { fontSize: 52, marginBottom: space.lg, color: colors.bronze, opacity: 0.5 },
-  emptyText: { ...t.display, color: colors.gold, marginBottom: space.sm },
-  emptySubtext: { ...t.body, color: colors.inkMuted, textAlign: 'center', maxWidth: 380 },
-  emptyButton: {
+  /* empty states */
+  empty: {
+    alignItems: 'center',
+    paddingTop: space.xl,
+    paddingBottom: space.xxxl,
+    paddingHorizontal: space.sm,
+  },
+  emptyShelf: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginBottom: space.xl,
+    opacity: 0.55,
+  },
+  emptySpine: { marginHorizontal: -4 },
+  emptyTitle: { ...t.display, fontSize: 23, color: colors.gold, marginTop: space.md, textAlign: 'center' },
+  emptyBody: {
+    ...t.body,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    marginTop: space.sm,
+    maxWidth: 340,
+  },
+  emptyCta: { alignSelf: 'stretch', marginTop: space.xl, paddingHorizontal: space.xl },
+  ghostButton: {
     marginTop: space.xl,
     paddingHorizontal: space.xl,
-    paddingVertical: space.md,
+    paddingVertical: space.sm + 2,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.gold,
+    borderColor: colors.border,
     backgroundColor: colors.surfaceRaised,
   },
-  emptyButtonText: { ...t.caption, color: colors.gold, letterSpacing: 0.8 },
+  ghostButtonText: { ...t.caption, color: colors.gold, letterSpacing: 0.8 },
   emptyFootnote: {
     ...t.caption,
     color: colors.bronze,
     textAlign: 'center',
     marginTop: space.lg,
-    maxWidth: 360,
+    maxWidth: 340,
     lineHeight: 18,
   },
 });

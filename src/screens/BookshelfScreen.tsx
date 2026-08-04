@@ -1,112 +1,125 @@
+// BookshelfScreen — the personal library drawn as an actual bookcase.
+//
+// Rebuilt on the primitives. Four structural changes:
+//
+// 1. <Shell>. The screen used to size itself from `useWindowDimensions()`, so a
+//    1365px desktop got SIX covers stretched across a full-bleed row with the
+//    masthead's stat strip spread 400px apart. Everything now lives in the
+//    centred phone-width column and every cover is computed from
+//    `useColumnWidth()`.
+//
+// 2. REAL SHELVES. Reference 5's skeuomorphic bookcase, executed in the
+//    aubergine/gold language rather than as literal walnut: each row of volumes
+//    stands in a recessed niche (a darker back panel with light falling off at
+//    the top), on a board with a gold-lit front edge, a lighter face, and a dark
+//    nose that drops a real shadow onto the page below. Each volume gets its own
+//    contact shadow, so the books rest ON the board instead of floating above a
+//    drawn line — and lifting one (tapping it) shrinks that shadow, which is the
+//    cue that sells the whole thing.
+//
+// 3. ONE ACCENT. `colors.action` appears exactly once and only ever on the
+//    single next action — the "Continue Reading" button inside an opened
+//    volume's card, or, on an empty library, the one button that fixes it. The
+//    two states cannot coexist.
+//
+// 4. NO LOCAL PALETTE. The screen used to carry its own light/dark palette and
+//    two wood tones keyed off `settings.theme`. App chrome does not follow the
+//    reader theme — picking the cream reading ground turned this screen
+//    parchment while every other screen stayed aubergine. Only the READER
+//    changes ground. Everything here is painted from `theme`.
+//
+// Progress semantics also changed, because they were wrong: `Book.currentProgress`
+// is a PAGE NUMBER (see LibraryScreen and AppContext.countPages), not a
+// percentage. The old bar rendered `width: '${currentProgress}%'`, so a reader on
+// page 40 of 900 showed a 40%-full bar.
+
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  useWindowDimensions,
-} from 'react-native';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+
 import { useApp } from '../context/AppContext';
 import BookCover from '../components/BookCover';
-import { colors, fonts, space, radius, type, elevation, COVER_RATIO } from '../theme';
+import Shell, { useColumnWidth } from '../components/Shell';
+import Section from '../components/Section';
+import { ChevronLeftIcon, PlayIcon, CheckIcon } from '../components/icons';
+import { colors, space, radius, type as t, elevation, COVER_RATIO } from '../theme';
 import type { Book } from '../types';
 
-/**
- * Personal Library.
- *
- * Rebuilt as a physical bookshelf: real Gutenberg covers (or the designed
- * typographic board from BookCover) standing face-out on a lit walnut plank,
- * each with a contact shadow so the volumes rest *on* the shelf rather than
- * floating in a grid. The old 2px-radius tiles, 9px type, and sparkle glyph
- * on every item are gone.
- *
- * Sub-components live at module scope rather than inside the screen so that
- * expanding a book doesn't remount every BookCover and re-trigger its image
- * load.
- */
+/** Padding between the niche's inner wall and the first/last volume. */
+const SHELF_PAD = space.md;
 
-interface Palette {
-  bg: string;
-  surface: string;
-  ink: string;
-  inkMuted: string;
-  gold: string;
-  goldBright: string;
-  bronze: string;
-  rule: string;
-  border: string;
-  /** Foreground on a solid gold fill. */
-  onGold: string;
+/** Covers are the hero, but a shelf of three needs them to stay in proportion. */
+const MAX_COVER = 148;
+
+/** The three ghost spines standing on the empty bookcase. Never a lone glyph. */
+const GHOST_SHELF: Array<{ title: string; author: string }> = [
+  { title: 'Confessions', author: 'Augustine' },
+  { title: 'The Iliad', author: 'Homer' },
+  { title: 'Consolation of Philosophy', author: 'Boethius' },
+];
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
-interface Wood {
-  face: string;
-  edge: string;
-  lip: string;
-  board: string;
+/** `currentProgress` is a page number; `totalPages` is 0 until the text is fetched. */
+function progressPercent(book: Book): number {
+  if (!book.totalPages || book.totalPages <= 0) return 0;
+  return clamp((book.currentProgress / book.totalPages) * 100, 0, 100);
 }
 
-/** Manuscript palette (dark) and its parchment counterpart (light). */
-const PALETTE: Record<'dark' | 'light', Palette> = {
-  dark: {
-    bg: colors.bg,
-    surface: colors.surface,
-    ink: colors.ink,
-    inkMuted: colors.inkMuted,
-    gold: colors.gold,
-    goldBright: colors.goldBright,
-    bronze: colors.bronze,
-    rule: colors.rule,
-    border: colors.border,
-    onGold: colors.bg,
-  },
-  light: {
-    bg: '#efe7da',
-    surface: '#f7f1e6',
-    ink: '#2f2717',
-    inkMuted: '#6b5f4a',
-    gold: '#8a6b2f',
-    goldBright: '#a8843c',
-    bronze: '#8b7355',
-    rule: 'rgba(90,70,35,0.20)',
-    border: 'rgba(90,70,35,0.28)',
-    onGold: '#f7f1e6',
-  },
-};
-
-/** Wood tones aren't in the core palette — the shelf is the only thing needing them. */
-const WOOD: Record<'dark' | 'light', Wood> = {
-  dark: { face: '#3b2c1d', edge: '#8b7355', lip: '#150e08', board: 'rgba(255,255,255,0.022)' },
-  light: { face: '#c19a68', edge: '#e6c79a', lip: '#7d5c36', board: 'rgba(120,90,40,0.05)' },
-};
-
-function columnsFor(width: number) {
-  if (width < 380) return 2;
-  if (width < 560) return 3;
-  if (width < 820) return 4;
-  if (width < 1120) return 5;
-  return 6;
-}
-
-function chunk<T>(items: T[], size: number): T[][] {
+function chunk<T>(items: readonly T[], size: number): T[][] {
   const rows: T[][] = [];
   for (let i = 0; i < items.length; i += size) rows.push(items.slice(i, i + size));
   return rows;
 }
 
-function clampProgress(value?: number) {
-  return Math.max(0, Math.min(value || 0, 100));
+/** `addedDate` is a string on imports and a number on catalogue entries. */
+function toMillis(value: string | number | undefined): number {
+  if (typeof value === 'number') return value;
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-/** The plank: lit top edge, walnut face, dark underside lip reading as depth. */
-function Plank({ wood, style }: { wood: Wood; style?: StyleProp<ViewStyle> }) {
+function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+// ---------------------------------------------------------------------------
+// The bookcase
+// ---------------------------------------------------------------------------
+
+/**
+ * The board. Three stacked bars rather than one: a gold-lit front edge catching
+ * the light, the face of the plank, and a dark nose underneath that carries the
+ * drop shadow. Overhangs the niche by 6px on each side because a real shelf
+ * board is wider than the case it sits in — that overhang is most of what stops
+ * this reading as a divider rule.
+ */
+function Plank({ wide = false }: { wide?: boolean }) {
   return (
-    <View style={[styles.plankWrap, style]}>
-      <View style={[styles.plankEdge, { backgroundColor: wood.edge }]} />
-      <View style={[styles.plankFace, { backgroundColor: wood.face }, elevation.card]} />
-      <View style={[styles.plankLip, { backgroundColor: wood.lip }]} />
+    <View pointerEvents="none" style={styles.plank}>
+      <View style={styles.plankEdge} />
+      <View style={[styles.plankFace, wide && styles.plankFaceWide]} />
+      <View style={styles.plankNose} />
+    </View>
+  );
+}
+
+/**
+ * The recess the books stand in. The two shade bands at the top are a poor
+ * man's gradient — `expo-linear-gradient` is not installed and this workflow may
+ * not add dependencies — and they carry their own top radius, because the niche
+ * itself must NOT clip (`overflow: 'hidden'` here would shear the drop shadow
+ * off every cover in the row, which is the exact defect Carousel.tsx documents).
+ */
+function Niche({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={styles.niche}>
+      <View pointerEvents="none" style={styles.nicheShadeA} />
+      <View pointerEvents="none" style={styles.nicheShadeB} />
+      {children}
     </View>
   );
 }
@@ -115,23 +128,27 @@ function Plank({ wood, style }: { wood: Wood; style?: StyleProp<ViewStyle> }) {
 function Volume({
   book,
   width,
-  palette,
-  light,
   expanded,
   onPress,
 }: {
   book: Book;
   width: number;
-  palette: Palette;
-  light: boolean;
   expanded: boolean;
   onPress: (id: string) => void;
 }) {
-  const progress = clampProgress(book.currentProgress);
-  const inProgress = progress > 0 && !book.isFinished;
+  const pct = progressPercent(book);
+  const started = pct > 0 && !book.isFinished;
 
   return (
-    <TouchableOpacity activeOpacity={0.82} onPress={() => onPress(book.id)} style={{ width }}>
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={() => onPress(book.id)}
+      style={{ width }}
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      accessibilityLabel={book.author ? `${book.title}, ${book.author}` : book.title}
+      testID={`shelf-volume-${book.id}`}
+    >
       <View style={[styles.volume, expanded && styles.volumeLifted]}>
         <BookCover
           uri={book.cover}
@@ -141,369 +158,430 @@ function Volume({
           width={width}
         />
 
-        {/* Selected state: a gilt frame rather than a colour change. */}
-        {expanded && (
-          <View
-            pointerEvents="none"
-            style={[styles.selectRing, { borderColor: palette.goldBright }]}
-          />
-        )}
+        {/* Selected state is a gilt frame, not a colour change — the cover has
+            to stay the loudest thing on the shelf. */}
+        {expanded && <View pointerEvents="none" style={styles.selectRing} />}
 
-        {inProgress && (
+        {started && (
           <View pointerEvents="none" style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${progress}%`, backgroundColor: palette.goldBright },
-              ]}
-            />
+            <View style={[styles.progressFill, { width: `${Math.max(3, pct)}%` }]} />
           </View>
         )}
 
         {book.isFinished && (
-          <View
-            style={[
-              styles.seal,
-              { backgroundColor: palette.gold, borderColor: palette.bg },
-              elevation.card,
-            ]}
-          >
-            <Text style={[styles.sealMark, { color: palette.onGold }]}>✓</Text>
+          <View pointerEvents="none" style={styles.seal}>
+            <CheckIcon size={11} color={colors.bg} strokeWidth={3} />
           </View>
         )}
       </View>
 
-      {/* Contact shadow — what makes the book read as resting on the plank. */}
+      {/* Contact shadow. Lifting the volume leaves a gap above this and narrows
+          it, which is what reads as the book being picked up off the board. */}
       <View
         pointerEvents="none"
         style={[
-          styles.contactShadow,
+          styles.contact,
           {
-            width: width * 0.86,
-            marginLeft: width * 0.07,
-            opacity: light ? 0.18 : 0.55,
+            width: Math.round(width * (expanded ? 0.74 : 0.9)),
+            marginLeft: Math.round(width * (expanded ? 0.13 : 0.05)),
           },
+          expanded && styles.contactLifted,
         ]}
       />
     </TouchableOpacity>
   );
 }
 
-function DetailCard({ book, palette }: { book: Book; palette: Palette }) {
-  const progress = clampProgress(book.currentProgress);
+/** The opened volume's card, hung under the shelf it stands on. */
+function VolumeCard({ book, onRead }: { book: Book; onRead: (book: Book) => void }) {
+  const pct = progressPercent(book);
+  const page = book.totalPages > 0 ? clamp(book.currentProgress, 0, book.totalPages) : 0;
+  const label = book.isFinished ? 'Read Again' : pct > 0 ? 'Continue Reading' : 'Begin Reading';
 
   return (
-    <View
-      style={[
-        styles.detail,
-        { backgroundColor: palette.surface, borderColor: palette.border },
-        elevation.card,
-      ]}
-    >
-      <Text style={[type.heading, styles.detailTitle, { color: palette.gold }]} numberOfLines={2}>
+    <View style={styles.card} testID={`shelf-card-${book.id}`}>
+      <Text style={styles.cardTitle} numberOfLines={3}>
         {book.title}
       </Text>
       {!!book.author && (
-        <Text style={[type.caption, styles.detailAuthor, { color: palette.bronze }]}>
+        <Text style={styles.cardAuthor} numberOfLines={1}>
           {book.author}
         </Text>
       )}
-      <View style={[styles.detailRule, { backgroundColor: palette.rule }]} />
+
       {!!book.description && (
-        <Text style={[type.body, styles.detailBody, { color: palette.inkMuted }]} numberOfLines={4}>
+        <Text style={styles.cardBody} numberOfLines={4}>
           {book.description}
         </Text>
       )}
-      <View style={styles.detailFoot}>
-        <View style={[styles.detailBarTrack, { backgroundColor: palette.rule }]}>
-          <View
-            style={[
-              styles.detailBarFill,
-              { width: `${progress}%`, backgroundColor: palette.goldBright },
-            ]}
-          />
+
+      <View style={styles.cardFoot}>
+        <View style={styles.cardTrack}>
+          <View style={[styles.cardFill, { width: `${Math.max(1.5, pct)}%` }]} />
         </View>
-        <Text style={[type.caption, styles.detailMeta, { color: palette.bronze }]}>
-          {book.isFinished ? 'Finished' : `${progress}% complete`}
+        <Text style={styles.cardMeta} numberOfLines={1}>
+          {book.isFinished
+            ? 'Finished'
+            : book.totalPages > 0
+              ? `${page} of ${book.totalPages}  ·  ${Math.round(pct)}%`
+              : 'Not yet paginated'}
         </Text>
       </View>
+
+      {/* THE accent. Nothing else on this screen may be this colour. */}
+      <TouchableOpacity
+        style={styles.cta}
+        activeOpacity={0.9}
+        onPress={() => onRead(book)}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${book.title}`}
+      >
+        <PlayIcon size={14} color={colors.actionInk} />
+        <Text style={styles.ctaLabel}>{label}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
-function ShelfSection({
-  title,
-  books: sectionBooks,
-  icon,
-  cols,
-  gap,
-  coverWidth,
-  coverHeight,
-  palette,
-  wood,
-  light,
-  expandedBookId,
-  onPressBook,
-}: {
-  title: string;
-  books: Book[];
-  icon: string;
-  cols: number;
-  gap: number;
-  coverWidth: number;
-  coverHeight: number;
-  palette: Palette;
-  wood: Wood;
-  light: boolean;
-  expandedBookId: string | null;
-  onPressBook: (id: string) => void;
-}) {
-  const rows = chunk(sectionBooks, cols);
-
+function StatCell({ value, label }: { value: number; label: string }) {
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHead}>
-        <Text style={[styles.sectionGlyph, { color: palette.bronze }]}>{icon}</Text>
-        <Text style={[styles.sectionLabel, { color: palette.gold }]}>{title.toUpperCase()}</Text>
-        <View style={[styles.sectionRule, { backgroundColor: palette.rule }]} />
-        <Text style={[styles.sectionCount, { color: palette.bronze }]}>{sectionBooks.length}</Text>
-      </View>
-
-      {rows.length === 0 ? (
-        <View style={[styles.emptyShelf, { borderColor: palette.rule }]}>
-          <Text style={[type.body, styles.emptyShelfText, { color: palette.inkMuted }]}>
-            No volumes on this shelf yet
-          </Text>
-        </View>
-      ) : (
-        rows.map((row, i) => {
-          const open = row.find((b) => b.id === expandedBookId);
-          return (
-            <View key={i} style={styles.shelfUnit}>
-              <View style={[styles.backboard, { backgroundColor: wood.board }]}>
-                <View style={[styles.backboardTopRule, { backgroundColor: palette.rule }]} />
-                <View style={[styles.row, { gap, minHeight: coverHeight }]}>
-                  {row.map((book) => (
-                    <Volume
-                      key={book.id}
-                      book={book}
-                      width={coverWidth}
-                      palette={palette}
-                      light={light}
-                      expanded={book.id === expandedBookId}
-                      onPress={onPressBook}
-                    />
-                  ))}
-                </View>
-              </View>
-              <Plank wood={wood} />
-              {!!open && <DetailCard book={open} palette={palette} />}
-            </View>
-          );
-        })
-      )}
+    <View style={styles.statCell}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
-function Stat({ value, label, palette }: { value: number; label: string; palette: Palette }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={[styles.statValue, { color: palette.goldBright }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: palette.bronze }]}>{label}</Text>
-    </View>
-  );
-}
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 export default function BookshelfScreen() {
-  const { books, settings } = useApp();
-  const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
-  const { width: winWidth } = useWindowDimensions();
+  const { books, openBook } = useApp();
+  const navigation = useNavigation<any>();
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  const light = settings.theme === 'light';
-  const palette = light ? PALETTE.light : PALETTE.dark;
-  const wood = light ? WOOD.light : WOOD.dark;
+  // THE fix for the worst desktop defect: sizes come from the capped column,
+  // never from the window.
+  const col = useColumnWidth();
+  const cols = col < 300 ? 2 : 3;
+  const gap = col < 340 ? space.sm : space.md;
+  const inner = Math.max(120, col - SHELF_PAD * 2);
+  const coverW = clamp(Math.floor((inner - gap * (cols - 1)) / cols), 54, MAX_COVER);
 
-  const pagePad = winWidth < 480 ? space.lg : space.xl;
-  const cols = columnsFor(winWidth);
-  const gap = winWidth < 480 ? space.md : space.lg;
-  const available = Math.max(winWidth - pagePad * 2 - space.lg * 2, 200);
-  const coverWidth = Math.min(Math.floor((available - gap * (cols - 1)) / cols), 168);
-  const coverHeight = Math.round(coverWidth * COVER_RATIO);
-
-  const currentlyReading = useMemo(
-    () => books.filter((b) => !b.isFinished && b.currentProgress > 0),
+  const reading = useMemo(
+    () =>
+      books
+        .filter(b => !b.isFinished && b.currentProgress > 0)
+        .sort((a, b) => (b.lastReadDate ?? 0) - (a.lastReadDate ?? 0)),
     [books]
   );
-  const finished = useMemo(() => books.filter((b) => b.isFinished), [books]);
   const toRead = useMemo(
-    () => books.filter((b) => !b.isFinished && b.currentProgress === 0),
+    () =>
+      books
+        .filter(b => !b.isFinished && b.currentProgress <= 0)
+        .sort((a, b) => toMillis(b.addedDate) - toMillis(a.addedDate)),
     [books]
   );
+  const finished = useMemo(() => books.filter(b => b.isFinished), [books]);
 
-  const handlePressBook = (id: string) =>
-    setExpandedBookId((current) => (current === id ? null : id));
+  const shelves = useMemo(() => {
+    const out: Array<{ key: string; title: string; subtitle: string; items: Book[] }> = [];
+    if (reading.length) {
+      out.push({
+        key: 'reading',
+        title: 'Currently Reading',
+        subtitle: plural(reading.length, 'volume open', 'volumes open'),
+        items: reading,
+      });
+    }
+    if (toRead.length) {
+      out.push({
+        key: 'to-read',
+        title: 'To Read',
+        subtitle: plural(toRead.length, 'volume waiting', 'volumes waiting'),
+        items: toRead,
+      });
+    }
+    if (finished.length) {
+      out.push({
+        key: 'finished',
+        title: 'Finished',
+        subtitle: plural(finished.length, 'volume closed', 'volumes closed'),
+        items: finished,
+      });
+    }
+    return out;
+  }, [reading, toRead, finished]);
 
-  const shelfProps = {
-    cols,
-    gap,
-    coverWidth,
-    coverHeight,
-    palette,
-    wood,
-    light,
-    expandedBookId,
-    onPressBook: handlePressBook,
+  const toggle = (id: string) => setOpenId(current => (current === id ? null : id));
+
+  /**
+   * Put the volume on the desk and go to the reader. `openBook` sets the current
+   * book synchronously and then downloads the text; the reader owns the loading
+   * state, so this deliberately does not await it. The navigate bubbles out of
+   * the More stack to the tab navigator, which is where "Reading" lives.
+   */
+  const handleRead = (book: Book) => {
+    openBook(book).catch(() => {});
+    try {
+      navigation.navigate('Reading', { screen: 'ReaderHome' });
+    } catch {
+      /* Route resolution is the navigator's business; a miss must not crash. */
+    }
   };
 
+  const goBack = () => {
+    if (navigation.canGoBack?.()) navigation.goBack();
+  };
+
+  const canGoBack = !!navigation.canGoBack?.();
+
   return (
-    <View style={[styles.container, { backgroundColor: palette.bg }]}>
-      <View style={[styles.header, { paddingHorizontal: pagePad }]}>
-        <Text style={[styles.eyebrow, { color: palette.bronze }]}>ANNOTATED</Text>
-        <Text style={[type.display, styles.title, { color: palette.gold }]}>Personal Library</Text>
-
-        <View style={styles.ornament}>
-          <View style={[styles.ornamentRule, { backgroundColor: palette.rule }]} />
-          <Text style={[styles.ornamentGlyph, { color: palette.bronze }]}>❧</Text>
-          <View style={[styles.ornamentRule, { backgroundColor: palette.rule }]} />
-        </View>
-
-        {books.length > 0 && (
-          <View style={styles.stats}>
-            <Stat
-              value={books.length}
-              label={books.length === 1 ? 'VOLUME' : 'VOLUMES'}
-              palette={palette}
-            />
-            <View style={[styles.statDivider, { backgroundColor: palette.rule }]} />
-            <Stat value={currentlyReading.length} label="READING" palette={palette} />
-            <View style={[styles.statDivider, { backgroundColor: palette.rule }]} />
-            <Stat value={finished.length} label="FINISHED" palette={palette} />
-          </View>
+    <Shell scroll testID="bookshelf-screen">
+      {/* Masthead */}
+      <View style={styles.masthead}>
+        {canGoBack && (
+          <TouchableOpacity
+            style={styles.back}
+            onPress={goBack}
+            activeOpacity={0.75}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            testID="bookshelf-back"
+          >
+            <ChevronLeftIcon size={16} color={colors.gold} strokeWidth={2.2} />
+          </TouchableOpacity>
         )}
+        <View style={styles.mastheadText}>
+          <Text style={styles.overline}>ANNOTATED</Text>
+          <Text style={styles.screenTitle}>Bookshelf</Text>
+        </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={[styles.shelves, { paddingHorizontal: pagePad }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {currentlyReading.length > 0 && (
-          <ShelfSection title="Currently Reading" books={currentlyReading} icon="◆" {...shelfProps} />
-        )}
+      {books.length > 0 && (
+        <View style={styles.stats}>
+          <StatCell value={books.length} label={books.length === 1 ? 'VOLUME' : 'VOLUMES'} />
+          <View style={styles.statRule} />
+          <StatCell value={reading.length} label="READING" />
+          <View style={styles.statRule} />
+          <StatCell value={finished.length} label="FINISHED" />
+        </View>
+      )}
 
-        {toRead.length > 0 && (
-          <ShelfSection title="To Read" books={toRead} icon="◇" {...shelfProps} />
-        )}
+      {/* The bookcase */}
+      {shelves.map((shelf, shelfIndex) => {
+        const rows = chunk(shelf.items, cols);
 
-        {finished.length > 0 && (
-          <ShelfSection title="Finished Reading" books={finished} icon="✦" {...shelfProps} />
-        )}
-
-        {books.length === 0 && (
-          <View
-            style={[
-              styles.emptyLibrary,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-              elevation.card,
-            ]}
+        return (
+          <Section
+            key={shelf.key}
+            title={shelf.title}
+            subtitle={shelf.subtitle}
+            last={shelfIndex === shelves.length - 1}
+            testID={`shelf-${shelf.key}`}
           >
-            <Text style={[styles.emptyGlyph, { color: palette.bronze }]}>❦</Text>
-            <Text style={[type.heading, styles.emptyTitle, { color: palette.gold }]}>
-              Your library is empty
-            </Text>
-            <View style={[styles.emptyRule, { backgroundColor: palette.rule }]} />
-            <Text style={[type.body, styles.emptyMessage, { color: palette.inkMuted }]}>
-              Add books from the catalog and they will appear here, standing on your shelves.
-            </Text>
+            {rows.map((row, rowIndex) => {
+              const opened = row.find(b => b.id === openId);
+              return (
+                <View
+                  key={`${shelf.key}-${rowIndex}`}
+                  style={rowIndex < rows.length - 1 && styles.shelfSpacing}
+                >
+                  <Niche>
+                    <View style={[styles.row, { gap }]}>
+                      {row.map(book => (
+                        <Volume
+                          key={book.id}
+                          book={book}
+                          width={coverW}
+                          expanded={book.id === openId}
+                          onPress={toggle}
+                        />
+                      ))}
+                    </View>
+                  </Niche>
+                  <Plank />
+                  {!!opened && <VolumeCard book={opened} onRead={handleRead} />}
+                </View>
+              );
+            })}
+          </Section>
+        );
+      })}
 
-            {/* An empty shelf, drawn, so the page still reads as a bookcase. */}
-            <Plank wood={wood} style={styles.emptyPlank} />
+      {/* Empty state: a drawn bookcase with ghost volumes on it, never a glyph. */}
+      {books.length === 0 && (
+        <View style={styles.empty} testID="bookshelf-empty">
+          <View style={styles.emptyCase}>
+            <Niche>
+              <View style={[styles.row, styles.emptyRow, { gap }]}>
+                {GHOST_SHELF.map(spine => (
+                  <View key={spine.title} style={styles.ghost} pointerEvents="none">
+                    <BookCover title={spine.title} author={spine.author} width={coverW} />
+                  </View>
+                ))}
+              </View>
+            </Niche>
+            <Plank wide />
           </View>
-        )}
-      </ScrollView>
-    </View>
+
+          <Text style={styles.emptyTitle}>Your shelves are bare</Text>
+          <Text style={styles.emptyBody}>
+            Nothing is standing here yet. Add a volume from the classical catalogue and it will
+            take its place on the shelf.
+          </Text>
+
+          {/* With no volume open there is no card, so THIS is the screen's
+              single action and it carries the accent. */}
+          <TouchableOpacity
+            style={[styles.cta, styles.emptyCta]}
+            activeOpacity={0.9}
+            onPress={() => {
+              try {
+                navigation.navigate('Catalog');
+              } catch {
+                /* no-op */
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Browse the catalogue"
+          >
+            <Text style={styles.ctaLabel}>Browse the catalogue</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </Shell>
   );
 }
 
+export { BookshelfScreen };
+
+// ---------------------------------------------------------------------------
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
-  header: {
-    paddingTop: space.xxl,
-    paddingBottom: space.lg,
-  },
-  eyebrow: {
-    ...type.overline,
-    fontSize: 11,
-    letterSpacing: 3,
-    marginBottom: space.xs,
-  },
-  title: {
-    fontSize: 30,
-    lineHeight: 38,
-  },
-  ornament: {
+  /* masthead ------------------------------------------------------------- */
+  masthead: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: space.md,
+    gap: space.md,
+    paddingTop: space.xl,
     marginBottom: space.lg,
   },
-  ornamentRule: { flex: 1, height: 1, maxWidth: 120 },
-  ornamentGlyph: {
-    fontFamily: fonts.display,
-    fontSize: 15,
-    marginHorizontal: space.md,
+  back: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  mastheadText: { flexShrink: 1, minWidth: 0 },
+  overline: {
+    ...t.overline,
+    color: colors.bronze,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  screenTitle: { ...t.display, color: colors.gold },
 
-  stats: { flexDirection: 'row', alignItems: 'center' },
-  stat: { paddingRight: space.lg },
-  statValue: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28 },
-  statLabel: { ...type.overline, fontSize: 10, letterSpacing: 1.4, marginTop: 2 },
-  statDivider: { width: 1, height: 28, marginRight: space.lg },
-
-  shelves: { paddingTop: space.sm, paddingBottom: space.xxxl * 2 },
-
-  section: { marginBottom: space.xxl },
-  sectionHead: {
+  /* stat strip ----------------------------------------------------------- */
+  stats: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: space.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.rule,
+    paddingVertical: space.md,
+    marginBottom: space.xl,
+    ...elevation.card,
   },
-  sectionGlyph: { fontSize: 12, marginRight: space.sm },
-  sectionLabel: {
-    ...type.overline,
-    fontSize: 12,
-    letterSpacing: 2.2,
+  statCell: { flex: 1, alignItems: 'center' },
+  statValue: {
+    ...t.hero,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.goldBright,
+    fontVariant: ['tabular-nums'],
   },
-  sectionRule: { flex: 1, height: 1, marginHorizontal: space.md },
-  sectionCount: {
-    fontFamily: fonts.display,
-    fontSize: 15,
-    letterSpacing: 0.5,
-  },
+  statLabel: { ...t.overline, color: colors.bronze, marginTop: 2 },
+  statRule: { width: 1, alignSelf: 'stretch', backgroundColor: colors.rule },
 
-  shelfUnit: { marginBottom: space.xl },
-  backboard: {
+  /* the bookcase --------------------------------------------------------- */
+  shelfSpacing: { marginBottom: space.xl },
+
+  /**
+   * The recess. Deliberately NO `overflow: 'hidden'` — clipping here shears the
+   * drop shadow off every cover standing in it.
+   */
+  niche: {
+    backgroundColor: 'rgba(0, 0, 0, 0.26)',
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: colors.rule,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     paddingTop: space.lg,
-    paddingHorizontal: space.lg,
-    borderTopLeftRadius: radius.md,
-    borderTopRightRadius: radius.md,
+    paddingHorizontal: SHELF_PAD,
   },
-  backboardTopRule: {
+  /** Light falling off down the back panel. Two bands, each carrying the
+   *  niche's own top radius so the corners stay round without clipping. */
+  nicheShadeA: {
     position: 'absolute',
     top: 0,
-    left: space.lg,
-    right: space.lg,
-    height: 1,
+    left: 0,
+    right: 0,
+    height: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.28)',
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
   },
+  nicheShadeB: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    right: 0,
+    height: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.14)',
+  },
+
   row: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
     alignItems: 'flex-end',
   },
 
+  /** The board: lit front edge, face, and a dark nose that drops the shadow. */
+  plank: { marginHorizontal: -6 },
+  plankEdge: {
+    height: 2,
+    backgroundColor: 'rgba(227, 200, 135, 0.34)',
+  },
+  plankFace: {
+    height: 12,
+    backgroundColor: '#2a1e3d',
+  },
+  plankFaceWide: { height: 14 },
+  plankNose: {
+    height: 8,
+    marginHorizontal: space.sm,
+    backgroundColor: '#090511',
+    borderBottomLeftRadius: radius.sm,
+    borderBottomRightRadius: radius.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+
+  /* a volume ------------------------------------------------------------- */
   volume: { position: 'relative' },
-  volumeLifted: { transform: [{ translateY: -6 }] },
+  volumeLifted: { transform: [{ translateY: -10 }] },
   selectRing: {
     position: 'absolute',
     top: -3,
@@ -511,7 +589,8 @@ const styles = StyleSheet.create({
     right: -3,
     bottom: -3,
     borderWidth: 1.5,
-    borderRadius: radius.md + 2,
+    borderColor: colors.goldBright,
+    borderRadius: radius.cover + 3,
   },
   progressTrack: {
     position: 'absolute',
@@ -521,82 +600,109 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: radius.pill,
     overflow: 'hidden',
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
-  progressFill: { height: '100%', borderRadius: radius.pill },
+  progressFill: {
+    height: '100%',
+    borderRadius: radius.pill,
+    backgroundColor: colors.goldBright,
+  },
   seal: {
     position: 'absolute',
     top: -8,
     right: -8,
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     borderRadius: radius.pill,
+    backgroundColor: colors.gold,
     borderWidth: 2,
+    borderColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sealMark: { fontSize: 12, fontFamily: fonts.ui, lineHeight: 14 },
-
-  contactShadow: {
-    height: 7,
+  contact: {
+    height: 6,
+    marginTop: -2,
     borderRadius: radius.pill,
     backgroundColor: '#000',
-    marginTop: -3,
+    opacity: 0.5,
+    shadowColor: '#000',
+    shadowOpacity: 0.6,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 2 },
   },
+  contactLifted: { opacity: 0.3, marginTop: 2 },
 
-  plankWrap: { marginHorizontal: -space.xs },
-  plankEdge: { height: 2, borderTopLeftRadius: 1, borderTopRightRadius: 1, opacity: 0.55 },
-  plankFace: { height: 12 },
-  plankLip: {
-    height: 7,
-    marginHorizontal: space.sm,
-    borderBottomLeftRadius: radius.sm,
-    borderBottomRightRadius: radius.sm,
-    opacity: 0.85,
-  },
-
-  detail: {
+  /* opened volume card --------------------------------------------------- */
+  card: {
     marginTop: space.lg,
     padding: space.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    ...elevation.card,
   },
-  detailTitle: { marginBottom: 2 },
-  detailAuthor: { fontStyle: 'italic' },
-  detailRule: { height: 1, marginVertical: space.md },
-  detailBody: { marginBottom: space.md },
-  detailFoot: { flexDirection: 'row', alignItems: 'center' },
-  detailBarTrack: {
-    flex: 1,
+  cardTitle: { ...t.heading, color: colors.goldBright },
+  cardAuthor: { ...t.caption, color: colors.bronze, fontStyle: 'italic', marginTop: 3 },
+  cardBody: { ...t.body, color: colors.inkMuted, marginTop: space.md },
+  cardFoot: { marginTop: space.lg },
+  cardTrack: {
     height: 3,
     borderRadius: radius.pill,
     overflow: 'hidden',
-    marginRight: space.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
-  detailBarFill: { height: '100%', borderRadius: radius.pill },
-  detailMeta: { letterSpacing: 0.6 },
+  cardFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.gold },
+  cardMeta: {
+    ...t.caption,
+    color: colors.bronze,
+    marginTop: space.sm,
+    fontVariant: ['tabular-nums'],
+  },
 
-  emptyShelf: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: radius.lg,
-    paddingVertical: space.xxl,
+  /* the one accent ------------------------------------------------------- */
+  cta: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  emptyShelfText: { fontStyle: 'italic' },
-
-  emptyLibrary: {
-    marginTop: space.xxl,
-    paddingTop: space.xxxl,
+    justifyContent: 'center',
+    gap: space.sm,
+    marginTop: space.lg,
+    minHeight: 46,
     paddingHorizontal: space.xl,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    alignItems: 'center',
-    overflow: 'hidden',
+    borderRadius: radius.pill,
+    backgroundColor: colors.action,
   },
-  emptyGlyph: { fontFamily: fonts.display, fontSize: 34, marginBottom: space.md },
-  emptyTitle: { textAlign: 'center' },
-  emptyRule: { width: 64, height: 1, marginVertical: space.lg },
-  emptyMessage: { textAlign: 'center', maxWidth: 380, marginBottom: space.xxxl },
-  emptyPlank: { alignSelf: 'stretch', marginHorizontal: -space.xl },
+  ctaLabel: {
+    ...t.caption,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    color: colors.actionInk,
+  },
+
+  /* empty state ---------------------------------------------------------- */
+  empty: {
+    alignItems: 'center',
+    paddingTop: space.md,
+    paddingBottom: space.xxl,
+  },
+  emptyCase: { alignSelf: 'stretch', marginBottom: space.xl },
+  emptyRow: { justifyContent: 'center' },
+  ghost: { opacity: 0.42 },
+  emptyTitle: {
+    ...t.display,
+    fontSize: 23,
+    color: colors.gold,
+    textAlign: 'center',
+    marginTop: space.md,
+  },
+  emptyBody: {
+    ...t.body,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    marginTop: space.sm,
+    maxWidth: 340,
+  },
+  emptyCta: { alignSelf: 'stretch', marginTop: space.xl },
 });

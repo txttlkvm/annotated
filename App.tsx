@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react';
-import { Platform, Text } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import type { LinkingOptions, NavigatorScreenParams } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, BottomTabBar } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { AppProvider, useApp } from './src/context/AppContext';
 import { DatabaseService } from './src/services/DatabaseService';
 import { TTSService } from './src/services/TTSService';
 import { AudioService } from './src/services/AudioService';
-import { space, type, readerPalettes } from './src/theme';
+import { colors, layout, space, type } from './src/theme';
+import { Icon } from './src/components/icons';
 
 import LibraryScreen from './src/screens/LibraryScreen';
 import ReaderScreen from './src/screens/ReaderScreen';
@@ -27,9 +29,37 @@ import CollectionsScreen from './src/screens/CollectionsScreen';
 import BookshelfScreen from './src/screens/BookshelfScreen';
 import TableOfContentsScreen from './src/screens/TableOfContentsScreen';
 import CatalogScreen from './src/screens/CatalogScreen';
+import MoreScreen, { type MoreStackParamList } from './src/screens/MoreScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+/* ------------------------------------------------------------------ *
+ * NAVIGATION SHAPE
+ *
+ * This app used to run NINE bottom tabs. Every one of the owner's five
+ * reference apps runs four or five, because a bar of nine forces 11px
+ * labels, truncates half of them, and gives every destination the same
+ * weight — a dictionary sitting beside the library as an equal.
+ *
+ * Nothing was deleted in the consolidation. The four screens that were
+ * only ever a menu entry (Bookshelf, Collections, Dictionary, Stats)
+ * plus Settings and a second Highlights entry moved behind the fifth
+ * tab, MoreScreen, which pushes each of them onto its own stack so they
+ * get a real back gesture instead of a tab-press dead end.
+ *
+ *   Library    LibraryHome | BookDetails | ClassicalLibraryReader
+ *   Reading    ReaderHome  | Highlights  | TableOfContents          (labelled "Read")
+ *   Curriculum CurriculumHome | ClassicalLibraryReader | MusicPlayer | ArtViewer
+ *   Catalog    (single screen)
+ *   More       MoreHome | Bookshelf | Collections | Dictionary | Highlights | Stats | Settings
+ *
+ * NOTE on the "Reading" route name. The tab READS as "Read" — that is its
+ * label — but the ROUTE keeps its old name because BookDetailsScreen calls
+ * `navigation.navigate('Reading', { screen: 'ReaderHome' })`. React
+ * Navigation resolves that by route name, and a rename here would turn
+ * "Continue reading" in the book detail sheet into a silent no-op.
+ * ------------------------------------------------------------------ */
 
 function LibraryNavigator() {
   return (
@@ -70,6 +100,26 @@ function ReaderNavigator() {
   );
 }
 
+/**
+ * The More stack. Its screen names are the keys of `MoreStackParamList`, which
+ * MoreScreen exports and types its own `navigate` calls against — so a screen
+ * added here without a matching entry there fails to compile rather than
+ * failing silently at runtime.
+ */
+function MoreNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MoreHome" component={MoreScreen} />
+      <Stack.Screen name="Bookshelf" component={BookshelfScreen} />
+      <Stack.Screen name="Collections" component={CollectionsScreen} />
+      <Stack.Screen name="Dictionary" component={DictionaryScreen} />
+      <Stack.Screen name="Highlights" component={HighlightsScreen} />
+      <Stack.Screen name="Stats" component={StatsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+    </Stack.Navigator>
+  );
+}
+
 /* ------------------------------------------------------------------ *
  * Deep linking
  *
@@ -80,11 +130,10 @@ function ReaderNavigator() {
  *
  * The nesting below MIRRORS the navigators declared above. If a child key
  * does not exist on the stack it is silently ignored and you fall back to
- * the stack's first screen, so these names are load-bearing:
- *
- *   Library    -> LibraryHome | BookDetails | ClassicalLibraryReader
- *   Reading    -> ReaderHome  | Highlights  | TableOfContents
- *   Curriculum -> CurriculumHome | ClassicalLibraryReader | MusicPlayer | ArtViewer
+ * the stack's first screen, so these names are load-bearing — and they
+ * moved with the tab consolidation: the five screens that used to answer
+ * to /bookshelf, /collections, /dictionary, /stats and /settings now live
+ * under /more/… because they are children of the More stack.
  *
  * Param note: BookDetails, ClassicalLibraryReader, MusicPlayer and ArtViewer
  * all destructure `route.params` unconditionally. React Navigation only
@@ -126,12 +175,8 @@ type RootTabParamList = {
   Library: NavigatorScreenParams<LibraryStackParamList>;
   Reading: NavigatorScreenParams<ReadingStackParamList>;
   Curriculum: NavigatorScreenParams<CurriculumStackParamList>;
-  Bookshelf: undefined;
-  Collections: undefined;
-  Dictionary: undefined;
   Catalog: undefined;
-  Stats: undefined;
-  Settings: undefined;
+  More: NavigatorScreenParams<MoreStackParamList>;
 };
 
 const linking: LinkingOptions<RootTabParamList> = {
@@ -175,34 +220,73 @@ const linking: LinkingOptions<RootTabParamList> = {
           ArtViewer: 'art/:title',
         },
       },
-      Bookshelf: 'bookshelf',
-      Collections: 'collections',
-      Dictionary: 'dictionary',
       Catalog: 'catalog',
-      Stats: 'stats',
-      Settings: 'settings',
+      More: {
+        path: 'more',
+        initialRouteName: 'MoreHome',
+        screens: {
+          MoreHome: '',
+          Bookshelf: 'bookshelf',
+          Collections: 'collections',
+          Dictionary: 'dictionary',
+          Highlights: 'highlights',
+          Stats: 'stats',
+          Settings: 'settings',
+        },
+      },
     },
   },
 };
 
-const TAB_TITLES: Record<string, string> = {
-  Library: 'Library',
-  Reading: 'Reading',
-  Curriculum: 'Curriculum',
+/**
+ * `documentTitle.formatter` is handed the DEEPEST focused route, not the tab —
+ * `getCurrentRoute()` walks all the way down. The old map was keyed by tab name
+ * ('Library', 'Settings'…), so once the tabs gained stacks almost every lookup
+ * missed and the browser tab just said "Annotated". Keyed by leaf route name it
+ * actually reports where you are.
+ */
+const ROUTE_TITLES: Record<string, string> = {
+  LibraryHome: 'Library',
+  BookDetails: 'Book',
+  ClassicalLibraryReader: 'Reading',
+  ReaderHome: 'Reader',
+  TableOfContents: 'Contents',
+  CurriculumHome: 'Curriculum',
+  MusicPlayer: 'Music',
+  ArtViewer: 'Art',
+  Catalog: 'Catalog',
+  MoreHome: 'More',
   Bookshelf: 'Bookshelf',
   Collections: 'Collections',
   Dictionary: 'Dictionary',
-  Catalog: 'Catalog',
-  Stats: 'Stats',
+  Highlights: 'Highlights',
+  Stats: 'Statistics',
   Settings: 'Settings',
 };
 
 const documentTitle = {
-  formatter: (_options: any, route: any) => {
-    const section = route?.name ? TAB_TITLES[route.name] : undefined;
+  formatter: (options: any, route: any) => {
+    const section = options?.title ?? (route?.name ? ROUTE_TITLES[route.name] : undefined);
     return section ? `Annotated · ${section}` : 'Annotated';
   },
 };
+
+const isWeb = Platform.OS === 'web';
+
+/**
+ * The tab bar is APP CHROME, so it is painted from the fixed aubergine-and-gold
+ * palette rather than from `readerPalettes[settings.theme]`. It used to follow
+ * the reader theme, which meant picking the cream reading ground turned the bar
+ * cream while every screen above it stayed aubergine. Only the READER changes
+ * ground; the chrome does not.
+ */
+function AppTabBar(props: BottomTabBarProps) {
+  return (
+    <View style={styles.tabBarOuter}>
+      <BottomTabBar {...props} />
+    </View>
+  );
+}
 
 function MainApp() {
   const { settings } = useApp();
@@ -221,15 +305,6 @@ function MainApp() {
     }
   };
 
-  // The tab bar used to be #1a1a1a / #333 / #4A90E2 — a stock-blue accent on
-  // neutral grey, i.e. none of the aubergine-and-gold system. readerPalettes
-  // already carries a correct surface/border/accent triple per theme, and
-  // readerPalettes.dark is literally colors.surface / colors.border /
-  // colors.gold / colors.bronze, so one lookup covers dark, night, sepia
-  // and light without branching.
-  const palette = readerPalettes[settings.theme] ?? readerPalettes.dark;
-  const isWeb = Platform.OS === 'web';
-
   return (
     <>
       <StatusBar
@@ -238,34 +313,42 @@ function MainApp() {
       />
       <NavigationContainer linking={linking} documentTitle={documentTitle}>
         <Tab.Navigator
+          tabBar={AppTabBar}
           screenOptions={{
             headerShown: false,
+            // Without this, `shouldUseHorizontalLabels` puts the label BESIDE
+            // the icon on any landscape or >=768px viewport — i.e. on every
+            // desktop browser, which is half of where this app is used. The
+            // references are all icon-above-label; pin it.
+            tabBarLabelPosition: 'below-icon',
             tabBarStyle: {
-              backgroundColor: palette.surface,
-              borderTopColor: palette.border,
-              borderTopWidth: 1,
-              paddingTop: space.sm,
-              // Only pin an explicit height on web. On native the tab bar
-              // computes 49 + safe-area inset itself, and a hardcoded height
-              // here overrides that and eats the home-indicator gap.
+              // The bar's CONTENT is capped to the same phone column every
+              // screen uses; `AppTabBar` paints the background and the top rule
+              // full-bleed behind it, so on a 1365px desktop the rule still
+              // reaches both edges while five tabs do not spread 273px apart.
+              width: '100%',
+              maxWidth: layout.maxWidth,
+              alignSelf: 'center',
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              // Only pin an explicit height on web. `getTabBarHeight` returns a
+              // custom height VERBATIM — it stops adding the safe-area inset —
+              // so hardcoding one on native eats the home-indicator gap.
               ...(isWeb
-                ? { height: 68, paddingBottom: space.sm, paddingHorizontal: space.sm }
+                ? { height: 74, paddingTop: space.sm, paddingBottom: space.md }
                 : null),
             },
-            tabBarActiveTintColor: palette.accent,
-            tabBarInactiveTintColor: palette.accentSoft,
+            tabBarActiveTintColor: colors.gold,
+            tabBarInactiveTintColor: colors.bronze,
             tabBarLabelStyle: {
-              // type.caption already carries fonts.ui + letterSpacing; the
-              // size is nudged down because nine tabs share the bar.
+              // type.caption already carries fonts.ui + letterSpacing. Five tabs
+              // instead of nine means the label can go back to a readable 12.
               ...type.caption,
-              fontSize: 11,
+              fontSize: 12,
               letterSpacing: 0.2,
               fontWeight: '600',
-              marginTop: space.xs / 2,
-              marginBottom: isWeb ? 0 : space.xs / 2,
-            },
-            tabBarIconStyle: {
-              marginTop: space.xs / 2,
+              marginTop: 3,
+              marginBottom: isWeb ? 0 : 2,
             },
             tabBarItemStyle: {
               paddingVertical: space.xs,
@@ -278,15 +361,19 @@ function MainApp() {
             component={LibraryNavigator}
             options={{
               tabBarLabel: 'Library',
-              tabBarIcon: ({ color }) => <Icon name="📚" color={color} />,
+              tabBarIcon: ({ color, focused }) => (
+                <Icon name="library" size={23} color={color} strokeWidth={focused ? 2 : 1.65} />
+              ),
             }}
           />
           <Tab.Screen
             name="Reading"
             component={ReaderNavigator}
             options={{
-              tabBarLabel: 'Reading',
-              tabBarIcon: ({ color }) => <Icon name="📖" color={color} />,
+              tabBarLabel: 'Read',
+              tabBarIcon: ({ color, focused }) => (
+                <Icon name="read" size={23} color={color} strokeWidth={focused ? 2 : 1.65} />
+              ),
             }}
           />
           <Tab.Screen
@@ -294,31 +381,9 @@ function MainApp() {
             component={CurriculumNavigator}
             options={{
               tabBarLabel: 'Curriculum',
-              tabBarIcon: ({ color }) => <Icon name="✦" color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Bookshelf"
-            component={BookshelfScreen}
-            options={{
-              tabBarLabel: 'Shelf',
-              tabBarIcon: ({ color }) => <Icon name="🏛" color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Collections"
-            component={CollectionsScreen}
-            options={{
-              tabBarLabel: 'Collections',
-              tabBarIcon: ({ color }) => <Icon name="📑" color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Dictionary"
-            component={DictionaryScreen}
-            options={{
-              tabBarLabel: 'Dictionary',
-              tabBarIcon: ({ color }) => <Icon name="📓" color={color} />,
+              tabBarIcon: ({ color, focused }) => (
+                <Icon name="curriculum" size={23} color={color} strokeWidth={focused ? 2 : 1.65} />
+              ),
             }}
           />
           <Tab.Screen
@@ -326,23 +391,19 @@ function MainApp() {
             component={CatalogScreen}
             options={{
               tabBarLabel: 'Catalog',
-              tabBarIcon: ({ color }) => <Icon name="📕" color={color} />,
+              tabBarIcon: ({ color, focused }) => (
+                <Icon name="catalog" size={23} color={color} strokeWidth={focused ? 2 : 1.65} />
+              ),
             }}
           />
           <Tab.Screen
-            name="Stats"
-            component={StatsScreen}
+            name="More"
+            component={MoreNavigator}
             options={{
-              tabBarLabel: 'Stats',
-              tabBarIcon: ({ color }) => <Icon name="📊" color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Settings"
-            component={SettingsScreen}
-            options={{
-              tabBarLabel: 'Settings',
-              tabBarIcon: ({ color }) => <Icon name="⚙️" color={color} />,
+              tabBarLabel: 'More',
+              tabBarIcon: ({ color, focused }) => (
+                <Icon name="more" size={23} color={color} strokeWidth={focused ? 2 : 1.65} />
+              ),
             }}
           />
         </Tab.Navigator>
@@ -351,25 +412,16 @@ function MainApp() {
   );
 }
 
-// Previously returned a bare string in a fragment, which (a) throws
-// "Text strings must be rendered within a <Text> component" on native and
-// (b) dropped the `color` prop entirely — so the active tint never reached
-// the glyph. Wrapping in <Text> fixes both; monochrome glyphs like ✦ now
-// actually turn gold when their tab is focused.
-function Icon({ name, color }: { name: string; color: string }) {
-  return (
-    <Text
-      style={{
-        fontSize: 18,
-        lineHeight: 22,
-        color,
-        textAlign: 'center',
-      }}
-    >
-      {name}
-    </Text>
-  );
-}
+const styles = StyleSheet.create({
+  /** Full-bleed chrome behind the capped tab row. */
+  tabBarOuter: {
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+});
 
 export default function App() {
   return (

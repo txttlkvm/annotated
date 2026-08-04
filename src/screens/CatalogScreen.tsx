@@ -1,3 +1,30 @@
+// CatalogScreen — everything in the classical library that is NOT yet on the
+// reader's shelf, and the one place a text gets added to it.
+//
+// Rebuilt on the shared primitives:
+//
+// 1. <Shell>. The screen had no width cap, so on a 1365px desktop each card was
+//    a 76px cover marooned beside 1200px of description, and the three filter
+//    tracks ran the full viewport. Everything now sits in the centred
+//    phone-width column, and the cover width is derived from
+//    `useColumnWidth()` — never from `Dimensions.get('window')`.
+//
+// 2. Covers are the hero: 76px → 92–118px, drawn by <BookCover> from
+//    `coverFor(item.id)` (keyed by CATALOG ITEM id, which is what that map is
+//    keyed by), with the typographic board as the fallback.
+//
+// 3. ONE accent per row. "Add to Library" is the single next action on this
+//    screen, so it is the only thing wearing `colors.action`. Everything else —
+//    chips, tags, the result count — is neutral gold or bronze. The chips'
+//    selected state is a solid gold fill; the old hairline-over-dark version
+//    read as a strikethrough, i.e. as "excluded" rather than "chosen".
+//
+// SEARCH, FILTERING AND ADD BEHAVIOUR ARE UNCHANGED: the same exclusion of
+// already-shelved ids, the same tier/stage/category predicates, the same
+// 50-vs-30 result cap, and the same add path — `addClassicalLibraryItem`, the
+// optimistic removal from the results, and the inline confirmation banner that
+// exists because react-native-web does not implement `Alert.alert`.
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
@@ -13,12 +40,13 @@ import { useApp } from '../context/AppContext';
 import type { ClassicalLibraryItem } from '../data/classicalLibrary';
 import { coverFor, textUrlFor } from '../data/gutenbergIds';
 import BookCover from '../components/BookCover';
-import { colors, fonts, space, radius, type, elevation } from '../theme';
+import Shell, { useColumnWidth } from '../components/Shell';
+import Section from '../components/Section';
+import { SearchIcon, CloseIcon, CheckIcon, PlusIcon } from '../components/icons';
+import { colors, fonts, space, radius, type as t, elevation, layout } from '../theme';
 
 type TierFilter = 'all' | 1 | 2;
 type StageFilter = 'all' | 'grammar' | 'logic' | 'rhetoric';
-
-const COVER_WIDTH = 76;
 
 const TIER_OPTIONS: Array<{ value: TierFilter; label: string }> = [
   { value: 'all', label: 'All tiers' },
@@ -33,21 +61,36 @@ const STAGE_OPTIONS: Array<{ value: StageFilter; label: string }> = [
   { value: 'rhetoric', label: 'Rhetoric' },
 ];
 
-const TYPE_GLYPH: Record<string, string> = {
-  book: '❦',
-  music: '♪',
-  art: '✎',
-  resource: '◆',
+const TYPE_LABEL: Record<string, string> = {
+  music: 'Music',
+  art: 'Art',
+  resource: 'Resource',
+};
+
+/** Rubrication: one ink per stage of the trivium, same family as Curriculum. */
+const STAGE_INK: Record<string, string> = {
+  grammar: colors.success,
+  logic: colors.gold,
+  rhetoric: colors.danger,
 };
 
 const ROMAN: Record<number, string> = { 1: 'I', 2: 'II' };
 
-/** React Native Web paints a default focus ring that fights the gold border. */
-const NO_FOCUS_RING = { outlineStyle: 'none' } as any;
+/** React Native Web paints a focus ring and a border that fight the pill's own. */
+const NO_FOCUS_RING = { outlineStyle: 'none', borderWidth: 0 } as any;
 
 const titleCase = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
-/** Pill filter control. Selected state is a gold wash — never a hairline that reads as a strikethrough. */
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
+
+// ---------------------------------------------------------------------------
+// Pieces. Module level, never declared inside the screen: a component declared
+// in a render body is a new type on every render, so React would rebuild the
+// search field on each keystroke and drop its focus.
+// ---------------------------------------------------------------------------
+
+/** Filter pill. Selected is a solid gold fill with dark ink and a check. */
 function Chip({
   label,
   active,
@@ -60,9 +103,13 @@ function Chip({
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.75}
+      activeOpacity={0.8}
       style={[styles.chip, active && styles.chipActive]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
     >
+      {active && <CheckIcon size={11} color={colors.bg} strokeWidth={3} />}
       <Text style={[styles.chipLabel, active && styles.chipLabelActive]} numberOfLines={1}>
         {label}
       </Text>
@@ -71,29 +118,47 @@ function Chip({
 }
 
 /** Read-only metadata tag on a catalog card. */
-function Tag({ label, emphasis }: { label: string; emphasis?: boolean }) {
+function Tag({
+  label,
+  ink = colors.inkMuted,
+  dot,
+  emphasis,
+}: {
+  label: string;
+  ink?: string;
+  dot?: boolean;
+  emphasis?: boolean;
+}) {
   return (
     <View style={[styles.tag, emphasis && styles.tagEmphasis]}>
-      <Text style={[styles.tagLabel, emphasis && styles.tagLabelEmphasis]} numberOfLines={1}>
+      {dot && <View style={[styles.tagDot, { backgroundColor: ink }]} />}
+      <Text
+        style={[styles.tagLabel, { color: ink }, emphasis && styles.tagLabelEmphasis]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </View>
   );
 }
 
+/** A labelled, edge-bleeding track of filter pills. */
 function FilterRow({
   label,
   children,
+  style,
 }: {
   label: string;
   children: React.ReactNode;
+  style?: any;
 }) {
   return (
-    <View style={styles.filterRow}>
+    <View style={style}>
       <Text style={styles.filterLabel}>{label}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.chipScroller}
         contentContainerStyle={styles.chipTrack}
       >
         {children}
@@ -101,6 +166,88 @@ function FilterRow({
     </View>
   );
 }
+
+/**
+ * One catalog row: large cover, the metadata that decides whether it belongs on
+ * the shelf, and the single accent-coloured action.
+ */
+function ItemCard({
+  item,
+  coverWidth,
+  onAdd,
+}: {
+  item: ClassicalLibraryItem;
+  coverWidth: number;
+  onAdd: (item: ClassicalLibraryItem) => void;
+}) {
+  const hasFullText = !!textUrlFor(item.id);
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardTop}>
+        <BookCover
+          uri={coverFor(item.id)}
+          title={item.title}
+          author={item.author}
+          itemType={item.type}
+          width={coverWidth}
+        />
+
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.cardAuthor} numberOfLines={1}>
+            {item.author}
+          </Text>
+
+          <View style={styles.tagRow}>
+            {!!item.tier && (
+              <Tag
+                label={`Tier ${ROMAN[item.tier] || item.tier}`}
+                ink={item.tier === 1 ? colors.goldBright : colors.bronze}
+                emphasis={item.tier === 1}
+              />
+            )}
+            {!!item.stage && (
+              <Tag label={titleCase(item.stage)} ink={STAGE_INK[item.stage] || colors.bronze} dot />
+            )}
+            <Tag label={titleCase(item.category)} ink={colors.inkMuted} />
+            {!!TYPE_LABEL[item.type] && <Tag label={TYPE_LABEL[item.type]} ink={colors.bronze} />}
+            {typeof item.grade === 'number' && item.grade > 0 && (
+              <Tag label={`Grade ${item.grade}`} ink={colors.bronze} />
+            )}
+          </View>
+
+          {/* Inside the text column, not under the row: a 118px cover stands
+              ~177px tall, and a description slung beneath the whole row would
+              leave that much dead space beside it. */}
+          <Text style={styles.cardDesc} numberOfLines={3}>
+            {item.description}
+          </Text>
+        </View>
+      </View>
+
+      {/* THE action. Nothing else on this screen may wear this colour. */}
+      <View style={styles.cardFooter}>
+        <TouchableOpacity
+          style={styles.addButton}
+          activeOpacity={0.9}
+          onPress={() => onAdd(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Add ${item.title} to your library`}
+        >
+          <PlusIcon size={13} color={colors.actionInk} strokeWidth={2.4} />
+          <Text style={styles.addButtonText}>Add to Library</Text>
+        </TouchableOpacity>
+
+        {hasFullText && <Text style={styles.sourceNote}>Full text available</Text>}
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 export default function CatalogScreen() {
   const { getClassicalLibrary, books, addClassicalLibraryItem } = useApp();
@@ -112,6 +259,12 @@ export default function CatalogScreen() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // THE fix for the desktop defect: sizes come from the capped column, not the
+  // window. The gutter is applied by Shell's contentContainerStyle rather than
+  // by Shell itself, so it has to be passed to the hook explicitly.
+  const col = useColumnWidth(undefined, layout.gutter);
+  const coverW = clamp(Math.round(col * 0.28), 92, 118);
 
   // Categories are derived from the data rather than hardcoded so the chips
   // never drift from the library.
@@ -194,203 +347,156 @@ export default function CatalogScreen() {
     setCategoryFilter('all');
   };
 
-  const ItemCard = ({ item }: { item: ClassicalLibraryItem }) => {
-    const hasFullText = !!textUrlFor(item.id);
-
-    return (
-      <View style={styles.card}>
-        <BookCover
-          uri={coverFor(item.id)}
-          title={item.title}
-          author={item.author}
-          itemType={item.type}
-          width={COVER_WIDTH}
-        />
-
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <Text style={styles.cardAuthor} numberOfLines={1}>
-            {item.author}
-          </Text>
-
-          <View style={styles.tagRow}>
-            {!!item.tier && (
-              <Tag label={`Tier ${ROMAN[item.tier] || item.tier}`} emphasis={item.tier === 1} />
-            )}
-            {!!item.stage && <Tag label={titleCase(item.stage)} />}
-            <Tag label={`${TYPE_GLYPH[item.type] || TYPE_GLYPH.book}  ${titleCase(item.category)}`} />
-            {typeof item.grade === 'number' && item.grade > 0 && (
-              <Tag label={`Grade ${item.grade}`} />
-            )}
-          </View>
-
-          <Text style={styles.cardDesc} numberOfLines={3}>
-            {item.description}
-          </Text>
-
-          <View style={styles.cardFooter}>
-            <TouchableOpacity
-              style={styles.addButton}
-              activeOpacity={0.8}
-              onPress={() => handleAddItem(item)}
-            >
-              <Text style={styles.addButtonText}>Add to Library</Text>
-            </TouchableOpacity>
-            {hasFullText && <Text style={styles.sourceNote}>Full text available</Text>}
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const resultCount = filteredItems.length;
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.overline}>The Great Books</Text>
-        <Text style={styles.title}>Classical Catalog</Text>
+    // gutter={false} + an explicit gutter on the column, so the scroller's clip
+    // box stays the full window and no card shadow is sheared at the edge.
+    <Shell scroll gutter={false} contentContainerStyle={styles.content}>
+      {/* Masthead */}
+      <View style={styles.masthead}>
+        <Text style={styles.overline}>THE GREAT BOOKS</Text>
+        <Text style={styles.screenTitle}>Classical Catalog</Text>
         <View style={styles.titleRule} />
         <Text style={styles.subtitle}>Texts not yet on your shelf</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Search */}
-        <View style={styles.searchField}>
-          <Text style={styles.searchGlyph}>⌕</Text>
-          <TextInput
-            placeholder="Search by title, author, or topic"
-            placeholderTextColor={colors.bronze}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={[styles.searchInput, NO_FOCUS_RING]}
-            returnKeyType="search"
+      {/* Search */}
+      <View style={styles.searchRow}>
+        <SearchIcon size={16} color={colors.bronze} strokeWidth={1.8} />
+        <TextInput
+          placeholder="Search by title, author, or topic"
+          placeholderTextColor={colors.bronze}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={[styles.searchInput, NO_FOCUS_RING]}
+          returnKeyType="search"
+          accessibilityLabel="Search the catalog"
+        />
+        {!!searchQuery && (
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
+            <CloseIcon size={14} color={colors.bronze} strokeWidth={1.8} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Filters */}
+      <View style={styles.filters}>
+        <FilterRow label="Tier">
+          {TIER_OPTIONS.map(opt => (
+            <Chip
+              key={String(opt.value)}
+              label={opt.label}
+              active={tierFilter === opt.value}
+              onPress={() => setTierFilter(opt.value)}
+            />
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Stage" style={styles.filterRowSpaced}>
+          {STAGE_OPTIONS.map(opt => (
+            <Chip
+              key={opt.value}
+              label={opt.label}
+              active={stageFilter === opt.value}
+              onPress={() => setStageFilter(opt.value)}
+            />
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Subject" style={styles.filterRowSpaced}>
+          <Chip
+            label="All subjects"
+            active={categoryFilter === 'all'}
+            onPress={() => setCategoryFilter('all')}
           />
-          {!!searchQuery && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.searchClear}>✕</Text>
+          {categories.map(cat => (
+            <Chip
+              key={cat}
+              label={titleCase(cat)}
+              active={categoryFilter === cat}
+              onPress={() => setCategoryFilter(cat)}
+            />
+          ))}
+        </FilterRow>
+      </View>
+
+      {!!justAdded && (
+        <View style={styles.banner}>
+          <View style={styles.bannerMark}>
+            <CheckIcon size={12} color={colors.success} strokeWidth={2.6} />
+          </View>
+          <Text style={styles.bannerText} numberOfLines={2}>
+            “{justAdded}” added to your library
+          </Text>
+        </View>
+      )}
+
+      {/* Results */}
+      {isSearching ? (
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={colors.gold} />
+          <Text style={styles.loadingText}>Searching the catalog…</Text>
+        </View>
+      ) : resultCount === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyGlyph}>❦</Text>
+          <Text style={styles.emptyTitle}>
+            {searchQuery || filtersActive ? 'Nothing matches' : 'Catalog complete'}
+          </Text>
+          <Text style={styles.emptyText}>
+            {searchQuery || filtersActive
+              ? 'Try a different term, or widen the filters.'
+              : 'Every text in the catalog is already on your shelf.'}
+          </Text>
+          {filtersActive && (
+            <TouchableOpacity
+              style={styles.ghostButton}
+              onPress={clearFilters}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+            >
+              <Text style={styles.ghostButtonText}>Clear filters</Text>
             </TouchableOpacity>
           )}
         </View>
-
-        {/* Filters */}
-        <View style={styles.filters}>
-          <FilterRow label="Tier">
-            {TIER_OPTIONS.map(opt => (
-              <Chip
-                key={String(opt.value)}
-                label={opt.label}
-                active={tierFilter === opt.value}
-                onPress={() => setTierFilter(opt.value)}
-              />
-            ))}
-          </FilterRow>
-
-          <FilterRow label="Stage">
-            {STAGE_OPTIONS.map(opt => (
-              <Chip
-                key={opt.value}
-                label={opt.label}
-                active={stageFilter === opt.value}
-                onPress={() => setStageFilter(opt.value)}
-              />
-            ))}
-          </FilterRow>
-
-          <FilterRow label="Subject">
-            <Chip
-              label="All subjects"
-              active={categoryFilter === 'all'}
-              onPress={() => setCategoryFilter('all')}
-            />
-            {categories.map(cat => (
-              <Chip
-                key={cat}
-                label={titleCase(cat)}
-                active={categoryFilter === cat}
-                onPress={() => setCategoryFilter(cat)}
-              />
-            ))}
-          </FilterRow>
-        </View>
-
-        {!!justAdded && (
-          <View style={styles.banner}>
-            <Text style={styles.bannerText} numberOfLines={2}>
-              “{justAdded}” added to your library
-            </Text>
-          </View>
-        )}
-
-        {/* Results */}
-        {isSearching ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.gold} />
-            <Text style={styles.loadingText}>Searching the catalog…</Text>
-          </View>
-        ) : filteredItems.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyGlyph}>❦</Text>
-            <Text style={styles.emptyTitle}>
-              {searchQuery || filtersActive ? 'Nothing matches' : 'Catalog complete'}
-            </Text>
-            <Text style={styles.emptyText}>
-              {searchQuery || filtersActive
-                ? 'Try a different term, or widen the filters.'
-                : 'Every text in the catalog is already on your shelf.'}
-            </Text>
-            {filtersActive && (
-              <TouchableOpacity style={styles.emptyAction} onPress={clearFilters} activeOpacity={0.8}>
-                <Text style={styles.emptyActionText}>Clear filters</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          <>
-            <View style={styles.resultHeader}>
-              <Text style={styles.resultCount}>
-                {filteredItems.length} {filteredItems.length === 1 ? 'text' : 'texts'}
-              </Text>
-              {filtersActive && (
-                <TouchableOpacity onPress={clearFilters} activeOpacity={0.7}>
-                  <Text style={styles.resultClear}>Clear filters</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {filteredItems.map(item => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </>
-        )}
-      </ScrollView>
-    </View>
+      ) : (
+        <Section
+          title={searchQuery.trim() ? 'Results' : 'Available Texts'}
+          subtitle={`${resultCount} ${resultCount === 1 ? 'text' : 'texts'} not yet on your shelf`}
+          actionLabel={filtersActive ? 'Clear filters' : undefined}
+          onAction={filtersActive ? clearFilters : undefined}
+          hideActionChevron
+          style={styles.results}
+          last
+        >
+          {filteredItems.map(item => (
+            <ItemCard key={item.id} item={item} coverWidth={coverW} onAdd={handleAddItem} />
+          ))}
+        </Section>
+      )}
+    </Shell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  /** The page gutter lives on the column, not on Shell. */
+  content: { paddingHorizontal: layout.gutter },
 
-  header: {
-    paddingHorizontal: space.xl,
-    paddingTop: space.xl,
-    paddingBottom: space.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.rule,
-    backgroundColor: colors.surface,
-  },
+  /* masthead */
+  masthead: { paddingTop: space.xl, marginBottom: space.lg },
   overline: {
-    ...type.overline,
+    ...t.overline,
     color: colors.bronze,
     textTransform: 'uppercase',
-    marginBottom: space.sm,
+    marginBottom: 4,
   },
-  title: { ...type.display, color: colors.gold },
+  screenTitle: { ...t.display, color: colors.gold },
   titleRule: {
     height: 1,
     width: 56,
@@ -399,152 +505,184 @@ const styles = StyleSheet.create({
     marginTop: space.md,
     marginBottom: space.md,
   },
-  subtitle: { ...type.body, color: colors.inkMuted },
+  subtitle: { ...t.body, color: colors.inkMuted },
 
-  content: {
-    paddingHorizontal: space.xl,
-    paddingTop: space.xl,
-    paddingBottom: space.xxxl,
-  },
-
-  searchField: {
+  /* search */
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    gap: space.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
     paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    ...elevation.card,
+    height: 44,
   },
-  searchGlyph: { fontSize: 18, color: colors.bronze },
   searchInput: {
     flex: 1,
-    ...type.body,
+    minWidth: 0,
     color: colors.ink,
-    paddingVertical: space.xs,
+    ...t.body,
   },
-  searchClear: { fontSize: 14, color: colors.bronze, paddingHorizontal: space.xs },
 
-  filters: { marginTop: space.xl, gap: space.lg },
-  filterRow: { gap: space.sm },
+  /* filters */
+  filters: { marginTop: space.lg, marginBottom: space.xl },
+  filterRowSpaced: { marginTop: space.md },
   filterLabel: {
-    ...type.overline,
+    ...t.overline,
     color: colors.bronze,
     textTransform: 'uppercase',
+    marginBottom: space.sm,
   },
-  chipTrack: { flexDirection: 'row', gap: space.sm, paddingRight: space.lg, paddingVertical: 2 },
+  /**
+   * RNW gives every ScrollView `flexGrow:1`; in a column parent that is
+   * VERTICAL growth, which would let a chip track absorb the page's slack.
+   * Pin it, and bleed it off both edges so the pills run to the screen edge.
+   */
+  chipScroller: {
+    flexGrow: 0,
+    flexShrink: 0,
+    marginHorizontal: -layout.gutter,
+  },
+  chipTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: layout.gutter,
+  },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    // NEVER `flex: 1` — that is what stretched controls to ~640px on desktop.
     paddingHorizontal: space.lg,
-    paddingVertical: space.sm,
+    minHeight: 34,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  chipActive: {
-    backgroundColor: 'rgba(201, 169, 97, 0.16)',
-    borderColor: colors.gold,
-  },
-  chipLabel: { ...type.caption, color: colors.inkMuted },
-  chipLabelActive: { color: colors.goldBright, fontWeight: '600' },
+  /** Solid gold. A hairline over a dark fill read as a strikethrough. */
+  chipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  chipLabel: { ...t.caption, fontSize: 13, color: colors.inkMuted },
+  chipLabelActive: { color: colors.bg, fontWeight: '700' },
 
+  /* banner */
   banner: {
-    marginTop: space.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    marginBottom: space.xl,
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: 'rgba(127, 169, 107, 0.45)',
     backgroundColor: 'rgba(127, 169, 107, 0.12)',
   },
-  bannerText: { ...type.body, color: colors.ink },
+  bannerMark: { width: 16, alignItems: 'center' },
+  bannerText: { ...t.body, color: colors.ink, flex: 1, minWidth: 0 },
 
-  resultHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: space.xxl,
-    marginBottom: space.lg,
-  },
-  resultCount: { ...type.caption, color: colors.bronze, textTransform: 'uppercase', letterSpacing: 1 },
-  resultClear: { ...type.caption, color: colors.gold },
+  /* results */
+  results: { marginTop: space.xs },
 
-  loadingContainer: { justifyContent: 'center', alignItems: 'center', marginVertical: space.xxxl },
-  loadingText: { ...type.body, color: colors.inkMuted, marginTop: space.lg },
-
-  emptyState: {
-    marginTop: space.xxl,
-    paddingHorizontal: space.xl,
-    paddingVertical: space.xxxl,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-  },
-  emptyGlyph: { fontSize: 26, color: colors.bronze, marginBottom: space.md },
-  emptyTitle: { ...type.heading, color: colors.gold, marginBottom: space.sm },
-  emptyText: { ...type.body, color: colors.inkMuted, textAlign: 'center', maxWidth: 320 },
-  emptyAction: {
-    marginTop: space.xl,
-    paddingHorizontal: space.xl,
-    paddingVertical: space.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.gold,
-  },
-  emptyActionText: { ...type.caption, color: colors.goldBright, fontWeight: '600' },
-
+  /* card */
   card: {
-    flexDirection: 'row',
-    gap: space.lg,
     padding: space.lg,
     marginBottom: space.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    alignItems: 'flex-start',
     ...elevation.card,
   },
-  cardBody: { flex: 1, minWidth: 0 },
-  cardTitle: { ...type.title, color: colors.ink, marginBottom: 2 },
-  cardAuthor: { ...type.caption, color: colors.bronze, marginBottom: space.md },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
+  cardBody: { flex: 1, minWidth: 0, marginLeft: space.lg },
+  cardTitle: { ...t.title, color: colors.gold, marginBottom: 2 },
+  cardAuthor: {
+    ...t.caption,
+    color: colors.bronze,
+    fontStyle: 'italic',
+    marginBottom: space.md,
+  },
 
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginBottom: space.md },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tag: {
-    paddingHorizontal: space.md,
-    paddingVertical: space.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    paddingHorizontal: space.sm + 2,
+    paddingVertical: 3,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.rule,
     backgroundColor: colors.surfaceRaised,
   },
-  tagEmphasis: {
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(201, 169, 97, 0.14)',
+  tagEmphasis: { borderColor: colors.border, backgroundColor: 'rgba(201, 169, 97, 0.14)' },
+  tagDot: { width: 5, height: 5, borderRadius: radius.pill },
+  tagLabel: { fontFamily: fonts.ui, fontSize: 11, lineHeight: 16, letterSpacing: 0.4 },
+  tagLabelEmphasis: { fontWeight: '700' },
+
+  cardDesc: { ...t.body, color: colors.inkMuted, marginTop: space.md },
+
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    flexWrap: 'wrap',
+    marginTop: space.lg,
   },
-  tagLabel: { ...type.caption, fontSize: 11, color: colors.inkMuted },
-  tagLabelEmphasis: { color: colors.goldBright, fontWeight: '600' },
-
-  cardDesc: { ...type.body, color: colors.inkMuted, marginBottom: space.lg },
-
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: space.md, flexWrap: 'wrap' },
+  /** THE action. One colour, one job. */
   addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     paddingHorizontal: space.lg,
-    paddingVertical: space.sm,
+    minHeight: 40,
     borderRadius: radius.pill,
-    backgroundColor: colors.gold,
+    backgroundColor: colors.action,
   },
   addButtonText: {
     fontFamily: fonts.ui,
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-    color: colors.bg,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: colors.actionInk,
   },
-  sourceNote: { ...type.caption, fontSize: 11, color: colors.bronze },
+  sourceNote: { ...t.caption, fontSize: 11, color: colors.bronze },
+
+  /* loading + empty */
+  loading: { alignItems: 'center', justifyContent: 'center', paddingVertical: space.xxxl },
+  loadingText: { ...t.body, color: colors.inkMuted, marginTop: space.lg },
+  empty: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: space.xxxl,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  emptyGlyph: {
+    fontFamily: fonts.display,
+    fontSize: 34,
+    color: colors.bronze,
+    marginBottom: space.md,
+  },
+  emptyTitle: { ...t.heading, color: colors.gold, marginBottom: space.sm, textAlign: 'center' },
+  emptyText: { ...t.body, color: colors.inkMuted, textAlign: 'center', maxWidth: 320 },
+  ghostButton: {
+    marginTop: space.xl,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.sm + 2,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+  },
+  ghostButtonText: { ...t.caption, color: colors.gold, letterSpacing: 0.8 },
 });
