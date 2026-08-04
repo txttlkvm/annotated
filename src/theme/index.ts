@@ -4,6 +4,13 @@
 // deep aubergine with manuscript gold. This centralises it and adds the
 // typography, spacing, and elevation scales the screens were missing, which
 // is most of why the app read as "basic" despite decent colours.
+//
+// Retuned against the owner's five reference apps. The references win on
+// STRUCTURE, not palette: bigger radii, one saturated accent per screen, far
+// more vertical breathing room, and — the big one — a phone-width column that
+// stays a phone-width column on a 1365px desktop. Aubergine + gold stays.
+
+import type { ViewStyle } from 'react-native';
 
 export const colors = {
   /** Page background — near-black with a violet cast, easy on the eye at night. */
@@ -21,6 +28,23 @@ export const colors = {
   goldBright: '#e3c887',
   /** Muted bronze. Secondary text, borders, metadata. */
   bronze: '#8b7355',
+
+  // ---------------------------------------------------------------------
+  // THE action accent. Exactly one saturated colour per screen, reserved for
+  // the single next action (Continue Reading, Add to Library, Start Lesson).
+  // Ember orange: hue ~25° against gold's ~41°, and far more saturated
+  // (78% vs 52%), so it reads as a different *role* rather than more gold.
+  // Nothing decorative may use it — the moment two things on a screen are
+  // action-coloured, neither is the action.
+  // ---------------------------------------------------------------------
+  /** Primary CTA fill. */
+  action: '#e57c33',
+  /** Label/icon colour to sit ON an `action` fill (6.6:1 — never use gold or white here). */
+  actionInk: '#1a0c03',
+  /** Tinted wash for the CTA's halo, selected pills, progress fills. */
+  actionSoft: 'rgba(229, 124, 51, 0.16)',
+  /** Hairline for an outlined variant of the CTA. */
+  actionBorder: 'rgba(229, 124, 51, 0.45)',
 
   /** Body copy in the reader — warm off-white, never pure #fff. */
   ink: '#ece4d8',
@@ -50,25 +74,90 @@ export const fonts = {
   ui: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
 };
 
-/** 4pt base scale. Consistent rhythm is most of what reads as "designed". */
+/**
+ * 4pt base scale. Consistent rhythm is most of what reads as "designed".
+ *
+ * The small end (xs..lg) is UNCHANGED — it is the inner padding of every card
+ * and chip in the app, and loosening it would just make everything puffy. What
+ * the references actually have more of is the space BETWEEN blocks, so the
+ * large end grew and a named `section` step was added.
+ */
 export const space = {
   xs: 4,
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 24,
-  xxl: 32,
-  xxxl: 48,
+  /** Was 24. Bumped to the bottom of the reference's 28–32 section band. */
+  xl: 28,
+  /** Was 32. The gap between a section and the next section's heading. */
+  xxl: 36,
+  /** Was 48. Scroll-tail padding and empty-state breathing room. */
+  xxxl: 56,
+  /** Canonical between-sections rhythm. Use this for `section { marginBottom }`. */
+  section: 32,
+  /** Gap between a section heading and the content it heads. */
+  heading: 14,
 };
 
 export const radius = {
-  sm: 4,
-  md: 8,
-  lg: 14,
+  /** Was 4. Badges, swatches, tiny inline chips. */
+  sm: 8,
+  /** Was 8. Buttons, inputs, list tiles — and the cover corner in BookCover. */
+  md: 12,
+  /** Was 14. THE card radius from the references. */
+  lg: 22,
+  /** Hero panels — the Continue Reading card, featured banners, sheets. */
+  hero: 28,
+  /** Book covers. Deliberately tighter than a card so the cover reads as an
+   *  object sitting on the card, not as part of it. */
+  cover: 12,
+  /** Chips, tabs and filter pills are fully round in every reference. */
   pill: 999,
 };
 
+/**
+ * The phone column. THE fix for the worst desktop defect: with no cap, a
+ * 1365px viewport stretched two sort buttons to ~640px each. Every reference
+ * is a single narrow column that simply centres itself on a wide screen.
+ */
+const MAX_WIDTH = 480;
+const GUTTER = 20;
+
+export const layout = {
+  /** Hard cap for app chrome. Nothing in the shell should exceed this. */
+  maxWidth: MAX_WIDTH,
+  /** The reader gets a wider measure — 480px of justified serif is cramped on
+   *  a desktop; ~34em is the classic comfortable line length. */
+  readerMaxWidth: 660,
+  /** Horizontal page gutter, inside the capped column. */
+  gutter: GUTTER,
+
+  /** Centring helper. Drop on any block that must not go full-bleed. */
+  centered: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' } as ViewStyle,
+
+  /** Centred column WITH the page gutter — screen roots and
+   *  ScrollView/FlatList `contentContainerStyle`. */
+  screen: {
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: GUTTER,
+  } as ViewStyle,
+
+  /** Same, for the reader's wider measure. */
+  readerColumn: { width: '100%', maxWidth: 660, alignSelf: 'center' } as ViewStyle,
+
+  /** Escape hatch for one-off widths: `layout.center(720)`. Horizontal
+   *  carousels should stay full-bleed and instead pad their content, so they
+   *  bleed off the edge the way the references do. */
+  center(max: number = MAX_WIDTH): ViewStyle {
+    return { width: '100%', maxWidth: max, alignSelf: 'center' };
+  },
+};
+
 export const type = {
+  /** Hero titles — the Continue Reading card, a book detail masthead. */
+  hero: { fontFamily: fonts.display, fontSize: 32, letterSpacing: 0.2 },
   /** Screen titles. */
   display: { fontFamily: fonts.display, fontSize: 26, letterSpacing: 0.4 },
   /** Section headings. */
@@ -84,8 +173,8 @@ export const type = {
 };
 
 /**
- * Elevation. React Native Web maps these to box-shadow; the soft gold-tinted
- * shadow is what stops cards looking like flat rectangles.
+ * Elevation. React Native Web maps these to box-shadow; the soft shadow is
+ * what stops cards looking like flat rectangles.
  */
 export const elevation = {
   card: {
@@ -95,12 +184,23 @@ export const elevation = {
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  /** Covers are the hero object in every reference — they need a real drop
+   *  shadow, cast downward, so the book sits ON the surface. */
   cover: {
     shadowColor: '#000',
     shadowOpacity: 0.55,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 6,
+  },
+  /** The large Continue-Reading panel. Wider, softer and dropped further than
+   *  a card so one element clearly owns the top of the screen. */
+  hero: {
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
   },
 };
 
@@ -120,9 +220,14 @@ export type ReaderPalette = {
 };
 
 /**
- * The four reader themes, re-cut against the design system. The old palette
- * put #e0e0e0 on #1a1a1a (grey on grey) and #000 on #fff (glaring); these are
- * all warm-neutral pairings with the same contrast in every mode.
+ * The four reader themes. The references all read on PAPER, not on black — so
+ * `light` and `sepia` were re-cut as genuinely warm grounds (no blue-white, no
+ * grey) carrying near-black serif text, which is what an actual printed page
+ * looks like. `dark`/`night` remain as the option, not the default.
+ *
+ * Convention preserved from before: `surface` is chrome (header, control bar)
+ * and is a step DEEPER than the page, `raised` is a button fill deeper still.
+ * On paper that reads as the page recessing away from its furniture.
  *
  * Lives here rather than in ReaderScreen because Settings previews these
  * swatches — when they were declared locally in the reader, Settings drew from
@@ -151,28 +256,41 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     rule: 'rgba(171, 144, 87, 0.14)',
     border: 'rgba(171, 144, 87, 0.22)',
   },
+  /** Aged paper — tea-stained, the warmest ground. Text at 13:1. */
   sepia: {
-    bg: '#f3ead6',
-    surface: '#e9dec4',
-    raised: '#ded1b3',
-    text: '#463427',
-    muted: '#7c6950',
-    accent: '#8b6914',
-    accentSoft: '#9a8256',
-    rule: 'rgba(70, 52, 39, 0.16)',
-    border: 'rgba(70, 52, 39, 0.26)',
+    bg: '#f1e3c4',
+    surface: '#e9d9b5',
+    raised: '#dfcda3',
+    text: '#231a10',
+    muted: '#6d5c40',
+    accent: '#7a4f18',
+    accentSoft: '#96794b',
+    rule: 'rgba(35, 26, 16, 0.13)',
+    border: 'rgba(35, 26, 16, 0.22)',
   },
+  /** Cream book paper — the default reading ground. Warm ivory, never #fff;
+   *  near-black warm ink rather than the old grey-on-grey. */
   light: {
-    bg: '#fbf7f0',
-    surface: '#f1eae0',
-    raised: '#e6ddd0',
-    text: '#292118',
-    muted: '#6d6154',
-    accent: '#8a6a30',
-    accentSoft: '#9c8a6e',
-    rule: 'rgba(41, 33, 24, 0.14)',
-    border: 'rgba(41, 33, 24, 0.22)',
+    bg: '#f8f2e4',
+    surface: '#f1e9d6',
+    raised: '#e7dcc3',
+    text: '#17120c',
+    muted: '#6a5c48',
+    accent: '#7c5a1f',
+    accentSoft: '#9b8558',
+    rule: 'rgba(23, 18, 12, 0.11)',
+    border: 'rgba(23, 18, 12, 0.19)',
   },
 };
 
-export default { colors, fonts, space, radius, type, elevation, COVER_RATIO };
+export default {
+  colors,
+  fonts,
+  space,
+  radius,
+  layout,
+  type,
+  elevation,
+  readerPalettes,
+  COVER_RATIO,
+};
