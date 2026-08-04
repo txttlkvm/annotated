@@ -59,10 +59,19 @@ export default function BookCover({ uri, title, author, itemType = 'book', width
         <View style={styles.fallback}>
           {/* Spine rule — reads as a book board rather than an empty tile. */}
           <View style={styles.spine} />
-          <View style={styles.fallbackBody}>
+          <View style={[styles.fallbackBody, { paddingHorizontal: width < 90 ? 5 : 8 }]}>
             <Text
-              style={[type.title, styles.fallbackTitle, { fontSize: width < 90 ? 11 : 13 }]}
-              numberOfLines={4}
+              style={[
+                type.title,
+                styles.fallbackTitle,
+                // React Native Web breaks mid-word rather than overflow, so a
+                // long title in a narrow spine (e.g. "Confessions" at ~58px)
+                // was splitting as "Confe-ssions". Scaling the font down with
+                // width and allowing an extra line keeps words whole far more
+                // often than the old fixed 11/13px step did.
+                { fontSize: Math.max(8, Math.min(13, Math.round(width / 7))) },
+              ]}
+              numberOfLines={width < 90 ? 5 : 4}
             >
               {title}
             </Text>

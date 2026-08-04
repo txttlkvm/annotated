@@ -891,22 +891,18 @@ export default function LibraryScreen({ navigation }: any) {
           <Text style={styles.screenTitle}>Library</Text>
         </View>
 
+        {/* Browses the canon; the big CTA below imports a local file. They
+            used to fire the identical handler — same label, same action,
+            just two sizes of the same button. */}
         <TouchableOpacity
-          style={[styles.addButton, isBusy && styles.addButtonBusy]}
-          onPress={handleUploadBook}
-          disabled={isBusy}
+          style={styles.addButton}
+          onPress={() => navigation.navigate('Catalog')}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Import a book from this device"
+          accessibilityLabel="Browse the classical catalogue"
         >
-          {isBusy ? (
-            <ActivityIndicator color={colors.gold} size="small" />
-          ) : (
-            <>
-              <PlusIcon size={13} color={colors.gold} strokeWidth={2.2} />
-              <Text style={styles.addButtonText}>Add</Text>
-            </>
-          )}
+          <PlusIcon size={13} color={colors.gold} strokeWidth={2.2} />
+          <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -1061,7 +1057,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     minHeight: 36,
   },
-  addButtonBusy: { opacity: 0.6 },
   addButtonText: { ...t.caption, letterSpacing: 0.8, color: colors.gold, fontWeight: '600' },
 
   /* search */
