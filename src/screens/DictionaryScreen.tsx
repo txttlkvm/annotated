@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
+import Shell from '../components/Shell';
 import type { WordLookup } from '../types';
 
 type SortMode = 'recent' | 'alpha';
@@ -185,7 +186,8 @@ export default function DictionaryScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <Shell gutter={false} contentContainerStyle={styles.container}>
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.eyebrow}>VOCABULARY</Text>
@@ -322,7 +324,7 @@ export default function DictionaryScreen() {
           filteredWords.map(renderWord)
         )}
       </ScrollView>
-    </View>
+    </Shell>
   );
 }
 

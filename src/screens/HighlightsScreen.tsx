@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
+import Shell from '../components/Shell';
 import type { Highlight } from '../types';
 
 /**
@@ -104,7 +105,8 @@ export default function HighlightsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <Shell gutter={false} contentContainerStyle={styles.container}>
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerText}>
@@ -224,7 +226,7 @@ export default function HighlightsScreen() {
           ))}
         </ScrollView>
       )}
-    </View>
+    </Shell>
   );
 }
 

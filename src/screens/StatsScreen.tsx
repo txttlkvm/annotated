@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import BookCover from '../components/BookCover';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
 
+import Shell from '../components/Shell';
 /* ------------------------------------------------------------------ *
  * Building blocks
  * ------------------------------------------------------------------ */
@@ -103,7 +104,7 @@ export default function StatsScreen() {
   const recent = books.slice(0, 5);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <Shell scroll gutter={false} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Your reading</Text>
         <Text style={styles.title}>Reading Wisdom</Text>
@@ -208,7 +209,7 @@ export default function StatsScreen() {
           )}
         </View>
       </View>
-    </ScrollView>
+    </Shell>
   );
 }
 

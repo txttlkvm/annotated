@@ -13,6 +13,7 @@ import {
 import { useApp } from '../context/AppContext';
 import BookCover from '../components/BookCover';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
+import Shell from '../components/Shell';
 import type { Book, Collection } from '../types';
 
 /** Width of the small covers in a collection's preview stack. */
@@ -237,7 +238,8 @@ export default function CollectionsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <Shell gutter={false} contentContainerStyle={styles.container}>
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.eyebrow}>THE LIBRARY</Text>
@@ -417,7 +419,7 @@ export default function CollectionsScreen() {
           </View>
         </Modal>
       )}
-    </View>
+    </Shell>
   );
 }
 

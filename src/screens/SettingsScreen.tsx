@@ -14,6 +14,7 @@ import { TTSService } from '../services/TTSService';
 import { READER_THEMES } from '../types';
 import { colors, fonts, space, radius, type, elevation, readerPalettes } from '../theme';
 
+import Shell from '../components/Shell';
 /* ------------------------------------------------------------------ *
  * Building blocks
  * ------------------------------------------------------------------ */
@@ -159,7 +160,7 @@ export default function SettingsScreen() {
   const themeNames = Object.keys(READER_THEMES);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <Shell scroll gutter={false} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Annotated</Text>
         <Text style={styles.title}>Settings</Text>
@@ -363,7 +364,7 @@ export default function SettingsScreen() {
           </View>
         </View>
       </View>
-    </ScrollView>
+    </Shell>
   );
 }
 
