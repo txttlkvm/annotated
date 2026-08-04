@@ -1,11 +1,78 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { DatabaseService } from '../services/DatabaseService';
-import { READER_THEMES } from '../types';
+import BookCover from '../components/BookCover';
+import { colors, fonts, space, radius, type, elevation } from '../theme';
+
+/* ------------------------------------------------------------------ *
+ * Building blocks
+ * ------------------------------------------------------------------ */
+
+/**
+ * A single figure, set large in the display serif with a hairline above and a
+ * small-caps label beneath. The old version was a 28px number on a flat
+ * 2px-radius tile; the weight of the numeral is what carries this now.
+ */
+function StatBlock({
+  label,
+  value,
+  unit,
+  note,
+}: {
+  label: string;
+  value: number | string;
+  unit?: string;
+  note?: string;
+}) {
+  return (
+    <View style={styles.statBlock}>
+      <View style={styles.statAccent} />
+      <Text style={styles.statLabel}>{label}</Text>
+      <View style={styles.statFigureRow}>
+        <Text style={styles.statFigure} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Text>
+        {!!unit && <Text style={styles.statUnit}>{unit}</Text>}
+      </View>
+      {!!note && <Text style={styles.statNote}>{note}</Text>}
+    </View>
+  );
+}
+
+/** Slim gold meter used for completion and per-book progress. */
+function Meter({ percent, thin }: { percent: number; thin?: boolean }) {
+  const clamped = Math.max(0, Math.min(100, isFinite(percent) ? percent : 0));
+  return (
+    <View style={[styles.meterTrack, thin && styles.meterTrackThin]}>
+      <View style={[styles.meterFill, thin && styles.meterFillThin, { width: `${clamped}%` }]} />
+    </View>
+  );
+}
+
+function SectionTitle({ children, caption }: { children: string; caption?: string }) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text style={styles.sectionTitle}>{children}</Text>
+      {!!caption && <Text style={styles.sectionCaption}>{caption}</Text>}
+    </View>
+  );
+}
+
+function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  return (
+    <View style={[styles.infoRow, last && styles.infoRowLast]}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Screen
+ * ------------------------------------------------------------------ */
 
 export default function StatsScreen() {
-  const { books, settings } = useApp();
+  const { books } = useApp();
   const [stats, setStats] = useState({ totalPages: 0, totalMinutes: 0, booksRead: 0 });
 
   useEffect(() => {
@@ -26,130 +93,283 @@ export default function StatsScreen() {
     setStats({ totalPages, totalMinutes, booksRead });
   };
 
-  const StatCard = ({ title, value, unit }: { title: string; value: number | string; unit?: string }) => (
-    <View style={[styles.statCard, { backgroundColor: '#2d1b4e', borderColor: '#8b7355' }]}>
-      <Text style={[styles.statTitle, { color: '#8b7355' }]}>{title}</Text>
-      <View style={styles.statValueRow}>
-        <Text style={[styles.statValue, { color: '#c9a961' }]}>{value}</Text>
-        {unit && <Text style={[styles.statUnit, { color: '#c9a961' }]}>{unit}</Text>}
-      </View>
-    </View>
-  );
-
-  const averageReadingTime = books.length > 0 ? Math.round(stats.totalMinutes / books.length) : 0;
   const totalBooks = books.length;
+  const averageReadingTime = totalBooks > 0 ? Math.round(stats.totalMinutes / totalBooks) : 0;
+  const averagePages = totalBooks > 0 ? Math.round(stats.totalPages / totalBooks) : 0;
   const finishRate = totalBooks > 0 ? Math.round((stats.booksRead / totalBooks) * 100) : 0;
+  const inProgress = totalBooks - stats.booksRead;
+  const hours = (stats.totalMinutes / 60).toFixed(1);
+
+  const recent = books.slice(0, 5);
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: '#0f0a1a' }]}
-      contentContainerStyle={styles.content}
-    >
-      <Text style={[styles.title, { color: '#c9a961' }]}>✦ Reading Wisdom</Text>
-
-      {/* Main Stats */}
-      <View style={styles.statsGrid}>
-        <StatCard title="Manuscripts" value={totalBooks} />
-        <StatCard title="Completed" value={stats.booksRead} />
-        <StatCard title="Pages Read" value={stats.totalPages} />
-        <StatCard title="Hours" value={(stats.totalMinutes / 60).toFixed(1)} unit="hrs" />
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>Your reading</Text>
+        <Text style={styles.title}>Reading Wisdom</Text>
+        <Text style={styles.subtitle}>
+          What you have read, and what still waits on the shelf.
+        </Text>
+        <View style={styles.headerRule} />
       </View>
 
-      {/* Detailed Stats */}
+      {/* Figures */}
+      <View style={styles.statsGrid}>
+        <StatBlock label="Manuscripts" value={totalBooks} note="in the library" />
+        <StatBlock label="Completed" value={stats.booksRead} note={`${finishRate}% of the shelf`} />
+        <StatBlock label="Pages read" value={stats.totalPages} />
+        <StatBlock label="Time spent" value={hours} unit="hrs" />
+      </View>
+
+      {/* Completion */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Summary</Text>
-
-        <View style={[styles.infoRow, { borderBottomColor: '#8b7355' }]}>
-          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>Average Reading Time</Text>
-          <Text style={[styles.infoValue, { color: '#8b7355' }]}>{averageReadingTime} mins</Text>
+        <SectionTitle caption="How much of the shelf you have finished.">Progress</SectionTitle>
+        <View style={styles.card}>
+          <View style={styles.completionHead}>
+            <Text style={styles.completionFigure}>{finishRate}</Text>
+            <Text style={styles.completionUnit}>%</Text>
+            <Text style={styles.completionCaption}>
+              {stats.booksRead} of {totalBooks || 0} finished
+            </Text>
+          </View>
+          <Meter percent={finishRate} />
         </View>
+      </View>
 
-        <View style={[styles.infoRow, { borderBottomColor: '#8b7355' }]}>
-          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>Completion Rate</Text>
-          <Text style={[styles.infoValue, { color: '#8b7355' }]}>{finishRate}%</Text>
+      {/* Summary */}
+      <View style={styles.section}>
+        <SectionTitle>Summary</SectionTitle>
+        <View style={styles.card}>
+          <InfoRow label="Average reading time" value={`${averageReadingTime} min`} />
+          <InfoRow label="Average pages per book" value={String(averagePages)} />
+          <InfoRow label="In progress" value={String(inProgress)} />
+          <InfoRow label="Total hours" value={`${hours} hrs`} last />
         </View>
+      </View>
 
-        <View style={[styles.infoRow, { borderBottomColor: '#8b7355' }]}>
-          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>In Progress</Text>
-          <Text style={[styles.infoValue, { color: '#8b7355' }]}>{totalBooks - stats.booksRead}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: '#c9a961' }]}>Average Pages</Text>
-          <Text style={[styles.infoValue, { color: '#8b7355' }]}>
-            {books.length > 0 ? Math.round(stats.totalPages / books.length) : 0}
+      {/* Intentions */}
+      <View style={styles.section}>
+        <SectionTitle>Reading Intentions</SectionTitle>
+        <View style={styles.card}>
+          <Text style={styles.quote}>
+            Establish reading goals and maintain a consistent contemplative
+            practice. Set targets for pages read or time spent in deep engagement
+            with your manuscripts.
           </Text>
         </View>
       </View>
 
-      {/* Reading Goals */}
+      {/* Recently read */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Reading Intentions</Text>
-        <Text style={[styles.goalText, { color: '#8b7355' }]}>
-          Establish reading goals and maintain a consistent contemplative practice. Set targets for pages read or time spent in deep engagement with your manuscripts.
-        </Text>
-      </View>
-
-      {/* Recently Read */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: '#c9a961' }]}>✦ Recently Contemplated</Text>
-        {books.slice(0, 5).map(book => (
-          <View key={book.id} style={[styles.recentBook, { borderBottomColor: '#8b7355' }]}>
-            <View>
-              <Text style={[styles.recentTitle, { color: '#c9a961' }]} numberOfLines={1}>
-                {book.title}
-              </Text>
-              <Text style={[styles.recentAuthor, { color: '#8b7355' }]}>
-                {Math.round((book.currentProgress / book.totalPages) * 100)}% complete
-              </Text>
-            </View>
-            <Text style={[styles.recentPages, { color: '#c9a961' }]}>{book.currentProgress} / {book.totalPages}</Text>
-          </View>
-        ))}
+        <SectionTitle>Recently Contemplated</SectionTitle>
+        <View style={styles.card}>
+          {recent.length === 0 ? (
+            <Text style={styles.empty}>
+              Nothing opened yet. Choose a volume from the library to begin.
+            </Text>
+          ) : (
+            recent.map((book, i) => {
+              const pct =
+                book.totalPages > 0
+                  ? Math.round((book.currentProgress / book.totalPages) * 100)
+                  : 0;
+              return (
+                <View
+                  key={book.id}
+                  style={[styles.recentRow, i === recent.length - 1 && styles.infoRowLast]}
+                >
+                  <BookCover
+                    uri={book.cover}
+                    title={book.title}
+                    author={book.author}
+                    itemType={book.itemType}
+                    width={40}
+                  />
+                  <View style={styles.recentBody}>
+                    <Text style={styles.recentTitle} numberOfLines={1}>
+                      {book.title}
+                    </Text>
+                    {!!book.author && (
+                      <Text style={styles.recentAuthor} numberOfLines={1}>
+                        {book.author}
+                      </Text>
+                    )}
+                    <Meter percent={pct} thin />
+                  </View>
+                  <View style={styles.recentFigures}>
+                    <Text style={styles.recentPercent}>{pct}%</Text>
+                    <Text style={styles.recentPages}>
+                      {book.currentProgress} / {book.totalPages}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
       </View>
     </ScrollView>
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * Styles
+ * ------------------------------------------------------------------ */
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 22, fontWeight: '400', marginBottom: 20, letterSpacing: 2, fontFamily: 'Georgia' },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: space.lg, paddingBottom: space.xxxl },
+
+  header: { marginTop: space.sm, marginBottom: space.xl },
+  eyebrow: {
+    ...type.overline,
+    color: colors.bronze,
+    textTransform: 'uppercase',
+    marginBottom: space.xs,
+  },
+  title: { ...type.display, color: colors.gold },
+  subtitle: { ...type.body, color: colors.inkMuted, marginTop: space.sm },
+  headerRule: { height: 1, backgroundColor: colors.rule, marginTop: space.lg },
+
+  /* Figures */
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+    gap: space.md,
+    marginBottom: space.xxl,
   },
-  statCard: {
-    width: '48%',
-    borderRadius: 2,
+  statBlock: {
+    flexGrow: 1,
+    flexBasis: '46%',
+    minWidth: 140,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    padding: 16,
+    borderColor: colors.border,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.lg,
+    overflow: 'hidden',
+    ...elevation.card,
   },
-  statTitle: { fontSize: 11, fontWeight: '400', marginBottom: 8, letterSpacing: 1, fontFamily: 'Georgia' },
-  statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  statValue: { fontSize: 28, fontWeight: '300' },
-  statUnit: { fontSize: 11, letterSpacing: 1 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 15, fontWeight: '400', marginBottom: 12, letterSpacing: 2, fontFamily: 'Georgia' },
+  statAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: colors.gold,
+    opacity: 0.5,
+  },
+  statLabel: {
+    ...type.overline,
+    color: colors.bronze,
+    textTransform: 'uppercase',
+    marginBottom: space.sm,
+  },
+  statFigureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs },
+  statFigure: {
+    fontFamily: fonts.display,
+    fontSize: 38,
+    lineHeight: 44,
+    color: colors.goldBright,
+    letterSpacing: 0.5,
+  },
+  statUnit: { ...type.caption, color: colors.bronze },
+  statNote: { ...type.caption, color: colors.inkMuted, marginTop: space.xs },
+
+  /* Sections */
+  section: { marginBottom: space.xxl },
+  sectionHead: { marginBottom: space.sm },
+  sectionTitle: { ...type.heading, color: colors.goldBright },
+  sectionCaption: { ...type.caption, color: colors.inkMuted, marginTop: space.xs },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.xs,
+    marginTop: space.sm,
+    ...elevation.card,
+  },
+
+  /* Completion */
+  completionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: space.xs,
+    paddingTop: space.lg,
+    marginBottom: space.md,
+  },
+  completionFigure: {
+    fontFamily: fonts.display,
+    fontSize: 34,
+    lineHeight: 38,
+    color: colors.goldBright,
+  },
+  completionUnit: { ...type.caption, color: colors.bronze, fontSize: 14 },
+  completionCaption: { ...type.caption, color: colors.inkMuted, marginLeft: space.sm },
+
+  /* Meter */
+  meterTrack: {
+    height: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.rule,
+    overflow: 'hidden',
+    marginBottom: space.lg,
+  },
+  meterTrackThin: { height: 3, borderWidth: 0, marginBottom: 0, marginTop: space.sm },
+  meterFill: { height: '100%', backgroundColor: colors.gold, borderRadius: radius.pill },
+  meterFillThin: { backgroundColor: colors.bronze },
+
+  /* Summary rows */
   infoRow: {
     flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    gap: space.lg,
+    paddingVertical: space.lg,
     borderBottomWidth: 1,
+    borderBottomColor: colors.rule,
   },
-  infoLabel: { fontSize: 13, fontFamily: 'Georgia' },
-  infoValue: { fontSize: 13, fontWeight: '400', letterSpacing: 1 },
-  goalText: { fontSize: 12, lineHeight: 20, fontFamily: 'Georgia', letterSpacing: 0.5 },
-  recentBook: {
+  infoRowLast: { borderBottomWidth: 0 },
+  infoLabel: { ...type.body, color: colors.ink },
+  infoValue: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.gold,
+    letterSpacing: 0.2,
+  },
+
+  quote: {
+    ...type.body,
+    fontFamily: fonts.reading,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.inkMuted,
+    paddingVertical: space.lg,
+  },
+  empty: { ...type.body, color: colors.inkMuted, paddingVertical: space.lg },
+
+  /* Recent */
+  recentRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    gap: space.md,
+    paddingVertical: space.md,
     borderBottomWidth: 1,
+    borderBottomColor: colors.rule,
   },
-  recentTitle: { fontSize: 13, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
-  recentAuthor: { fontSize: 11, letterSpacing: 0.5 },
-  recentPages: { fontSize: 12, fontWeight: '400', letterSpacing: 1 },
+  recentBody: { flex: 1 },
+  recentTitle: { ...type.title, color: colors.ink },
+  recentAuthor: { ...type.caption, color: colors.bronze, marginTop: 2 },
+  recentFigures: { alignItems: 'flex-end' },
+  recentPercent: {
+    fontFamily: fonts.display,
+    fontSize: 15,
+    color: colors.gold,
+  },
+  recentPages: { ...type.caption, color: colors.inkMuted, marginTop: 2 },
 });

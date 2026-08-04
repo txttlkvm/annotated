@@ -6,24 +6,83 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  TextInputProps,
   Alert,
   Modal,
-  FlatList,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
+import BookCover from '../components/BookCover';
+import { colors, fonts, space, radius, type, elevation } from '../theme';
+import type { Book, Collection } from '../types';
+
+/** Width of the small covers in a collection's preview stack. */
+const STACK_COVER = 38;
+const STACK_MAX = 4;
+
+const CATEGORY_LABEL: Record<string, string> = {
+  grammar: 'Grammar',
+  logic: 'Logic',
+  rhetoric: 'Rhetoric',
+  custom: 'Collection',
+};
+
+/**
+ * A labelled form field. The old screens dropped bare TextInputs onto the page
+ * with a 1px border and no label, which is most of why the forms read as raw.
+ * A label in the overline style, generous padding and a gold focus ring is the
+ * whole difference.
+ */
+function Field({
+  label,
+  hint,
+  style,
+  onFocus,
+  onBlur,
+  ...props
+}: { label: string; hint?: string } & TextInputProps) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        placeholderTextColor={colors.bronze}
+        {...props}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+        style={[
+          styles.input,
+          props.multiline && styles.inputMultiline,
+          focused && styles.inputFocused,
+          style,
+        ]}
+      />
+      {!!hint && <Text style={styles.fieldHint}>{hint}</Text>}
+    </View>
+  );
+}
 
 export default function CollectionsScreen() {
-  const { collections, books, createCollection, deleteCollection, addBookToCollection, removeBookFromCollection, settings } = useApp();
+  const {
+    collections,
+    books,
+    createCollection,
+    deleteCollection,
+    addBookToCollection,
+    removeBookFromCollection,
+  } = useApp();
+
   const [showModal, setShowModal] = useState(false);
   const [collectionName, setCollectionName] = useState('');
   const [collectionDesc, setCollectionDesc] = useState('');
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
-
-  const bgColor = settings.theme === 'light' ? '#f5f5f5' : '#0f0a1a';
-  const textColor = settings.theme === 'light' ? '#333' : '#c9a961';
-  const secondaryColor = settings.theme === 'light' ? '#666' : '#8b7355';
-  const accentColor = settings.theme === 'light' ? '#e0e0e0' : '#2d1b4e';
-  const borderColor = settings.theme === 'light' ? '#ddd' : '#c9a961';
+  const [showPicker, setShowPicker] = useState(false);
 
   const handleCreateCollection = async () => {
     if (!collectionName.trim()) {
@@ -58,115 +117,203 @@ export default function CollectionsScreen() {
     ]);
   };
 
-  const selectedCollection = collections.find(c => c.id === selectedCollectionId);
+  const closeModal = () => {
+    setCollectionName('');
+    setCollectionDesc('');
+    setShowModal(false);
+  };
+
+  const selectedCollection = collections.find((c) => c.id === selectedCollectionId);
   const collectionBooks = selectedCollection
-    ? books.filter(b => selectedCollection.bookIds.includes(b.id))
+    ? books.filter((b) => selectedCollection.bookIds.includes(b.id))
+    : [];
+  const availableBooks = selectedCollection
+    ? books.filter((b) => !selectedCollection.bookIds.includes(b.id))
     : [];
 
-  return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Text style={[styles.title, { color: textColor }]}>✦ Collections ✦</Text>
-        <Text style={[styles.subtitle, { color: secondaryColor }]}>Organize your library</Text>
-      </View>
+  const totalShelved = collections.reduce((n, c) => n + c.bookIds.length, 0);
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Create Collection Button */}
-        <TouchableOpacity
-          style={[styles.createButton, { backgroundColor: accentColor, borderColor }]}
-          onPress={() => setShowModal(true)}
-        >
-          <Text style={[styles.createButtonText, { color: textColor }]}>+ Create New Collection</Text>
-        </TouchableOpacity>
+  const renderCard = (collection: Collection) => {
+    const shelf = books.filter((b) => collection.bookIds.includes(b.id));
+    const preview = shelf.slice(0, STACK_MAX);
+    const overflow = shelf.length - preview.length;
 
-        {/* Collections List */}
-        {collections.length === 0 ? (
-          <View style={[styles.emptyState, { backgroundColor: accentColor, borderColor }]}>
-            <Text style={[styles.emptyText, { color: secondaryColor }]}>
-              No collections yet.{'\n\n'}Create one to organize your books by topic, theme, or reading level.
+    return (
+      <TouchableOpacity
+        key={collection.id}
+        style={styles.card}
+        activeOpacity={0.85}
+        onPress={() => setSelectedCollectionId(collection.id)}
+      >
+        <View style={styles.cardAccent} />
+
+        <View style={styles.cardHead}>
+          <View style={styles.cardHeadText}>
+            <Text style={styles.cardEyebrow}>
+              {CATEGORY_LABEL[collection.category || 'custom'] || 'Collection'}
+            </Text>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {collection.name}
+            </Text>
+            {!!collection.description && (
+              <Text style={styles.cardDesc} numberOfLines={2}>
+                {collection.description}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.countBadge}>
+            <Text style={styles.countNumber}>{collection.bookIds.length}</Text>
+            <Text style={styles.countLabel}>
+              {collection.bookIds.length === 1 ? 'VOL' : 'VOLS'}
             </Text>
           </View>
-        ) : (
-          collections.map((collection) => (
-            <TouchableOpacity
-              key={collection.id}
-              style={[styles.collectionCard, { backgroundColor: accentColor, borderColor }]}
-              onPress={() => setSelectedCollectionId(collection.id)}
-            >
-              <View style={styles.collectionHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.collectionName, { color: textColor }]}>
-                    {collection.name}
-                  </Text>
-                  {collection.description && (
-                    <Text style={[styles.collectionDesc, { color: secondaryColor }]}>
-                      {collection.description}
-                    </Text>
-                  )}
-                </View>
-                <View style={[styles.bookCount, { backgroundColor: textColor }]}>
-                  <Text style={[styles.bookCountText, { color: bgColor }]}>
-                    {collection.bookIds.length}
-                  </Text>
-                </View>
-              </View>
+        </View>
 
-              <View style={styles.collectionActions}>
-                <TouchableOpacity
-                  style={[styles.actionButton, { borderColor: secondaryColor }]}
-                  onPress={() => setSelectedCollectionId(collection.id)}
-                >
-                  <Text style={[styles.actionButtonText, { color: textColor }]}>Manage</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, { borderColor: secondaryColor }]}
-                  onPress={() => handleDeleteCollection(collection.id)}
-                >
-                  <Text style={[styles.actionButtonText, { color: '#c67c7c' }]}>Delete</Text>
-                </TouchableOpacity>
+        {preview.length > 0 ? (
+          <View style={styles.stack}>
+            {preview.map((book) => (
+              <View key={book.id} style={styles.stackItem}>
+                <BookCover
+                  uri={book.cover}
+                  title={book.title}
+                  author={book.author}
+                  itemType={book.itemType}
+                  width={STACK_COVER}
+                />
               </View>
+            ))}
+            {overflow > 0 && (
+              <View style={styles.stackMore}>
+                <Text style={styles.stackMoreText}>+{overflow}</Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.stackEmpty}>
+            <Text style={styles.stackEmptyText}>An empty shelf, waiting</Text>
+          </View>
+        )}
+
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={styles.ghostButton}
+            onPress={() => setSelectedCollectionId(collection.id)}
+          >
+            <Text style={styles.ghostButtonText}>Manage shelf</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quietButton}
+            onPress={() => handleDeleteCollection(collection.id)}
+          >
+            <Text style={styles.quietButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderShelfRow = (book: Book, action: React.ReactNode) => (
+    <View key={book.id} style={styles.bookRow}>
+      <BookCover
+        uri={book.cover}
+        title={book.title}
+        author={book.author}
+        itemType={book.itemType}
+        width={44}
+      />
+      <View style={styles.bookRowText}>
+        <Text style={styles.bookTitle} numberOfLines={2}>
+          {book.title}
+        </Text>
+        {!!book.author && (
+          <Text style={styles.bookAuthor} numberOfLines={1}>
+            {book.author}
+          </Text>
+        )}
+      </View>
+      {action}
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>THE LIBRARY</Text>
+        <Text style={styles.title}>Collections</Text>
+        <Text style={styles.subtitle}>
+          {collections.length === 0
+            ? 'Gather your books into shelves of your own making'
+            : `${collections.length} shelf${collections.length === 1 ? '' : 'ves'} · ${totalShelved} volume${totalShelved === 1 ? '' : 's'} gathered`}
+        </Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity
+          style={styles.createButton}
+          activeOpacity={0.85}
+          onPress={() => setShowModal(true)}
+        >
+          <Text style={styles.createGlyph}>✦</Text>
+          <Text style={styles.createButtonText}>New Collection</Text>
+        </TouchableOpacity>
+
+        {collections.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyGlyph}>❧</Text>
+            <Text style={styles.emptyTitle}>No collections yet</Text>
+            <Text style={styles.emptyBody}>
+              A collection is a shelf you build yourself — by theme, by term, by
+              the order in which a student ought to read. Start with one and add
+              volumes as you go.
+            </Text>
+            <TouchableOpacity style={styles.emptyCta} onPress={() => setShowModal(true)}>
+              <Text style={styles.emptyCtaText}>Create your first shelf</Text>
             </TouchableOpacity>
-          ))
+          </View>
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Your shelves</Text>
+              <View style={styles.sectionRule} />
+            </View>
+            {collections.map(renderCard)}
+          </>
         )}
       </ScrollView>
 
       {/* Create Collection Modal */}
-      <Modal visible={showModal} transparent animationType="fade">
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
-          <View style={[styles.modalContent, { backgroundColor: bgColor, borderColor }]}>
-            <Text style={[styles.modalTitle, { color: textColor }]}>New Collection</Text>
+      <Modal visible={showModal} transparent animationType="fade" onRequestClose={closeModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalEyebrow}>NEW SHELF</Text>
+            <Text style={styles.modalTitle}>Name your collection</Text>
+            <View style={styles.modalRule} />
 
-            <TextInput
-              placeholder="Collection Name"
-              placeholderTextColor={secondaryColor}
+            <Field
+              label="Title"
+              placeholder="e.g. Michaelmas Term — Rhetoric"
               value={collectionName}
               onChangeText={setCollectionName}
-              style={[styles.modalInput, { color: textColor, borderColor }]}
             />
 
-            <TextInput
-              placeholder="Description (optional)"
-              placeholderTextColor={secondaryColor}
+            <Field
+              label="Description"
+              hint="Optional — a line about what belongs here."
+              placeholder="Primary sources for the Michaelmas reading list"
               value={collectionDesc}
               onChangeText={setCollectionDesc}
               multiline
-              numberOfLines={2}
-              style={[styles.modalInput, { color: textColor, borderColor }]}
+              numberOfLines={3}
             />
 
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, { borderColor: secondaryColor }]}
-                onPress={() => setShowModal(false)}
-              >
-                <Text style={[styles.modalButtonText, { color: secondaryColor }]}>Cancel</Text>
+              <TouchableOpacity style={styles.ghostButton} onPress={closeModal}>
+                <Text style={styles.ghostButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: textColor }]}
-                onPress={handleCreateCollection}
-              >
-                <Text style={[styles.modalButtonText, { color: bgColor }]}>Create</Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleCreateCollection}>
+                <Text style={styles.primaryButtonText}>Create</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -175,37 +322,97 @@ export default function CollectionsScreen() {
 
       {/* Selected Collection Details */}
       {selectedCollection && (
-        <Modal visible={!!selectedCollectionId} transparent animationType="slide">
-          <View style={[styles.detailsContainer, { backgroundColor: bgColor }]}>
-            <View style={[styles.detailsHeader, { borderBottomColor: borderColor }]}>
-              <TouchableOpacity onPress={() => setSelectedCollectionId(null)}>
-                <Text style={[styles.backButton, { color: textColor }]}>← Back</Text>
+        <Modal
+          visible={!!selectedCollectionId}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSelectedCollectionId(null)}
+        >
+          <View style={styles.detailsContainer}>
+            <View style={styles.detailsHeader}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  setSelectedCollectionId(null);
+                  setShowPicker(false);
+                }}
+              >
+                <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
-              <Text style={[styles.detailsTitle, { color: textColor }]}>{selectedCollection.name}</Text>
+              <View style={styles.detailsHeadText}>
+                <Text style={styles.detailsEyebrow}>COLLECTION</Text>
+                <Text style={styles.detailsTitle} numberOfLines={1}>
+                  {selectedCollection.name}
+                </Text>
+              </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.detailsContent}>
-              {collectionBooks.length === 0 ? (
-                <Text style={[styles.noBooks, { color: secondaryColor }]}>
-                  No books in this collection yet
-                </Text>
-              ) : (
-                collectionBooks.map((book) => (
-                  <View key={book.id} style={[styles.bookItem, { backgroundColor: accentColor, borderColor }]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.bookTitle, { color: textColor }]}>{book.title}</Text>
-                      {book.author && (
-                        <Text style={[styles.bookAuthor, { color: secondaryColor }]}>{book.author}</Text>
-                      )}
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => removeBookFromCollection(selectedCollection.id, book.id)}
-                    >
-                      <Text style={[styles.removeText, { color: '#c67c7c' }]}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
+            <ScrollView
+              contentContainerStyle={styles.detailsContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {!!selectedCollection.description && (
+                <Text style={styles.detailsDesc}>{selectedCollection.description}</Text>
               )}
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  On this shelf ({collectionBooks.length})
+                </Text>
+                <View style={styles.sectionRule} />
+              </View>
+
+              {collectionBooks.length === 0 ? (
+                <View style={styles.emptyStateSmall}>
+                  <Text style={styles.emptyGlyphSmall}>❧</Text>
+                  <Text style={styles.emptyBodySmall}>
+                    Nothing here yet. Add a volume from your library below.
+                  </Text>
+                </View>
+              ) : (
+                collectionBooks.map((book) =>
+                  renderShelfRow(
+                    book,
+                    <TouchableOpacity
+                      style={styles.rowAction}
+                      onPress={() =>
+                        removeBookFromCollection(selectedCollection.id, book.id)
+                      }
+                    >
+                      <Text style={styles.rowActionDanger}>Remove</Text>
+                    </TouchableOpacity>
+                  )
+                )
+              )}
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Add from library</Text>
+                <View style={styles.sectionRule} />
+                <TouchableOpacity onPress={() => setShowPicker((v) => !v)}>
+                  <Text style={styles.sectionToggle}>{showPicker ? 'Hide' : 'Show'}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {showPicker &&
+                (availableBooks.length === 0 ? (
+                  <View style={styles.emptyStateSmall}>
+                    <Text style={styles.emptyBodySmall}>
+                      Every volume in your library is already on this shelf.
+                    </Text>
+                  </View>
+                ) : (
+                  availableBooks.map((book) =>
+                    renderShelfRow(
+                      book,
+                      <TouchableOpacity
+                        style={styles.rowAction}
+                        onPress={() => addBookToCollection(selectedCollection.id, book.id)}
+                      >
+                        <Text style={styles.rowActionText}>Add</Text>
+                      </TouchableOpacity>
+                    )
+                  )
+                ))}
             </ScrollView>
           </View>
         </Modal>
@@ -215,122 +422,300 @@ export default function CollectionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.bg },
+
+  /* Header */
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    borderBottomWidth: 2,
+    paddingHorizontal: space.xl,
+    paddingTop: space.xl,
+    paddingBottom: space.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.rule,
+    backgroundColor: colors.surface,
   },
-  title: { fontSize: 22, fontWeight: '400', fontFamily: 'Georgia', letterSpacing: 1, marginBottom: 4 },
-  subtitle: { fontSize: 12, letterSpacing: 0.5 },
-  content: { paddingHorizontal: 16, paddingVertical: 16 },
+  eyebrow: { ...type.overline, color: colors.bronze, marginBottom: space.xs },
+  title: { ...type.display, color: colors.goldBright, marginBottom: space.sm },
+  subtitle: { ...type.body, color: colors.inkMuted },
+
+  content: {
+    paddingHorizontal: space.lg,
+    paddingTop: space.xl,
+    paddingBottom: space.xxxl,
+  },
+
+  /* Primary action */
   createButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 2,
-    borderWidth: 1,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  createButtonText: { fontWeight: '400', fontSize: 13, letterSpacing: 1 },
-  emptyState: {
-    paddingHorizontal: 12,
-    paddingVertical: 24,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderLeftWidth: 2,
-  },
-  emptyText: { fontSize: 12, lineHeight: 18, textAlign: 'center' },
-  collectionCard: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 12,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderLeftWidth: 2,
-  },
-  collectionHeader: {
     flexDirection: 'row',
-    marginBottom: 8,
-  },
-  collectionName: { fontSize: 16, fontWeight: '600', fontFamily: 'Georgia' },
-  collectionDesc: { fontSize: 11, marginTop: 2 },
-  bookCount: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bookCountText: { fontWeight: '600', fontSize: 14 },
-  collectionActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 2,
+    gap: space.sm,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.lg,
     borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+    marginBottom: space.xxl,
+    ...elevation.card,
+  },
+  createGlyph: { fontSize: 14, color: colors.gold },
+  createButtonText: {
+    ...type.title,
+    color: colors.goldBright,
+  },
+
+  /* Section header */
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    marginTop: space.xl,
+    marginBottom: space.lg,
+  },
+  sectionTitle: { ...type.heading, color: colors.gold },
+  sectionRule: { flex: 1, height: 1, backgroundColor: colors.rule },
+  sectionToggle: { ...type.caption, color: colors.bronze },
+
+  /* Collection card */
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.lg,
+    paddingLeft: space.lg + space.xs,
+    marginBottom: space.lg,
+    overflow: 'hidden',
+    ...elevation.card,
+  },
+  cardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: colors.gold,
+    opacity: 0.65,
+  },
+  cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.lg },
+  cardHeadText: { flex: 1 },
+  cardEyebrow: { ...type.overline, color: colors.bronze, marginBottom: space.xs },
+  cardTitle: { ...type.heading, color: colors.goldBright },
+  cardDesc: { ...type.body, color: colors.inkMuted, marginTop: space.sm },
+
+  countBadge: {
+    minWidth: 52,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
     alignItems: 'center',
   },
-  actionButtonText: { fontSize: 11, fontWeight: '400' },
+  countNumber: { ...type.title, fontSize: 18, color: colors.goldBright },
+  countLabel: { ...type.overline, color: colors.bronze, marginTop: 2 },
+
+  /* Cover stack */
+  stack: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm, marginTop: space.lg },
+  stackItem: {},
+  stackMore: {
+    width: STACK_COVER,
+    height: Math.round(STACK_COVER * 1.5),
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stackMoreText: { ...type.caption, color: colors.bronze },
+  stackEmpty: {
+    marginTop: space.lg,
+    paddingVertical: space.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.rule,
+  },
+  stackEmptyText: { ...type.caption, color: colors.bronze, fontStyle: 'italic' },
+
+  cardActions: { flexDirection: 'row', gap: space.md, marginTop: space.lg },
+
+  /* Buttons */
+  ghostButton: {
+    flex: 1,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  ghostButtonText: { ...type.caption, color: colors.gold, letterSpacing: 0.6 },
+  quietButton: {
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  quietButtonText: { ...type.caption, color: colors.danger, letterSpacing: 0.6 },
+  primaryButton: {
+    flex: 1,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    ...type.caption,
+    color: colors.bg,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+  },
+
+  /* Empty states */
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: space.xxxl,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.rule,
+    backgroundColor: colors.surface,
+  },
+  emptyGlyph: { fontSize: 34, color: colors.bronze, marginBottom: space.lg },
+  emptyTitle: { ...type.heading, color: colors.gold, marginBottom: space.sm },
+  emptyBody: {
+    ...type.body,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    maxWidth: 320,
+    marginBottom: space.xl,
+  },
+  emptyCta: {
+    paddingVertical: space.md,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  emptyCtaText: { ...type.caption, color: colors.goldBright, letterSpacing: 0.8 },
+  emptyStateSmall: {
+    alignItems: 'center',
+    paddingVertical: space.xl,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.rule,
+    backgroundColor: colors.surface,
+    marginBottom: space.md,
+  },
+  emptyGlyphSmall: { fontSize: 22, color: colors.bronze, marginBottom: space.sm },
+  emptyBodySmall: { ...type.body, color: colors.inkMuted, textAlign: 'center' },
+
+  /* Form fields */
+  field: { marginBottom: space.lg },
+  fieldLabel: { ...type.overline, color: colors.bronze, marginBottom: space.sm },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    fontFamily: fonts.reading,
+    fontSize: 15,
+    color: colors.ink,
+  },
+  inputMultiline: { minHeight: 84, paddingTop: space.md, textAlignVertical: 'top' },
+  inputFocused: { borderColor: colors.gold, backgroundColor: colors.surfaceRaised },
+  fieldHint: { ...type.caption, color: colors.bronze, marginTop: space.xs },
+
+  /* Modal */
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: space.xl,
+    backgroundColor: 'rgba(6, 3, 12, 0.78)',
   },
   modalContent: {
-    width: '80%',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    borderRadius: 8,
-    borderWidth: 2,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16 },
-  modalInput: {
+    width: '100%',
+    maxWidth: 420,
+    padding: space.xl,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 12,
-    fontSize: 14,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    ...elevation.cover,
   },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
+  modalEyebrow: { ...type.overline, color: colors.bronze, marginBottom: space.xs },
+  modalTitle: { ...type.heading, color: colors.goldBright },
+  modalRule: {
+    height: 1,
+    backgroundColor: colors.rule,
+    marginTop: space.lg,
+    marginBottom: space.xl,
   },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 4,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  modalButtonText: { fontWeight: '600', fontSize: 13 },
-  detailsContainer: { flex: 1 },
+  modalActions: { flexDirection: 'row', gap: space.md, marginTop: space.sm },
+
+  /* Details view */
+  detailsContainer: { flex: 1, backgroundColor: colors.bg },
   detailsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.lg,
+    paddingHorizontal: space.lg,
+    paddingTop: space.xl,
+    paddingBottom: space.lg,
     borderBottomWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    borderBottomColor: colors.rule,
+    backgroundColor: colors.surface,
   },
-  backButton: { fontSize: 14, fontWeight: '400' },
-  detailsTitle: { fontSize: 18, fontWeight: '600', flex: 1 },
-  detailsContent: { paddingHorizontal: 16, paddingVertical: 12 },
-  noBooks: { fontSize: 14, textAlign: 'center', marginVertical: 20 },
-  bookItem: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 8,
-    borderRadius: 2,
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.pill,
     borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  bookTitle: { fontSize: 14, fontWeight: '600' },
-  bookAuthor: { fontSize: 12, marginTop: 2 },
-  removeText: { fontSize: 12, fontWeight: '400' },
+  backButtonText: { fontSize: 17, color: colors.gold, lineHeight: 20 },
+  detailsHeadText: { flex: 1 },
+  detailsEyebrow: { ...type.overline, color: colors.bronze, marginBottom: 2 },
+  detailsTitle: { ...type.heading, color: colors.goldBright },
+  detailsContent: {
+    paddingHorizontal: space.lg,
+    paddingTop: space.md,
+    paddingBottom: space.xxxl,
+  },
+  detailsDesc: { ...type.body, color: colors.inkMuted, marginTop: space.md },
+
+  /* Book rows */
+  bookRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.lg,
+    padding: space.md,
+    marginBottom: space.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.rule,
+    backgroundColor: colors.surface,
+  },
+  bookRowText: { flex: 1 },
+  bookTitle: { ...type.title, color: colors.ink },
+  bookAuthor: { ...type.caption, color: colors.inkMuted, marginTop: space.xs },
+  rowAction: {
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  rowActionText: { ...type.caption, color: colors.gold },
+  rowActionDanger: { ...type.caption, color: colors.danger },
 });

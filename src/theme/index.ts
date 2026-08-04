@@ -107,4 +107,72 @@ export const elevation = {
 /** Standard trade paperback proportion — covers should never be square. */
 export const COVER_RATIO = 1.5;
 
+export type ReaderPalette = {
+  bg: string;
+  surface: string;
+  raised: string;
+  text: string;
+  muted: string;
+  accent: string;
+  accentSoft: string;
+  rule: string;
+  border: string;
+};
+
+/**
+ * The four reader themes, re-cut against the design system. The old palette
+ * put #e0e0e0 on #1a1a1a (grey on grey) and #000 on #fff (glaring); these are
+ * all warm-neutral pairings with the same contrast in every mode.
+ *
+ * Lives here rather than in ReaderScreen because Settings previews these
+ * swatches — when they were declared locally in the reader, Settings drew from
+ * the stale READER_THEMES palette and showed colours the reader never rendered.
+ */
+export const readerPalettes: Record<string, ReaderPalette> = {
+  dark: {
+    bg: colors.bg,
+    surface: colors.surface,
+    raised: colors.surfaceRaised,
+    text: colors.ink,
+    muted: colors.inkMuted,
+    accent: colors.gold,
+    accentSoft: colors.bronze,
+    rule: colors.rule,
+    border: colors.border,
+  },
+  night: {
+    bg: '#080510',
+    surface: '#120d1d',
+    raised: '#1a1329',
+    text: '#c9c0b2',
+    muted: '#867c6f',
+    accent: '#ab9057',
+    accentSoft: '#736149',
+    rule: 'rgba(171, 144, 87, 0.14)',
+    border: 'rgba(171, 144, 87, 0.22)',
+  },
+  sepia: {
+    bg: '#f3ead6',
+    surface: '#e9dec4',
+    raised: '#ded1b3',
+    text: '#463427',
+    muted: '#7c6950',
+    accent: '#8b6914',
+    accentSoft: '#9a8256',
+    rule: 'rgba(70, 52, 39, 0.16)',
+    border: 'rgba(70, 52, 39, 0.26)',
+  },
+  light: {
+    bg: '#fbf7f0',
+    surface: '#f1eae0',
+    raised: '#e6ddd0',
+    text: '#292118',
+    muted: '#6d6154',
+    accent: '#8a6a30',
+    accentSoft: '#9c8a6e',
+    rule: 'rgba(41, 33, 24, 0.14)',
+    border: 'rgba(41, 33, 24, 0.22)',
+  },
+};
+
 export default { colors, fonts, space, radius, type, elevation, COVER_RATIO };
