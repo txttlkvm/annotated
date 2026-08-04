@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { DatabaseService } from '../services/DatabaseService';
 import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS, Collection, WordLookup, BookProgress } from '../types';
 import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
+import { gutenbergIds } from '../data/gutenbergIds';
 
 interface AppContextType {
   books: Book[];
@@ -184,14 +185,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addClassicalLibraryItem = async (item: ClassicalLibraryItem) => {
+    const ref = gutenbergIds[item.id];
     const book: Omit<Book, 'id'> = {
       title: item.title,
       author: item.author,
       currentProgress: 0,
-      totalPages: item.type === 'book' ? 100 : 0,
+      // Page count is unknown until the text is fetched and paginated.
+      totalPages: 0,
       fileSize: 0,
       isFavorite: false,
       isFinished: false,
+      // Real Gutenberg cover when we have a confident match; BookCover draws
+      // a typographic fallback when we don't.
+      cover: ref?.coverUrl,
       coverColor: '#2d1b4e',
       addedDate: new Date().toISOString(),
       itemType: item.type,

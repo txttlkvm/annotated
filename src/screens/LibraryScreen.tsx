@@ -14,8 +14,14 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { EbookService } from '../services/EbookService';
 import { Book } from '../types';
+import BookCover from '../components/BookCover';
+import { colors, type as t, space, radius, elevation } from '../theme';
 
 const { width } = Dimensions.get('window');
+
+// Two columns inside listContent padding, minus card margins and card padding.
+const GRID_COVER_W = Math.floor((width - space.xl) / 2 - space.md - space.xl);
+const LIST_COVER_W = 58;
 
 export default function LibraryScreen({ navigation }: any) {
   const { books, addBook, settings } = useApp();
@@ -114,13 +120,19 @@ export default function LibraryScreen({ navigation }: any) {
           style={[styles.gridCard, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}
           onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
         >
-          <View style={[styles.gridCover, { borderColor: '#c9a961' }]}>
-            <Text style={styles.coverSymbol}>{getItemTypeIcon(book.itemType)}</Text>
+          <View style={styles.gridCoverWrap}>
+            <BookCover
+              uri={book.cover}
+              title={book.title}
+              author={book.author}
+              itemType={book.itemType}
+              width={GRID_COVER_W}
+            />
           </View>
-          <Text style={[styles.gridTitle, { color: '#c9a961' }]} numberOfLines={2}>
+          <Text style={[styles.gridTitle, { color: colors.gold }]} numberOfLines={2}>
             {book.title}
           </Text>
-          <Text style={[styles.gridAuthor, { color: '#8b7355' }]} numberOfLines={1}>
+          <Text style={[styles.gridAuthor, { color: colors.bronze }]} numberOfLines={1}>
             {book.author || '—'}
           </Text>
           {book.totalPages > 0 && (
@@ -147,8 +159,14 @@ export default function LibraryScreen({ navigation }: any) {
         style={[styles.listCard, { backgroundColor: '#1a1328', borderColor: '#8b7355' }]}
         onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
       >
-        <View style={[styles.listCover, { backgroundColor: '#2d1b4e', borderColor: '#c9a961' }]}>
-          <Text style={styles.coverSymbolList}>{getItemTypeIcon(book.itemType)}</Text>
+        <View style={styles.listCoverWrap}>
+          <BookCover
+            uri={book.cover}
+            title={book.title}
+            author={book.author}
+            itemType={book.itemType}
+            width={LIST_COVER_W}
+          />
         </View>
         <View style={styles.listInfo}>
           <Text style={[styles.listTitle, { color: '#c9a961' }]} numberOfLines={1}>
@@ -265,118 +283,100 @@ export default function LibraryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingTop: space.lg,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
   },
-  headerTitle: { fontSize: 20, fontWeight: '400', letterSpacing: 2, fontFamily: 'Georgia' },
+  headerTitle: { ...t.display },
   addButton: {
-    backgroundColor: '#1a1328',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 2,
+    backgroundColor: colors.surfaceRaised,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm + 1,
+    borderRadius: radius.pill,
     borderWidth: 1,
   },
-  addButtonText: { fontWeight: '400', letterSpacing: 1, fontSize: 12 },
+  addButtonText: { ...t.caption, letterSpacing: 0.8 },
   searchSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
     borderBottomWidth: 1,
   },
   searchInput: {
     borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 10,
-    fontSize: 13,
-    fontFamily: 'Georgia',
+    borderRadius: radius.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    marginBottom: space.md,
+    ...t.body,
   },
   controls: {
     flexDirection: 'row',
-    gap: 8,
+    gap: space.sm,
   },
   sortButton: {
     flex: 1,
-    paddingVertical: 8,
-    backgroundColor: '#1a1328',
-    borderRadius: 2,
+    paddingVertical: space.sm + 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     borderWidth: 1,
     alignItems: 'center',
   },
-  sortButtonText: { fontSize: 11, fontWeight: '400', letterSpacing: 1 },
+  sortButtonText: { ...t.caption },
   viewButton: {
-    width: 40,
-    paddingVertical: 8,
-    backgroundColor: '#1a1328',
-    borderRadius: 2,
+    width: 44,
+    paddingVertical: space.sm + 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     borderWidth: 1,
     alignItems: 'center',
   },
-  viewButtonText: { fontSize: 13, fontWeight: '300' },
-  listContent: { padding: 12 },
+  viewButtonText: { fontSize: 15, color: colors.gold },
+  listContent: { padding: space.md, paddingBottom: space.xxxl },
   listCard: {
     flexDirection: 'row',
-    marginBottom: 12,
-    borderRadius: 2,
+    marginBottom: space.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    padding: 12,
+    padding: space.md,
     alignItems: 'center',
+    ...elevation.card,
   },
-  listCover: {
-    width: 50,
-    height: 70,
-    borderRadius: 1,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  coverSymbolList: { fontSize: 28, fontWeight: '300' },
-  listInfo: { flex: 1 },
-  listTitle: { fontSize: 13, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
-  listAuthor: { fontSize: 11, marginBottom: 4, letterSpacing: 0.5 },
-  listMeta: { marginBottom: 8 },
-  metaText: { fontSize: 10, letterSpacing: 0.5 },
+  listCoverWrap: { marginRight: space.lg },
+  listInfo: { flex: 1, justifyContent: 'center' },
+  listTitle: { ...t.title, marginBottom: 3 },
+  listAuthor: { ...t.caption, marginBottom: 6, fontStyle: 'italic' },
+  listMeta: { marginBottom: space.sm },
+  metaText: { ...t.overline, textTransform: 'uppercase' },
   progressBar: {
-    height: 2,
-    backgroundColor: '#3d3730',
-    borderRadius: 1,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: radius.pill,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#c9a961' },
-  listStatus: { alignItems: 'center', marginLeft: 12 },
-  pageNumber: { fontSize: 12, fontWeight: '300', letterSpacing: 1 },
-  pageLabel: { fontSize: 9, marginTop: 2, letterSpacing: 1 },
+  progressFill: { height: '100%', backgroundColor: colors.gold, borderRadius: radius.pill },
+  listStatus: { alignItems: 'center', marginLeft: space.md, minWidth: 30 },
+  pageNumber: { ...t.heading, fontSize: 17 },
+  pageLabel: { ...t.overline, marginTop: 2 },
   gridCard: {
     flex: 1,
-    marginHorizontal: 6,
-    marginBottom: 12,
-    borderRadius: 2,
+    marginHorizontal: space.sm,
+    marginBottom: space.lg,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    padding: 12,
+    padding: space.md,
+    ...elevation.card,
   },
-  gridCover: {
-    width: '100%',
-    aspectRatio: 3 / 4,
-    backgroundColor: '#2d1b4e',
-    borderRadius: 1,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  coverSymbol: { fontSize: 40, fontWeight: '300' },
-  gridTitle: { fontSize: 12, fontWeight: '400', marginBottom: 4, fontFamily: 'Georgia' },
-  gridAuthor: { fontSize: 10, marginBottom: 8, letterSpacing: 0.5 },
-  progressText: { fontSize: 10, marginTop: 4, letterSpacing: 0.5 },
-  typeTag: { fontSize: 9, marginTop: 4, fontStyle: 'italic', letterSpacing: 0.5 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 60, marginBottom: 16 },
-  emptyText: { fontSize: 16, fontWeight: '400', marginBottom: 8, fontFamily: 'Georgia', letterSpacing: 1 },
-  emptySubtext: { fontSize: 12, letterSpacing: 0.5 },
+  gridCoverWrap: { alignItems: 'center', marginBottom: space.md },
+  gridTitle: { ...t.title, fontSize: 14, marginBottom: 3 },
+  gridAuthor: { ...t.caption, marginBottom: space.sm, fontStyle: 'italic' },
+  progressText: { ...t.overline, marginTop: 5 },
+  typeTag: { ...t.overline, marginTop: 5, textTransform: 'uppercase' },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space.xl },
+  emptyIcon: { fontSize: 52, marginBottom: space.lg, color: colors.bronze, opacity: 0.5 },
+  emptyText: { ...t.display, marginBottom: space.sm },
+  emptySubtext: { ...t.body, textAlign: 'center' },
 });
