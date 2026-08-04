@@ -19,7 +19,14 @@ export interface Book {
   publishedDate?: string;
   itemType?: 'book' | 'music' | 'art' | 'resource';
   coverColor?: string;
+  /**
+   * Full plain text of the book. Transient: held in memory only, never
+   * written to the web store (localStorage) or the native SQLite table —
+   * a single title can run to megabytes. Re-fetched from `sourceUrl`.
+   */
   content?: string;
+  /** Remote plain-text source (Project Gutenberg), fetched on demand. */
+  sourceUrl?: string;
 }
 
 export interface Bookmark {

@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
+import { Platform, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
+import type { LinkingOptions, NavigatorScreenParams } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -8,6 +10,7 @@ import { AppProvider, useApp } from './src/context/AppContext';
 import { DatabaseService } from './src/services/DatabaseService';
 import { TTSService } from './src/services/TTSService';
 import { AudioService } from './src/services/AudioService';
+import { space, type, readerPalettes } from './src/theme';
 
 import LibraryScreen from './src/screens/LibraryScreen';
 import ReaderScreen from './src/screens/ReaderScreen';
@@ -67,6 +70,140 @@ function ReaderNavigator() {
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * Deep linking
+ *
+ * vercel.json rewrites every non-/api path to index.html, which fixes the
+ * hard 404 — but without a `linking` config React Navigation never reads
+ * window.location, so /Curriculum and /Settings both booted straight into
+ * the Library (the first tab). This maps real URLs onto the navigator.
+ *
+ * The nesting below MIRRORS the navigators declared above. If a child key
+ * does not exist on the stack it is silently ignored and you fall back to
+ * the stack's first screen, so these names are load-bearing:
+ *
+ *   Library    -> LibraryHome | BookDetails | ClassicalLibraryReader
+ *   Reading    -> ReaderHome  | Highlights  | TableOfContents
+ *   Curriculum -> CurriculumHome | ClassicalLibraryReader | MusicPlayer | ArtViewer
+ *
+ * Param note: BookDetails, ClassicalLibraryReader, MusicPlayer and ArtViewer
+ * all destructure `route.params` unconditionally. React Navigation only
+ * attaches `params` when the matched path actually carries one, so every one
+ * of those screens is given a REQUIRED path segment. A paramless path such as
+ * /curriculum/music would hand the screen `undefined` and crash on the
+ * destructure — so no such path is registered.
+ * ------------------------------------------------------------------ */
+const webOrigin =
+  typeof window !== 'undefined' && window.location ? window.location.origin : null;
+
+/**
+ * These param lists exist so the linking config is type-checked against the
+ * real nesting. Without them PathConfigMap collapses to the non-nested branch
+ * and `initialRouteName` / `screens` on a tab entry stop compiling — which is
+ * exactly the class of mistake (wrong nesting, silent fallback to the first
+ * screen) this config is meant to avoid.
+ */
+type LibraryStackParamList = {
+  LibraryHome: undefined;
+  BookDetails: { bookId: string };
+  ClassicalLibraryReader: { itemId: string };
+};
+
+type ReadingStackParamList = {
+  ReaderHome: undefined;
+  Highlights: undefined;
+  TableOfContents: undefined;
+};
+
+type CurriculumStackParamList = {
+  CurriculumHome: undefined;
+  ClassicalLibraryReader: { itemId: string };
+  MusicPlayer: { title: string; filePath?: string; artist?: string };
+  ArtViewer: { title: string; imagePath?: string; artist?: string };
+};
+
+type RootTabParamList = {
+  Library: NavigatorScreenParams<LibraryStackParamList>;
+  Reading: NavigatorScreenParams<ReadingStackParamList>;
+  Curriculum: NavigatorScreenParams<CurriculumStackParamList>;
+  Bookshelf: undefined;
+  Collections: undefined;
+  Dictionary: undefined;
+  Catalog: undefined;
+  Stats: undefined;
+  Settings: undefined;
+};
+
+const linking: LinkingOptions<RootTabParamList> = {
+  prefixes: [
+    // Web origin first — whatever host it is served from (Vercel prod,
+    // preview deploys, localhost) resolves without hardcoding a domain.
+    ...(webOrigin ? [webOrigin] : []),
+    // Native custom scheme, per app.json.
+    'bookvoicepro://',
+  ],
+  config: {
+    initialRouteName: 'Library',
+    screens: {
+      Library: {
+        path: 'library',
+        initialRouteName: 'LibraryHome',
+        screens: {
+          LibraryHome: '',
+          BookDetails: 'book/:bookId',
+          ClassicalLibraryReader: 'read/:itemId',
+        },
+      },
+      Reading: {
+        path: 'reading',
+        initialRouteName: 'ReaderHome',
+        screens: {
+          ReaderHome: '',
+          Highlights: 'highlights',
+          TableOfContents: 'contents',
+        },
+      },
+      Curriculum: {
+        path: 'curriculum',
+        initialRouteName: 'CurriculumHome',
+        screens: {
+          CurriculumHome: '',
+          ClassicalLibraryReader: 'read/:itemId',
+          // :title is required so `params` is never undefined; filePath /
+          // imagePath / artist ride along as query params.
+          MusicPlayer: 'music/:title',
+          ArtViewer: 'art/:title',
+        },
+      },
+      Bookshelf: 'bookshelf',
+      Collections: 'collections',
+      Dictionary: 'dictionary',
+      Catalog: 'catalog',
+      Stats: 'stats',
+      Settings: 'settings',
+    },
+  },
+};
+
+const TAB_TITLES: Record<string, string> = {
+  Library: 'Library',
+  Reading: 'Reading',
+  Curriculum: 'Curriculum',
+  Bookshelf: 'Bookshelf',
+  Collections: 'Collections',
+  Dictionary: 'Dictionary',
+  Catalog: 'Catalog',
+  Stats: 'Stats',
+  Settings: 'Settings',
+};
+
+const documentTitle = {
+  formatter: (_options: any, route: any) => {
+    const section = route?.name ? TAB_TITLES[route.name] : undefined;
+    return section ? `Annotated · ${section}` : 'Annotated';
+  },
+};
+
 function MainApp() {
   const { settings } = useApp();
 
@@ -84,24 +221,56 @@ function MainApp() {
     }
   };
 
+  // The tab bar used to be #1a1a1a / #333 / #4A90E2 — a stock-blue accent on
+  // neutral grey, i.e. none of the aubergine-and-gold system. readerPalettes
+  // already carries a correct surface/border/accent triple per theme, and
+  // readerPalettes.dark is literally colors.surface / colors.border /
+  // colors.gold / colors.bronze, so one lookup covers dark, night, sepia
+  // and light without branching.
+  const palette = readerPalettes[settings.theme] ?? readerPalettes.dark;
+  const isWeb = Platform.OS === 'web';
+
   return (
     <>
       <StatusBar
-        style={settings.theme === 'light' ? 'dark' : 'light'}
+        style={settings.theme === 'light' || settings.theme === 'sepia' ? 'dark' : 'light'}
         translucent
       />
-      <NavigationContainer>
+      <NavigationContainer linking={linking} documentTitle={documentTitle}>
         <Tab.Navigator
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: settings.theme === 'light' ? '#f5f5f5' : '#1a1a1a',
-              borderTopColor: settings.theme === 'light' ? '#e0e0e0' : '#333',
+              backgroundColor: palette.surface,
+              borderTopColor: palette.border,
               borderTopWidth: 1,
-              paddingBottom: 4,
+              paddingTop: space.sm,
+              // Only pin an explicit height on web. On native the tab bar
+              // computes 49 + safe-area inset itself, and a hardcoded height
+              // here overrides that and eats the home-indicator gap.
+              ...(isWeb
+                ? { height: 68, paddingBottom: space.sm, paddingHorizontal: space.sm }
+                : null),
             },
-            tabBarActiveTintColor: '#4A90E2',
-            tabBarInactiveTintColor: settings.theme === 'light' ? '#999' : '#666',
+            tabBarActiveTintColor: palette.accent,
+            tabBarInactiveTintColor: palette.accentSoft,
+            tabBarLabelStyle: {
+              // type.caption already carries fonts.ui + letterSpacing; the
+              // size is nudged down because nine tabs share the bar.
+              ...type.caption,
+              fontSize: 11,
+              letterSpacing: 0.2,
+              fontWeight: '600',
+              marginTop: space.xs / 2,
+              marginBottom: isWeb ? 0 : space.xs / 2,
+            },
+            tabBarIconStyle: {
+              marginTop: space.xs / 2,
+            },
+            tabBarItemStyle: {
+              paddingVertical: space.xs,
+            },
+            tabBarActiveBackgroundColor: 'transparent',
           }}
         >
           <Tab.Screen
@@ -182,8 +351,24 @@ function MainApp() {
   );
 }
 
-function Icon({ name }: { name: string; color: string }) {
-  return <>{name}</>;
+// Previously returned a bare string in a fragment, which (a) throws
+// "Text strings must be rendered within a <Text> component" on native and
+// (b) dropped the `color` prop entirely — so the active tint never reached
+// the glyph. Wrapping in <Text> fixes both; monochrome glyphs like ✦ now
+// actually turn gold when their tab is focused.
+function Icon({ name, color }: { name: string; color: string }) {
+  return (
+    <Text
+      style={{
+        fontSize: 18,
+        lineHeight: 22,
+        color,
+        textAlign: 'center',
+      }}
+    >
+      {name}
+    </Text>
+  );
 }
 
 export default function App() {
