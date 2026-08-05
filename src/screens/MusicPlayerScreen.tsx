@@ -6,15 +6,79 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Audio } from 'expo-av';
 import { useApp } from '../context/AppContext';
 
 import { Alert } from '../components/Alert';
+
+/**
+ * expo-av's web implementation silently no-ops instead of throwing: loadAsync
+ * and playAsync both resolve without error, but no <audio> element is ever
+ * created and nothing plays. Confirmed live — after calling both, document
+ * had zero <audio> tags. expo-av's web support has been thin for a while
+ * (Expo has been steering people to expo-audio/expo-video), so on web this
+ * wraps a real HTMLAudioElement behind the exact same async method shape
+ * expo-av's Sound exposes, so none of the calling code below has to change.
+ */
+class WebSound {
+  private el: HTMLAudioElement;
+  constructor(uri: string) {
+    this.el = new window.Audio(uri);
+    this.el.preload = 'auto';
+  }
+  async loadAsync() {
+    await new Promise<void>((resolve, reject) => {
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+      const onError = () => {
+        cleanup();
+        reject(this.el.error || new Error('Audio failed to load'));
+      };
+      const cleanup = () => {
+        this.el.removeEventListener('canplaythrough', onReady);
+        this.el.removeEventListener('error', onError);
+      };
+      this.el.addEventListener('canplaythrough', onReady, { once: true });
+      this.el.addEventListener('error', onError, { once: true });
+      this.el.load();
+    });
+  }
+  async playAsync() {
+    await this.el.play();
+  }
+  async pauseAsync() {
+    this.el.pause();
+  }
+  async stopAsync() {
+    this.el.pause();
+    this.el.currentTime = 0;
+  }
+  async setPositionAsync(positionMillis: number) {
+    this.el.currentTime = positionMillis / 1000;
+  }
+  async getStatusAsync() {
+    return {
+      isLoaded: true,
+      positionMillis: this.el.currentTime * 1000,
+      durationMillis: Number.isFinite(this.el.duration) ? this.el.duration * 1000 : 0,
+    };
+  }
+  async unloadAsync() {
+    this.el.pause();
+    this.el.src = '';
+  }
+}
+
+type SoundHandle = Audio.Sound | WebSound;
+
 interface MusicState {
   isLoading: boolean;
   isPlaying: boolean;
-  sound: Audio.Sound | null;
+  sound: SoundHandle | null;
   duration: number;
   position: number;
   error: string | null;
@@ -90,21 +154,27 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
     }
 
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-      });
-
-      const sound = new Audio.Sound();
-      // A remote https:// uri streams directly; expo-av does not require a
-      // local download first.
-      await sound.loadAsync({ uri });
+      let sound: SoundHandle;
+      if (Platform.OS === 'web') {
+        sound = new WebSound(uri);
+        await sound.loadAsync();
+      } else {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+        });
+        const nativeSound = new Audio.Sound();
+        // A remote https:// uri streams directly; expo-av does not require a
+        // local download first.
+        await nativeSound.loadAsync({ uri });
+        sound = nativeSound;
+      }
 
       const status = await sound.getStatusAsync();
       setState((prev) => ({
         ...prev,
         sound,
-        duration: status.durationMillis || 0,
+        duration: (status as any).durationMillis || 0,
         isLoading: false,
       }));
     } catch (error) {
