@@ -14,7 +14,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
 import { AudioService, PlaybackState } from '../services/AudioService';
@@ -164,6 +164,7 @@ export default function ReaderScreen() {
     retryTextLoad,
   } = useApp();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { width: windowWidth } = useWindowDimensions();
 
   const settings = useMemo(() => withReaderDefaults(storedSettings), [storedSettings]);
@@ -378,6 +379,41 @@ export default function ReaderScreen() {
     setCurrentPage((p) => Math.max(0, p - 1));
     setIsPlaying(false);
   }, []);
+
+  /** First page of a given chapter index. Pages are built chapter-by-chapter,
+   * so the first page whose chapterIndex matches IS the chapter's opening
+   * page — no separate lookup table needed. */
+  const goToChapter = useCallback(
+    (chapterIndex: number) => {
+      const target = pages.findIndex((p) => p.chapterIndex === chapterIndex);
+      if (target >= 0) {
+        setCurrentPage(target);
+        setIsPlaying(false);
+      }
+    },
+    [pages]
+  );
+
+  const chapterCount = parsed?.chapters.length ?? 0;
+  const currentChapterIndex = page?.chapterIndex ?? 0;
+  const handlePreviousChapter = useCallback(() => {
+    goToChapter(Math.max(0, currentChapterIndex - 1));
+  }, [goToChapter, currentChapterIndex]);
+  const handleNextChapter = useCallback(() => {
+    goToChapter(Math.min(chapterCount - 1, currentChapterIndex + 1));
+  }, [goToChapter, currentChapterIndex, chapterCount]);
+
+  // TableOfContentsScreen sends the chosen chapter back as a route param
+  // rather than a prop, since it is a sibling screen in the same stack, not
+  // a child — this is the normal RN Navigation way to pass a result back.
+  useEffect(() => {
+    const target = route?.params?.jumpToChapter;
+    if (typeof target === 'number' && pages.length > 0) {
+      goToChapter(target);
+      navigation.setParams({ jumpToChapter: undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.jumpToChapter, pages.length]);
 
   // Arrow keys turn pages on web — the expected gesture for a desktop reader.
   useEffect(() => {
@@ -731,9 +767,41 @@ export default function ReaderScreen() {
           <View style={styles.chromeTopRow}>
             <View style={styles.chromeTitles}>
               {!!chapterTitle && (
-                <Text style={[styles.overline, { color: palette.accentSoft }]} numberOfLines={1}>
-                  {chapterTitle.toUpperCase()}
-                </Text>
+                <View style={styles.chapterNavRow}>
+                  <TouchableOpacity
+                    onPress={handlePreviousChapter}
+                    disabled={currentChapterIndex === 0}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    accessibilityLabel="Previous chapter"
+                  >
+                    <ChevronLeftIcon
+                      size={13}
+                      color={currentChapterIndex === 0 ? palette.rule : palette.accentSoft}
+                      strokeWidth={2}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('TableOfContents')}
+                    style={{ flex: 1 }}
+                    accessibilityLabel="Open table of contents"
+                  >
+                    <Text style={[styles.overline, { color: palette.accentSoft }]} numberOfLines={1}>
+                      {chapterTitle.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleNextChapter}
+                    disabled={currentChapterIndex >= chapterCount - 1}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    accessibilityLabel="Next chapter"
+                  >
+                    <ChevronRightIcon
+                      size={13}
+                      color={currentChapterIndex >= chapterCount - 1 ? palette.rule : palette.accentSoft}
+                      strokeWidth={2}
+                    />
+                  </TouchableOpacity>
+                </View>
               )}
               <Text style={[styles.bookTitle, { color: palette.accent }]} numberOfLines={1}>
                 {currentBook.title}
@@ -1027,6 +1095,7 @@ const styles = StyleSheet.create({
     paddingBottom: space.md,
   },
   chromeTitles: { flex: 1, minWidth: 0 },
+  chapterNavRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   overline: {
     fontFamily: fonts.ui,
     fontSize: 10,
