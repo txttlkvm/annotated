@@ -314,10 +314,14 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
 
 // Wikimedia Commons direct image download URLs for public domain artwork
 const wikimediaArtwork: Record<string, string> = {
-  'The Trinity (Rublev)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Rublev_Trinity.jpg/1200px-Rublev_Trinity.jpg',
-  'Pietà': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg/800px-Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg',
-  'David': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Michelangelo%27s_David_1504.jpg/536px-Michelangelo%27s_David_1504.jpg',
-  'Annunciation (Fra Angelico)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Fra_Angelico_-_The_Annunciation.jpg/880px-Fra_Angelico_-_The_Annunciation.jpg',
+  // The original 4 entries below 400'd: Wikimedia only serves a fixed set of
+  // thumbnail widths, and 800px/536px weren't on the list. Re-fetched via the
+  // imageinfo API's own iiurlwidth (guarantees a width Wikimedia will
+  // actually generate) and re-verified with a real HTTP 200 before landing.
+  'The Trinity (Rublev)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Andrey_Rublev_-_%D0%A1%D0%B2._%D0%A2%D1%80%D0%BE%D0%B8%D1%86%D0%B0_-_Google_Art_Project.jpg/1280px-Andrey_Rublev_-_%D0%A1%D0%B2._%D0%A2%D1%80%D0%BE%D0%B8%D1%86%D0%B0_-_Google_Art_Project.jpg',
+  'Pietà': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg/1280px-Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg',
+  'David': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Michelangelo%27s_David_2015.jpg/1280px-Michelangelo%27s_David_2015.jpg',
+  'Annunciation (Fra Angelico)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Fra_Angelico_-_The_Annunciation.jpg/1280px-Fra_Angelico_-_The_Annunciation.jpg',
   // Verified via Wikimedia Commons API + a real HTTP fetch before being added
   // (200, image/jpeg, real byte count) — not guessed filenames.
   'Giotto (Scrovegni Chapel)': 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Giotto_-_Scrovegni_-_-36-_-_Lamentation_%28The_Mourning_of_Christ%29_adj.jpg',
@@ -369,6 +373,12 @@ const wikimediaMusic: Record<string, string> = {
     'https://upload.wikimedia.org/wikipedia/commons/b/b6/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_01_Prelude_No._1_in_C_major%2C_BWV_846.ogg',
   'Goldberg Variations':
     'https://upload.wikimedia.org/wikipedia/commons/5/59/Kimiko_Ishizaka_-_J.S._Bach-_-Open-_Goldberg_Variations%2C_BWV_988_%28Piano%29_-_01_Aria.mp3',
+  'Brandenburg Concertos':
+    'https://upload.wikimedia.org/wikipedia/commons/f/f4/Bach_-_Brandenburg_Concerto_No._1_-_1._Allegro.ogg',
+  'Missa Papae Marcelli':
+    'https://upload.wikimedia.org/wikipedia/commons/e/e1/Missa_Papae_Marcelli_-_I._Kyrie.flac',
+  'Gregorian Chant':
+    'https://upload.wikimedia.org/wikipedia/commons/7/7d/Kyrie_Eleison_Orbis_Factor.ogg',
 };
 
 function getWikimediaMusicSource(title: string) {
