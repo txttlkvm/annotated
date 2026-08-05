@@ -318,6 +318,12 @@ const wikimediaArtwork: Record<string, string> = {
   'Pietà': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg/800px-Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg',
   'David': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Michelangelo%27s_David_1504.jpg/536px-Michelangelo%27s_David_1504.jpg',
   'Annunciation (Fra Angelico)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Fra_Angelico_-_The_Annunciation.jpg/880px-Fra_Angelico_-_The_Annunciation.jpg',
+  // Verified via Wikimedia Commons API + a real HTTP fetch before being added
+  // (200, image/jpeg, real byte count) — not guessed filenames.
+  'Giotto (Scrovegni Chapel)': 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Giotto_-_Scrovegni_-_-36-_-_Lamentation_%28The_Mourning_of_Christ%29_adj.jpg',
+  'Michelangelo (Sistine Chapel Ceiling)': 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Sistine_Chapel_ceiling_02_%28brightened%29.jpg',
+  'Greco-Roman Sculpture': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Laoco%C3%B6n_and_his_sons_group.jpg/1280px-Laoco%C3%B6n_and_his_sons_group.jpg',
+  'Gothic Cathedral Sculpture (Chartres, Reims)': 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Chartres_Cathedral%3B_Christ_in_Majesty%3B_central_portal%2C_west_facade_-_Vanderbilt_ACT_-_00000043.jpg',
 };
 
 // Helper to generate Anna's Archive search URL
@@ -352,6 +358,25 @@ function getStandardEbooksSource(title: string) {
     provider: 'standard-ebooks' as const,
     url: `https://standardebooks.org/search?query=${encoded}`,
   };
+}
+
+// Direct, verified public-domain recordings (real HTTP 200 + audio content-
+// type checked before being added — not guessed filenames). Most catalogue
+// music entries are large multi-movement works, so this points at one
+// representative movement, not the whole work.
+const wikimediaMusic: Record<string, string> = {
+  'Well-Tempered Clavier':
+    'https://upload.wikimedia.org/wikipedia/commons/b/b6/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_01_Prelude_No._1_in_C_major%2C_BWV_846.ogg',
+  'Goldberg Variations':
+    'https://upload.wikimedia.org/wikipedia/commons/5/59/Kimiko_Ishizaka_-_J.S._Bach-_-Open-_Goldberg_Variations%2C_BWV_988_%28Piano%29_-_01_Aria.mp3',
+};
+
+function getWikimediaMusicSource(title: string) {
+  const directUrl = wikimediaMusic[title];
+  if (directUrl) {
+    return { type: 'html' as const, provider: 'wikimedia' as const, url: directUrl };
+  }
+  return null;
 }
 
 function getArchiveOrgMusicSource(title: string, artist?: string) {
@@ -406,15 +431,17 @@ export function getPublicDomainSources(
 
     // For music and art, include appropriate search sources
     if (itemType === 'music') {
+      const direct = getWikimediaMusicSource(title);
       return [
+        ...(direct ? [direct] : []),
         ...sources,
         getArchiveOrgMusicSource(title, author),
         getYouTubeMusicSource(title, author),
       ];
     } else if (itemType === 'art') {
       return [
-        ...sources,
         getWikimediaArtSource(title),
+        ...sources,
       ];
     }
 
@@ -433,15 +460,17 @@ export function getPublicDomainSources(
       const sources = value;
 
       if (itemType === 'music') {
+        const direct = getWikimediaMusicSource(title);
         return [
+          ...(direct ? [direct] : []),
           ...sources,
           getArchiveOrgMusicSource(title, author),
           getYouTubeMusicSource(title, author),
         ];
       } else if (itemType === 'art') {
         return [
-          ...sources,
           getWikimediaArtSource(title),
+          ...sources,
         ];
       }
 
@@ -456,7 +485,9 @@ export function getPublicDomainSources(
 
   // If no direct source found, return appropriate search options based on type
   if (itemType === 'music') {
+    const direct = getWikimediaMusicSource(title);
     return [
+      ...(direct ? [direct] : []),
       getArchiveOrgMusicSource(title, author),
       getYouTubeMusicSource(title, author),
     ];
