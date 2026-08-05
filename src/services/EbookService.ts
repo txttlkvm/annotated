@@ -28,12 +28,23 @@
 // LibraryScreen rehydrates `content` from it on demand. On native the copied
 // file itself is the store and is simply re-parsed.
 //
-// HONESTY RULE
-// ------------
-// There is no dependable browser parser for PDF or MOBI/AZW here. Those files
-// import as real catalogue records — title, format, size, cover placeholder —
-// and the caller is handed a `warning` string to show. We never fabricate
-// text and never add a silently empty book.
+// PDF, VIA PDF.JS
+// ---------------
+// pdf.js extracts the real text layer, loaded lazily so its ~1MB bundle only
+// ships to a session that actually imports a PDF. Its worker is fetched from
+// jsDelivr pinned to the exact installed version — the standard integration
+// pattern for pdf.js in a bundler with no custom worker-loader config. A
+// scanned/image-only PDF has no text layer for ANY reader to extract without
+// OCR; that case is detected and reported rather than importing a blank book.
+//
+// HONESTY RULE (still true for MOBI/AZW)
+// ---------------------------------------
+// There is no dependable browser parser for MOBI/AZW — the format needs a
+// PalmDOC + Huffman/CDIC decoder and no maintained JS implementation exists
+// to build on. Those files import as real catalogue records — title, format,
+// size, cover placeholder — and the caller is handed a `warning` string
+// pointing at Calibre's free MOBI→EPUB conversion. We never fabricate text
+// and never add a silently empty book.
 
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
@@ -786,6 +797,7 @@ export class EbookService {
       case 'txt':
         return this.parseTxt(picked, onProgress);
       case 'pdf':
+        return this.parsePdf(picked, onProgress);
       case 'mobi':
         return this.describeUnextractable(picked, format as EbookFormat);
       default:
@@ -794,19 +806,19 @@ export class EbookService {
   }
 
   /**
-   * Honest placeholder for the formats we cannot read here.
+   * Honest placeholder for the one format we still cannot read.
    *
-   * PDF needs a full layout engine (pdf.js) and MOBI/AZW3 needs a PalmDOC +
-   * Huffman/CDIC decoder; neither is available in this build. Rather than
-   * inventing a page of text, the book is catalogued and the user is told
+   * MOBI/AZW3 needs a PalmDOC + Huffman/CDIC decoder. No maintained
+   * JavaScript implementation exists to build on (checked the npm registry:
+   * the only package named `mobi` is a dead 2012 stub with an unrelated
+   * dependency) — every real MOBI-capable reader either ships Amazon's own
+   * closed decoder or shells out to Calibre to convert the file first. A
+   * hand-rolled decoder risks silently mis-decoding text, which is worse
+   * than telling the truth, so the book is catalogued and the user is told
    * exactly what did and did not happen.
    */
   private static describeUnextractable(picked: PickedFile, format: EbookFormat): EbookContent {
-    const label = format === 'pdf' ? 'PDF' : 'MOBI/AZW';
-    const note =
-      format === 'pdf'
-        ? `"${titleFromFileName(picked.name)}" is on the shelf, but its text could not be extracted — Annotated cannot read PDF text yet. Convert it to EPUB and import again to read it here.`
-        : `"${titleFromFileName(picked.name)}" is on the shelf, but its text could not be extracted — Annotated cannot read ${label} files yet. Convert it to EPUB and import again to read it here.`;
+    const note = `"${titleFromFileName(picked.name)}" is on the shelf, but its text could not be extracted — Annotated cannot read MOBI/AZW files yet. Convert it to EPUB with Calibre (free, calibre-ebook.com) and import the result to read it here.`;
 
     return {
       title: titleFromFileName(picked.name),
@@ -815,6 +827,124 @@ export class EbookService {
       text: '',
       textAvailable: false,
       note,
+    };
+  }
+
+  /**
+   * PDF via pdf.js — the actual text layer, not an approximation.
+   *
+   * pdf.js is loaded lazily (only when a PDF is actually imported) and its
+   * worker is fetched from a CDN pinned to the exact installed version, which
+   * avoids wiring a custom Metro worker-loader config for one format.
+   *
+   * A scanned/image-only PDF has no text layer at all — no reader, including
+   * this one, can extract words from a picture of a page without OCR. That
+   * case is detected and reported honestly rather than importing an empty
+   * or garbled book.
+   */
+  private static async parsePdf(picked: PickedFile, onProgress?: ProgressFn): Promise<EbookContent> {
+    if (!isWeb) {
+      throw new EbookImportError(
+        `"${picked.name}" could not be opened.`,
+        'PDF reading is only available in the web build.'
+      );
+    }
+    if (!picked.file) {
+      throw new EbookImportError(
+        `"${picked.name}" is no longer available.`,
+        'Pick the file again — the browser only lends access for a moment.'
+      );
+    }
+
+    const report = (percent: number, label: string) => {
+      if (!onProgress) return;
+      try {
+        onProgress({ stage: 'extracting', label, percent: Math.max(0, Math.min(100, Math.round(percent))) });
+      } catch {
+        /* ignore listener errors */
+      }
+    };
+
+    report(2, 'Reading file');
+    const buffer = await readFileWeb(picked.file, 'arrayBuffer', (fraction) => report(2 + fraction * 8, 'Reading file'));
+
+    report(12, 'Loading PDF engine');
+    const pdfjsLib = await import('pdfjs-dist');
+    // Pin the worker to the exact installed version so it can never drift out
+    // of sync with the API this code was written against.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+    let doc;
+    try {
+      doc = await pdfjsLib.getDocument({
+        data: buffer,
+        // Without this, PDFs that reference a standard base-14 font (Times,
+        // Helvetica, Courier…) rather than embedding their own — the common
+        // case for plainly-typeset documents — throw an UnknownErrorException
+        // asking for exactly this. Same version-pinned CDN pattern as the
+        // worker, pointed at pdf.js's bundled Foxit/Liberation substitutes.
+        standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
+      }).promise;
+    } catch (error: any) {
+      if (error?.name === 'PasswordException') {
+        throw new EbookImportError(
+          `"${picked.name}" is password-protected.`,
+          'Remove the password (e.g. with Calibre or your PDF viewer) and import it again.'
+        );
+      }
+      throw new EbookImportError(
+        `"${picked.name}" could not be opened as a PDF.`,
+        'The file may be damaged or not a real PDF.'
+      );
+    }
+
+    const numPages = doc.numPages;
+    const pageTexts: string[] = [];
+    for (let i = 1; i <= numPages; i += 1) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => (typeof item.str === 'string' ? item.str : ''))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      pageTexts.push(pageText);
+      report(15 + (i / numPages) * 75, `Extracting text — page ${i} of ${numPages}`);
+    }
+
+    const text = pageTexts.filter(Boolean).join('\n\n');
+    const nonEmptyPages = pageTexts.filter((t) => t.length > 0).length;
+
+    // Below this bar the PDF is almost certainly scanned pages/images with no
+    // embedded text — importing it as "readable" would just show a nearly
+    // blank book with no honest way to explain why.
+    if (text.length < 200 || nonEmptyPages / numPages < 0.5) {
+      throw new EbookImportError(
+        `"${picked.name}" has no readable text layer.`,
+        'This looks like a scanned or image-only PDF — the pages are pictures of text, not digital text, so no reader can extract them without OCR.'
+      );
+    }
+
+    report(92, 'Reading metadata');
+    let title: string | undefined;
+    let author: string | undefined;
+    try {
+      const meta: any = await doc.getMetadata();
+      const info = meta?.info || {};
+      if (typeof info.Title === 'string' && info.Title.trim()) title = info.Title.trim();
+      if (typeof info.Author === 'string' && info.Author.trim()) author = info.Author.trim();
+    } catch {
+      /* PDF metadata is optional; fall through to the filename. */
+    }
+
+    report(98, 'Finishing up');
+    return {
+      title: title || titleFromFileName(picked.name),
+      author,
+      chapters: [{ title: 'Full Text', content: text }],
+      totalPages: this.calculatePages(text, CHARS_PER_PAGE),
+      text,
+      textAvailable: true,
     };
   }
 
