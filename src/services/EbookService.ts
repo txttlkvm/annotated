@@ -869,10 +869,17 @@ export class EbookService {
     const buffer = await readFileWeb(picked.file, 'arrayBuffer', (fraction) => report(2 + fraction * 8, 'Reading file'));
 
     report(12, 'Loading PDF engine');
-    const pdfjsLib = await import('pdfjs-dist');
+    // The `legacy` build, not the main one: pdfjs-dist's main build uses ES2022
+    // static class blocks (`static { … }`), which this project's Babel/Metro
+    // config has no plugin for and fails to bundle with a SyntaxError. `legacy`
+    // exists precisely for toolchains that don't support the newest syntax —
+    // same API, same behaviour, just an older compilation target. Worker and
+    // library must be the matched legacy pair; standard_fonts/ is shared and
+    // has no legacy-specific copy.
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
     // Pin the worker to the exact installed version so it can never drift out
     // of sync with the API this code was written against.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/legacy/build/pdf.worker.min.mjs`;
 
     let doc;
     try {
