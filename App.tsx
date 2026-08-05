@@ -168,8 +168,11 @@ type ReadingStackParamList = {
 type CurriculumStackParamList = {
   CurriculumHome: undefined;
   ClassicalLibraryReader: { itemId: string };
-  MusicPlayer: { title: string; filePath?: string; artist?: string };
-  ArtViewer: { title: string; imagePath?: string; artist?: string };
+  // sourceUrl streams/loads directly from a remote URL — the normal path now.
+  // filePath/imagePath are the legacy native-download path, kept only for
+  // whatever still calls it during the ClassicalLibraryReaderScreen wind-down.
+  MusicPlayer: { title: string; sourceUrl?: string; filePath?: string; artist?: string };
+  ArtViewer: { title: string; sourceUrl?: string; imagePath?: string; artist?: string };
 };
 
 type RootTabParamList = {

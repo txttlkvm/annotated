@@ -20,9 +20,23 @@ interface MusicState {
   error: string | null;
 }
 
+/**
+ * Every source currently in the catalogue for music is a link to a SEARCH
+ * page (archive.org's search, a YouTube results page), not a direct audio
+ * file — there is no real recording to stream yet, for any piece. Rather
+ * than attempt to "play" a webpage URL and produce a confusing native
+ * decode error, this is detected up front and reported honestly.
+ */
+function isDirectAudioUrl(url?: string): boolean {
+  if (!url) return false;
+  if (/\/search|results\?|query=/i.test(url)) return false;
+  return /\.(mp3|ogg|wav|m4a|flac|aac)(\?|$)/i.test(url);
+}
+
 export default function MusicPlayerScreen({ route, navigation }: any) {
-  const { filePath, title, artist } = route.params;
+  const { sourceUrl, filePath, title, artist } = route.params;
   const { settings } = useApp();
+  const playableUrl = isDirectAudioUrl(sourceUrl) ? sourceUrl : null;
 
   const [state, setState] = useState<MusicState>({
     isLoading: true,
@@ -63,6 +77,18 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
   }, [state.isPlaying, state.sound]);
 
   const loadAudio = async () => {
+    // No real recording is linked for this piece — say so plainly rather
+    // than attempt a load that can only fail. See isDirectAudioUrl above.
+    const uri = playableUrl || (filePath ? `file://${filePath}` : null);
+    if (!uri) {
+      setState((prev) => ({
+        ...prev,
+        error: 'No direct recording is linked for this piece yet.',
+        isLoading: false,
+      }));
+      return;
+    }
+
     try {
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -70,7 +96,9 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
       });
 
       const sound = new Audio.Sound();
-      await sound.loadAsync({ uri: `file://${filePath}` });
+      // A remote https:// uri streams directly; expo-av does not require a
+      // local download first.
+      await sound.loadAsync({ uri });
 
       const status = await sound.getStatusAsync();
       setState((prev) => ({
@@ -82,10 +110,9 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
     } catch (error) {
       setState((prev) => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to load audio',
+        error: 'Could not load this recording.',
         isLoading: false,
       }));
-      Alert.alert('Error', 'Could not load audio file');
     }
   };
 

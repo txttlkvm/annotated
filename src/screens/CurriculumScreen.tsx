@@ -365,7 +365,7 @@ function CurriculumRow({
 // ---------------------------------------------------------------------------
 
 export default function CurriculumScreen({ navigation }: any) {
-  const { getClassicalLibrary } = useApp();
+  const { getClassicalLibrary, addClassicalLibraryItem, books } = useApp();
 
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -487,8 +487,43 @@ export default function CurriculumScreen({ navigation }: any) {
     setSearchText('');
   };
 
-  const handleViewItem = (item: ClassicalLibraryItem) => {
-    navigation.navigate('ClassicalLibraryReader', { itemId: item.id });
+  /**
+   * Used to route straight to an already-added volume instead of creating a
+   * duplicate library entry every time the same curriculum item is tapped.
+   * Book has no field linking back to a catalogue id, so this matches on
+   * title+author — the same key AppContext's own sourceUrl backfill uses.
+   */
+  const findExistingBook = (item: ClassicalLibraryItem) => {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const key = `${norm(item.title)}|${norm(item.author || '')}`;
+    return books.find((b) => `${norm(b.title)}|${norm(b.author || '')}` === key);
+  };
+
+  /**
+   * Every prior version of this handler sent every tap — book, music, art —
+   * to ClassicalLibraryReaderScreen, which downloaded to a native file:// path
+   * via ContentDownloadService. That has no web implementation at all, so on
+   * web every tap failed with "expo-file-system.getInfoAsync is not available
+   * on web" instead of reading anything.
+   *
+   * Books now go through the exact path already proven end-to-end from the
+   * Catalog: add (or reuse) the library entry, open Book Details, and let the
+   * real GutenbergService/AppContext pipeline fetch and paginate the text.
+   */
+  const handleViewItem = async (item: ClassicalLibraryItem) => {
+    if (item.type === 'music' || item.type === 'art') {
+      const source = item.sources?.[0];
+      if (item.type === 'music') {
+        navigation.navigate('MusicPlayer', { sourceUrl: source?.url, title: item.title, artist: item.author });
+      } else {
+        navigation.navigate('ArtViewer', { sourceUrl: source?.url, title: item.title, artist: item.author });
+      }
+      return;
+    }
+
+    const existing = findExistingBook(item);
+    const bookId = existing ? existing.id : await addClassicalLibraryItem(item);
+    navigation.navigate('Library', { screen: 'BookDetails', params: { bookId } });
   };
 
   /* ------------------------------------------------------------------- ui */

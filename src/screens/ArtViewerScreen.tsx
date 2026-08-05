@@ -20,8 +20,12 @@ interface ArtState {
 }
 
 export default function ArtViewerScreen({ route, navigation }: any) {
-  const { imagePath, title, artist } = route.params;
+  const { sourceUrl, imagePath, title, artist } = route.params;
   const { settings } = useApp();
+  // A remote https:// image loads directly — nothing to download, nothing
+  // that needs a native file-system. imagePath (file://) is the legacy path,
+  // kept only for whatever still passes it.
+  const imageUri = sourceUrl || (imagePath ? `file://${imagePath}` : null);
 
   const [state, setState] = useState<ArtState>({
     isLoading: true,
@@ -38,8 +42,16 @@ export default function ArtViewerScreen({ route, navigation }: any) {
   }, []);
 
   const loadImage = () => {
+    if (!imageUri) {
+      setState((prev) => ({
+        ...prev,
+        error: 'No image source is available for this piece yet.',
+        isLoading: false,
+      }));
+      return;
+    }
     Image.getSize(
-      `file://${imagePath}`,
+      imageUri,
       (width, height) => {
         setState((prev) => ({
           ...prev,
@@ -47,13 +59,12 @@ export default function ArtViewerScreen({ route, navigation }: any) {
           isLoading: false,
         }));
       },
-      (error) => {
+      () => {
         setState((prev) => ({
           ...prev,
-          error: 'Failed to load image',
+          error: 'Could not load this image.',
           isLoading: false,
         }));
-        Alert.alert('Error', 'Could not load image file');
       }
     );
   };
@@ -115,7 +126,7 @@ export default function ArtViewerScreen({ route, navigation }: any) {
         ) : (
           <View style={styles.imageWrapper}>
             <Image
-              source={{ uri: `file://${imagePath}` }}
+              source={{ uri: imageUri as string }}
               style={{
                 width: Math.min(scaledWidth, screenWidth - 32),
                 height: Math.min(
