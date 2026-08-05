@@ -36,6 +36,7 @@ import { DEFAULT_READER_SETTINGS } from '../types';
 import type { ReaderSettings } from '../types';
 
 import { Alert } from '../components/Alert';
+import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 /**
  * The reading surface — the most important screen in the app.
  *
@@ -187,6 +188,9 @@ export default function ReaderScreen() {
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lookupResult, setLookupResult] = useState<WikipediaSummary | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
   const [bookmarkNote, setBookmarkNote] = useState('');
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT);
   const [sessionStartTime] = useState(Date.now());
@@ -510,6 +514,25 @@ export default function ReaderScreen() {
       Alert.alert('Saved', 'Bookmark added');
     } catch (error) {
       Alert.alert('Error', 'Failed to add bookmark');
+    }
+  };
+
+  const handleLookup = async () => {
+    if (!selectedText) return;
+    setLookupLoading(true);
+    setLookupError(null);
+    setLookupResult(null);
+    try {
+      const result = await WikipediaService.lookup(selectedText);
+      if (!result) {
+        setLookupError('No Wikipedia entry found for this passage.');
+      } else {
+        setLookupResult(result);
+      }
+    } catch {
+      setLookupError('Could not reach Wikipedia. Check your connection.');
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -1099,14 +1122,72 @@ export default function ReaderScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderColor: palette.border }]}
+                onPress={() => {
+                  setSelectedText('');
+                  setShowHighlightColor(false);
+                }}
+              >
+                <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderColor: palette.border }]}
+                onPress={() => {
+                  setShowHighlightColor(false);
+                  handleLookup();
+                }}
+              >
+                <Text style={[styles.modalButtonText, { color: palette.accent }]}>Look up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ------------------------------------------------------- look up --- */}
+      <Modal
+        visible={lookupLoading || !!lookupResult || !!lookupError}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setLookupResult(null);
+          setLookupError(null);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalCard,
+              elevation.card,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            {lookupLoading ? (
+              <ActivityIndicator color={palette.accent} />
+            ) : lookupError ? (
+              <>
+                <Text style={[styles.modalTitle, { color: palette.accent }]}>Look up</Text>
+                <Text style={[styles.modalCaption, { color: palette.muted }]}>{lookupError}</Text>
+              </>
+            ) : (
+              lookupResult && (
+                <>
+                  <Text style={[styles.modalTitle, { color: palette.accent }]}>{lookupResult.title}</Text>
+                  <Text style={[styles.modalExcerpt, { color: palette.text }]}>{lookupResult.extract}</Text>
+                  <Text style={[styles.modalCaption, { color: palette.muted }]}>Source: Wikipedia</Text>
+                </>
+              )
+            )}
             <TouchableOpacity
               style={[styles.modalButton, { borderColor: palette.border, marginTop: space.md }]}
               onPress={() => {
-                setSelectedText('');
-                setShowHighlightColor(false);
+                setLookupResult(null);
+                setLookupError(null);
               }}
             >
-              <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
+              <Text style={[styles.modalButtonText, { color: palette.muted }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
