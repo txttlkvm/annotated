@@ -551,7 +551,9 @@ export default function ReaderScreen() {
             <>
               <ActivityIndicator color={colors.gold} style={{ marginBottom: space.md }} />
               <Text style={[styles.emptyBody, { color: colors.inkMuted }]}>
-                Fetching the full edition from the archive…
+                {currentBook.sourceUrl
+                  ? 'Fetching the full edition from the archive…'
+                  : 'Restoring the text from this device…'}
               </Text>
             </>
           ) : (
@@ -559,7 +561,18 @@ export default function ReaderScreen() {
               <Text style={[styles.emptyBody, { color: colors.inkMuted }]}>
                 {failedThisBook && textLoad.error
                   ? textLoad.error
-                  : 'The text of this volume has not been downloaded yet. Open it from the library to fetch the full edition.'}
+                  : /**
+                     * Reaching here with no error means AppContext found no
+                     * source at all — by construction that is now only a
+                     * format we cannot extract (PDF/MOBI) or a catalogue
+                     * entry with neither a remote edition nor stored local
+                     * text. The old copy ("hasn't been downloaded yet…
+                     * fetch the full edition") implied a retry would work;
+                     * for these cases it never will, so say what is true.
+                     */
+                    currentBook.fileFormat === 'pdf' || currentBook.fileFormat === 'mobi'
+                    ? `Annotated cannot read ${currentBook.fileFormat === 'pdf' ? 'PDF' : 'MOBI/AZW'} text yet — this volume is shelved for reference only. Convert it to EPUB or plain text and import it again to read it here.`
+                    : 'This volume has no readable edition yet. Add it again from the catalogue, or import a file with EPUB or plain-text content.'}
               </Text>
               {failedThisBook && (
                 <TouchableOpacity

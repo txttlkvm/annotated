@@ -163,7 +163,20 @@ function stripExtension(fileName: string): string {
 
 /** "the-pilgrims_progress (1).epub" -> "The Pilgrims Progress". */
 function titleFromFileName(fileName: string): string {
-  const raw = stripExtension(fileName)
+  let stem = stripExtension(fileName);
+
+  // Library-export filenames commonly read
+  // "Title -- Author -- Edition, Year -- Publisher -- hash -- Site name".
+  // A blind hyphen collapse below would run every field into one sentence
+  // (author, publisher and hash all ending up inside the "title"), so the
+  // double-hyphen is treated as a hard field separator first and only the
+  // opening field — the actual title — is kept.
+  const fields = stem.split(/\s+--\s+/);
+  if (fields.length > 1 && fields[0].trim()) {
+    stem = fields[0];
+  }
+
+  const raw = stem
     .replace(/[_+]+/g, ' ')
     .replace(/-+/g, ' ')
     .replace(/\s*\(\d+\)\s*$/, '')

@@ -12,6 +12,7 @@ import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READ
 import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
 import { gutenbergIds, GutenbergRef } from '../data/gutenbergIds';
 import { GutenbergService, GutenbergBook, ParsedBook } from '../services/GutenbergService';
+import { EbookService } from '../services/EbookService';
 
 /* ------------------------------------------------------------------ *
  * BOOK TEXT
@@ -411,8 +412,37 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Artwork, music, user imports and unmatched entries have no text to
-      // fetch. That is a state, not a failure — say nothing alarming.
+      // A locally-imported EPUB/TXT has its extracted text sitting in
+      // IndexedDB (see EbookService), not behind a remote `sourceUrl`. This
+      // branch was missing entirely, so a successfully-imported local book
+      // fell straight into the "unavailable" case below and the reader
+      // showed the Gutenberg-flavoured "hasn't been downloaded" message for
+      // text that was already sitting on the device.
+      if (EbookService.hasStoredText(book)) {
+        claim({ bookId: book.id, status: 'loading', error: null });
+        try {
+          const restored = await EbookService.loadStoredText(book);
+          if (!restored) throw new Error('LOCAL_TEXT_MISSING');
+
+          const totalPages = Math.max(1, countPages(GutenbergService.parse(restored), budgetRef.current));
+          const fileSize = restored.length;
+          applyBookFields(book.id, { content: restored }, { totalPages, fileSize });
+          claim({ bookId: book.id, status: 'ready', error: null });
+          return { ...book, content: restored, totalPages, fileSize };
+        } catch (error) {
+          console.warn('[AppContext] Could not restore stored text:', error);
+          claim({
+            bookId: book.id,
+            status: 'error',
+            error: `Could not restore the text of "${book.title}" from this device. Try importing the file again.`,
+          });
+          return book;
+        }
+      }
+
+      // Artwork, music, unmatched catalogue entries, and imports whose text
+      // could not be extracted (PDF/MOBI today) have nothing to load. That is
+      // a state, not a failure — say nothing alarming.
       const fetchable = book.itemType !== 'music' && book.itemType !== 'art' && !!book.sourceUrl;
       if (!fetchable) {
         claim({ bookId: book.id, status: 'unavailable', error: null });
