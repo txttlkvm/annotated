@@ -33,7 +33,6 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
@@ -45,6 +44,7 @@ import Section from '../components/Section';
 import { SearchIcon, CloseIcon, CheckIcon, PlusIcon } from '../components/icons';
 import { colors, fonts, space, radius, type as t, elevation, layout } from '../theme';
 
+import { Alert } from '../components/Alert';
 type TierFilter = 'all' | 1 | 2;
 type StageFilter = 'all' | 'grammar' | 'logic' | 'rhetoric';
 

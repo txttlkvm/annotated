@@ -7,13 +7,13 @@ import {
   ScrollView,
   TextInput,
   TextInputProps,
-  Alert,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
 import Shell from '../components/Shell';
 import type { WordLookup } from '../types';
 
+import { Alert } from '../components/Alert';
 type SortMode = 'recent' | 'alpha';
 
 /**

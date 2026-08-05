@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Animated,
   Share,
-  Alert,
   Modal,
   TextInput,
   Platform,
@@ -34,6 +33,7 @@ import { colors, fonts, space, radius, elevation, layout, readerPalettes } from 
 import { DEFAULT_READER_SETTINGS } from '../types';
 import type { ReaderSettings } from '../types';
 
+import { Alert } from '../components/Alert';
 /**
  * The reading surface — the most important screen in the app.
  *

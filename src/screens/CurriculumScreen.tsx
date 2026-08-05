@@ -40,7 +40,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Alert,
   Linking,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
@@ -53,6 +52,7 @@ import { SearchIcon, CloseIcon, CheckIcon, ChevronRightIcon } from '../component
 import { coverFor } from '../data/gutenbergIds';
 import { colors, fonts, space, radius, type as t, elevation, layout } from '../theme';
 
+import { Alert } from '../components/Alert';
 const categories = [
   'literature',
   'philosophy',

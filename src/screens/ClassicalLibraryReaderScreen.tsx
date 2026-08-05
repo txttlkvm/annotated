@@ -5,7 +5,6 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   FlatList,
   Linking,
@@ -13,6 +12,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { ContentDownloadService, DownloadProgress } from '../services/ContentDownloadService';
 
+import { Alert } from '../components/Alert';
 export default function ClassicalLibraryReaderScreen({ route, navigation }: any) {
   const { itemId } = route.params;
   const { getClassicalLibrary } = useApp();

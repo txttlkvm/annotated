@@ -13,6 +13,7 @@ import { TTSService } from './src/services/TTSService';
 import { AudioService } from './src/services/AudioService';
 import { colors, layout, space, type } from './src/theme';
 import { Icon } from './src/components/icons';
+import { AlertHost } from './src/components/Alert';
 
 import LibraryScreen from './src/screens/LibraryScreen';
 import ReaderScreen from './src/screens/ReaderScreen';
@@ -311,6 +312,7 @@ function MainApp() {
         style={settings.theme === 'light' || settings.theme === 'sepia' ? 'dark' : 'light'}
         translucent
       />
+      <AlertHost />
       <NavigationContainer linking={linking} documentTitle={documentTitle}>
         <Tab.Navigator
           tabBar={AppTabBar}

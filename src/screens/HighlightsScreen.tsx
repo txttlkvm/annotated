@@ -6,13 +6,13 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
 import Shell from '../components/Shell';
 import type { Highlight } from '../types';
 
+import { Alert } from '../components/Alert';
 /**
  * The six ink colours a passage can be marked in. These hexes are stored on
  * existing highlights, so they must not change — only how they are presented.

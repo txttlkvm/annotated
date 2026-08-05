@@ -5,13 +5,13 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   ScrollView,
   Image,
   Dimensions,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 
+import { Alert } from '../components/Alert';
 interface ArtState {
   isLoading: boolean;
   error: string | null;

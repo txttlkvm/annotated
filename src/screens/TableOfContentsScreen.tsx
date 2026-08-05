@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
-  Alert,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 
+import { Alert } from '../components/Alert';
 interface Chapter {
   id: string;
   title: string;

@@ -6,7 +6,6 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
@@ -14,6 +13,7 @@ import { DatabaseService } from '../services/DatabaseService';
 import BookCover from '../components/BookCover';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
 
+import { Alert } from '../components/Alert';
 /** "2h 14m", "45m", "—" when nothing has been read yet. */
 function formatDuration(totalMinutes: number): string {
   if (!totalMinutes || totalMinutes < 1) return '—';

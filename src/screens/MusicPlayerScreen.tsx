@@ -5,12 +5,12 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { Audio } from 'expo-av';
 import { useApp } from '../context/AppContext';
 
+import { Alert } from '../components/Alert';
 interface MusicState {
   isLoading: boolean;
   isPlaying: boolean;

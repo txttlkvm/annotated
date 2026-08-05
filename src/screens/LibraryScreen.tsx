@@ -48,6 +48,7 @@ import {
   MenuIcon,
   PlayIcon,
   ChevronRightIcon,
+  DownloadIcon,
 } from '../components/icons';
 import { colors, type as t, space, radius, elevation, layout } from '../theme';
 
@@ -891,19 +892,40 @@ export default function LibraryScreen({ navigation }: any) {
           <Text style={styles.screenTitle}>Library</Text>
         </View>
 
-        {/* Browses the canon; the big CTA below imports a local file. They
-            used to fire the identical handler — same label, same action,
-            just two sizes of the same button. */}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate('Catalog')}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Browse the classical catalogue"
-        >
-          <PlusIcon size={13} color={colors.gold} strokeWidth={2.2} />
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+        {/* Two distinct actions, always visible regardless of shelf state.
+            "Add" browses the canon; "Import" picks a local file. The empty-
+            state CTA below is the same import action at a larger size for a
+            first-run shelf — once a book exists that CTA stops rendering, so
+            this pair is the only way in for anyone with an existing library. */}
+        <View style={styles.mastheadActions}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => navigation.navigate('Catalog')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Browse the classical catalogue"
+          >
+            <PlusIcon size={13} color={colors.gold} strokeWidth={2.2} />
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addButton, isBusy && styles.addButtonBusy]}
+            onPress={handleUploadBook}
+            disabled={isBusy}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Import a book from this device"
+          >
+            {isBusy ? (
+              <ActivityIndicator color={colors.gold} size="small" />
+            ) : (
+              <>
+                <DownloadIcon size={13} color={colors.gold} strokeWidth={2.2} />
+                <Text style={styles.addButtonText}>Import</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search + controls. An empty shelf has nothing to search or sort, so
@@ -1045,6 +1067,8 @@ const styles = StyleSheet.create({
   mastheadText: { flexShrink: 1, minWidth: 0 },
   overline: { ...t.overline, color: colors.bronze, textTransform: 'uppercase', marginBottom: 4 },
   screenTitle: { ...t.display, color: colors.gold },
+  mastheadActions: { flexDirection: 'row', gap: space.sm },
+  addButtonBusy: { opacity: 0.6 },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',

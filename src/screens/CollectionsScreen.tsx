@@ -7,7 +7,6 @@ import {
   ScrollView,
   TextInput,
   TextInputProps,
-  Alert,
   Modal,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
@@ -16,6 +15,7 @@ import { colors, fonts, space, radius, type, elevation } from '../theme';
 import Shell from '../components/Shell';
 import type { Book, Collection } from '../types';
 
+import { Alert } from '../components/Alert';
 /** Width of the small covers in a collection's preview stack. */
 const STACK_COVER = 38;
 const STACK_MAX = 4;

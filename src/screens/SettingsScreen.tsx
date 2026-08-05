@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
-  Alert,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
@@ -15,6 +14,7 @@ import { READER_THEMES } from '../types';
 import { colors, fonts, space, radius, type, elevation, readerPalettes } from '../theme';
 
 import Shell from '../components/Shell';
+import { Alert } from '../components/Alert';
 /* ------------------------------------------------------------------ *
  * Building blocks
  * ------------------------------------------------------------------ */
