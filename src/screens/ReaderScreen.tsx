@@ -28,6 +28,8 @@ import {
   MenuIcon,
   PauseIcon,
   PlayIcon,
+  SearchIcon,
+  CloseIcon,
 } from '../components/icons';
 import { colors, fonts, space, radius, elevation, layout, readerPalettes } from '../theme';
 import { DEFAULT_READER_SETTINGS } from '../types';
@@ -183,6 +185,8 @@ export default function ReaderScreen() {
   const [selectedText, setSelectedText] = useState('');
   const [showHighlightColor, setShowHighlightColor] = useState(false);
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [bookmarkNote, setBookmarkNote] = useState('');
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT);
   const [sessionStartTime] = useState(Date.now());
@@ -308,6 +312,36 @@ export default function ReaderScreen() {
   const page = pages[safePage];
 
   const chapterTitle = parsed?.chapters[page?.chapterIndex ?? 0]?.title || '';
+
+  /**
+   * Search across the whole book, client-side over the already-parsed
+   * paragraphs — no server round trip, works offline. Each hit maps back to
+   * the exact page it lives on via `pages`, and shows a short excerpt around
+   * the match rather than the full paragraph, matching how every ereader's
+   * search results list actually reads.
+   */
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length < 2 || !parsed) return [];
+    const out: { paragraphIndex: number; pageIndex: number; snippet: string }[] = [];
+    for (const paragraph of parsed.paragraphs) {
+      const idx = paragraph.text.toLowerCase().indexOf(q);
+      if (idx === -1) continue;
+      const pageIndex = pages.findIndex((p) => p.paragraphs.some((pp) => pp.index === paragraph.index));
+      if (pageIndex === -1) continue;
+      const start = Math.max(0, idx - 40);
+      const snippet = `${start > 0 ? '…' : ''}${paragraph.text.slice(start, idx + q.length + 40).trim()}…`;
+      out.push({ paragraphIndex: paragraph.index, pageIndex, snippet });
+      if (out.length >= 100) break;
+    }
+    return out;
+  }, [searchQuery, parsed, pages]);
+
+  const jumpToSearchResult = (pageIndex: number) => {
+    setCurrentPage(pageIndex);
+    setShowSearch(false);
+    setSearchQuery('');
+  };
 
   // Reset to the opening page whenever a different book is put on the desk.
   useEffect(() => {
@@ -815,6 +849,14 @@ export default function ReaderScreen() {
 
             <TouchableOpacity
               style={[styles.iconButton, { borderColor: palette.border }]}
+              onPress={() => setShowSearch(true)}
+              accessibilityLabel="Search this book"
+            >
+              <SearchIcon size={16} color={palette.accent} strokeWidth={1.8} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.iconButton, { borderColor: palette.border }]}
               onPress={() => setShowBookmarkModal(true)}
               accessibilityLabel="Add bookmark"
             >
@@ -1066,6 +1108,59 @@ export default function ReaderScreen() {
             >
               <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ---------------------------------------------------------- search --- */}
+      <Modal visible={showSearch} transparent animationType="fade" onRequestClose={() => setShowSearch(false)}>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalCard,
+              elevation.card,
+              styles.searchCard,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <View style={styles.searchHeader}>
+              <SearchIcon size={16} color={palette.muted} strokeWidth={1.8} />
+              <TextInput
+                style={[styles.searchInput, { color: palette.text }]}
+                placeholder="Search this book…"
+                placeholderTextColor={palette.muted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+              />
+              <TouchableOpacity onPress={() => setShowSearch(false)} accessibilityLabel="Close search">
+                <CloseIcon size={16} color={palette.muted} strokeWidth={1.8} />
+              </TouchableOpacity>
+            </View>
+
+            {searchQuery.trim().length >= 2 && (
+              <Text style={[styles.searchCount, { color: palette.muted }]}>
+                {searchResults.length}
+                {searchResults.length >= 100 ? '+' : ''} match{searchResults.length === 1 ? '' : 'es'}
+              </Text>
+            )}
+
+            <ScrollView style={styles.searchResults} keyboardShouldPersistTaps="handled">
+              {searchResults.map((r) => (
+                <TouchableOpacity
+                  key={r.paragraphIndex}
+                  style={[styles.searchResultRow, { borderColor: palette.rule }]}
+                  onPress={() => jumpToSearchResult(r.pageIndex)}
+                >
+                  <Text style={[styles.searchSnippet, { color: palette.text }]} numberOfLines={2}>
+                    {r.snippet}
+                  </Text>
+                  <Text style={[styles.searchPageLabel, { color: palette.muted }]}>
+                    Page {r.pageIndex + 1}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1321,6 +1416,14 @@ const styles = StyleSheet.create({
     marginTop: space.sm,
     marginBottom: space.lg,
   },
+  searchCard: { maxHeight: '75%' },
+  searchHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.sm },
+  searchInput: { flex: 1, fontFamily: fonts.ui, fontSize: 15, paddingVertical: space.xs },
+  searchCount: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 0.3, marginBottom: space.sm },
+  searchResults: { flexGrow: 0 },
+  searchResultRow: { paddingVertical: space.md, borderTopWidth: 1 },
+  searchSnippet: { fontFamily: fonts.reading, fontSize: 14, lineHeight: 20 },
+  searchPageLabel: { fontFamily: fonts.ui, fontSize: 11, marginTop: space.xs },
   bookmarkInput: {
     borderWidth: 1,
     borderRadius: radius.md,
