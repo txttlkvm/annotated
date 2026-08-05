@@ -37,6 +37,7 @@ import type { ReaderSettings } from '../types';
 
 import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
+import { AudioShareService, AudioShareError } from '../services/AudioShareService';
 /**
  * The reading surface — the most important screen in the app.
  *
@@ -191,6 +192,7 @@ export default function ReaderScreen() {
   const [lookupResult, setLookupResult] = useState<WikipediaSummary | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [isSharingAudio, setIsSharingAudio] = useState(false);
   const [bookmarkNote, setBookmarkNote] = useState('');
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT);
   const [sessionStartTime] = useState(Date.now());
@@ -533,6 +535,33 @@ export default function ReaderScreen() {
       setLookupError('Could not reach Wikipedia. Check your connection.');
     } finally {
       setLookupLoading(false);
+    }
+  };
+
+  const handleShareAsAudio = async () => {
+    if (!selectedText) return;
+    if (!TTSService.hasApiKey()) {
+      setShowHighlightColor(false);
+      Alert.alert('TTS not set up', 'Add your Google Cloud TTS key in Settings first.');
+      return;
+    }
+    setIsSharingAudio(true);
+    try {
+      const result = await AudioShareService.shareAsAudio(selectedText, {
+        voice: settings.ttsVoice,
+        pitch: settings.ttsVoicePitch,
+        rate: settings.ttsVoiceRate,
+        title: currentBook?.title,
+      });
+      setShowHighlightColor(false);
+      if (result === 'downloaded') {
+        Alert.alert('Downloaded', 'Your browser can\'t hand files to the share sheet directly — the audio file downloaded instead. Attach it to a text/email manually.');
+      }
+    } catch (error) {
+      const message = error instanceof AudioShareError ? error.message : 'Could not create the audio file.';
+      Alert.alert('Error', message);
+    } finally {
+      setIsSharingAudio(false);
     }
   };
 
@@ -1140,6 +1169,17 @@ export default function ReaderScreen() {
                 }}
               >
                 <Text style={[styles.modalButtonText, { color: palette.accent }]}>Look up</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderColor: palette.border }]}
+                onPress={handleShareAsAudio}
+                disabled={isSharingAudio}
+              >
+                {isSharingAudio ? (
+                  <ActivityIndicator size="small" color={palette.accent} />
+                ) : (
+                  <Text style={[styles.modalButtonText, { color: palette.accent }]}>Share as audio</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>

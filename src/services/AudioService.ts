@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { WebSound } from './WebSound';
 
 export interface PlaybackState {
   isPlaying: boolean;
@@ -10,9 +11,10 @@ export interface PlaybackState {
 }
 
 type PlaybackStatusCallback = (state: PlaybackState) => void;
+type SoundHandle = Audio.Sound | WebSound;
 
 export class AudioService {
-  private static sound: Audio.Sound | null = null;
+  private static sound: SoundHandle | null = null;
   private static playbackStatusCallback: PlaybackStatusCallback | null = null;
   private static updateInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -34,8 +36,17 @@ export class AudioService {
       if (this.sound) {
         await this.sound.unloadAsync();
       }
-      const { sound } = await Audio.Sound.createAsync({ uri });
-      this.sound = sound;
+      // expo-av's web Audio.Sound.createAsync silently no-ops (confirmed live
+      // for MusicPlayerScreen — resolves fine, zero <audio> elements exist,
+      // nothing plays). WebSound wraps a real HTMLAudioElement instead.
+      if (Platform.OS === 'web') {
+        const webSound = new WebSound(uri);
+        await webSound.loadAsync();
+        this.sound = webSound;
+      } else {
+        const { sound } = await Audio.Sound.createAsync({ uri });
+        this.sound = sound;
+      }
       this.startStatusUpdates();
     } catch (error) {
       console.error('Load error:', error);

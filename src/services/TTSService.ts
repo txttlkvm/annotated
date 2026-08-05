@@ -130,14 +130,23 @@ export class TTSService {
       const data = await response.json();
       if (!data.audioContent) throw new Error('No audio in response');
 
-      const fileName = `audio_${Date.now()}.mp3`;
-      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-      await FileSystem.writeAsStringAsync(filePath, data.audioContent, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      // FileSystem.cacheDirectory is null on web (expo-file-system has no web
+      // implementation — the same gap already hit for imports and music), so
+      // a data: URI is used instead of writing a temp file. The browser plays
+      // and shares data: URIs natively; no filesystem needed.
+      const uri = isWeb
+        ? `data:audio/mp3;base64,${data.audioContent}`
+        : await (async () => {
+            const fileName = `audio_${Date.now()}.mp3`;
+            const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+            await FileSystem.writeAsStringAsync(filePath, data.audioContent, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return filePath;
+          })();
 
-      this.voiceCache.set(cacheKey, filePath);
-      return filePath;
+      this.voiceCache.set(cacheKey, uri);
+      return uri;
     } catch (error) {
       console.error('TTS error:', error);
       throw error;
