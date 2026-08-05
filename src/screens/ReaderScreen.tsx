@@ -155,6 +155,7 @@ export default function ReaderScreen() {
     bookmarks,
     settings: storedSettings,
     updateSettings,
+    updateBook,
     addBookmark,
     addHighlight,
     addReadingSession,
@@ -390,16 +391,28 @@ export default function ReaderScreen() {
     return () => window.removeEventListener('keydown', onKey);
   }, [handleNextPage, handlePreviousPage]);
 
-  // Record the sitting when the reader is left.
-  const sessionRef = useRef({ bookId: '', page: 0 });
+  // Record the sitting when the reader is left, and — separately — write the
+  // stopping point back onto the book itself. `currentPage` was local state
+  // only: BookDetailsScreen, the Library grid and the Continue Reading card
+  // all read Book.currentProgress, so without this write every one of them
+  // showed "Page 0" and 0% no matter how far the session actually went.
+  const sessionRef = useRef({ bookId: '', page: 0, totalPages: 1 });
   useEffect(() => {
-    sessionRef.current = { bookId: currentBook?.id || '', page: safePage };
-  }, [currentBook?.id, safePage]);
+    sessionRef.current = { bookId: currentBook?.id || '', page: safePage, totalPages };
+  }, [currentBook?.id, safePage, totalPages]);
   useEffect(() => {
     return () => {
-      const { bookId, page: endPage } = sessionRef.current;
+      const { bookId, page: endPage, totalPages: endTotal } = sessionRef.current;
+      if (!bookId) return;
+
+      updateBook(bookId, {
+        currentProgress: endPage + 1,
+        totalPages: endTotal,
+        lastReadDate: Date.now(),
+      }).catch(() => {});
+
       const durationMinutes = Math.round((Date.now() - sessionStartTime) / 60000);
-      if (!bookId || durationMinutes < 1) return;
+      if (durationMinutes < 1) return;
       addReadingSession({
         bookId,
         startTime: sessionStartTime,
