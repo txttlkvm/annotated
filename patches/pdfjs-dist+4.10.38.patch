@@ -1,0 +1,15 @@
+diff --git a/node_modules/pdfjs-dist/legacy/build/pdf.mjs b/node_modules/pdfjs-dist/legacy/build/pdf.mjs
+index 2975d8d..3e86863 100644
+--- a/node_modules/pdfjs-dist/legacy/build/pdf.mjs
++++ b/node_modules/pdfjs-dist/legacy/build/pdf.mjs
+@@ -17508,8 +17508,8 @@ class PDFWorker {
+       if (this.#mainThreadWorkerMessageHandler) {
+         return this.#mainThreadWorkerMessageHandler;
+       }
+-      const worker = await import(/*webpackIgnore: true*/this.workerSrc);
+-      return worker.WorkerMessageHandler;
++      // PATCHED for Metro (see patches/pdfjs-dist+*.patch): Metro's bundler requires import() targets to be statically resolvable strings and cannot parse this runtime-computed one, regardless of Babel config. This branch only runs when a real browser Worker could not be constructed at all -- every target browser for this app supports Worker, so it is unreachable in practice -- and even if reached, a Metro/RN bundle has no runtime loader capable of dynamically importing an arbitrary URL anyway, so the original code was never going to succeed here regardless of this build error.
++      throw new Error('PDF worker could not be created: this environment has no Worker support.');
+     };
+     return shadow(this, "_setupFakeWorkerGlobal", loader());
+   }
