@@ -245,23 +245,54 @@ export default function ReaderScreen() {
   /**
    * Tap the page to reveal the furniture. On web a click that merely ends a
    * text selection must not count — otherwise highlighting a sentence always
-   * throws the chrome up over the line you were reading.
+   * throws the chrome up over the line you were reading. The selection
+   * itself is picked up separately below (mobile browsers don't fire a
+   * click after a touch-drag selection at all, so this check alone would
+   * never open the passage modal on a phone).
    */
   const toggleChrome = useCallback(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const selection = window.getSelection?.();
-      const text = selection ? String(selection).trim() : '';
-      if (text.length > 0) {
-        // A mouse has no long-press, so on web the drag-selection itself is
-        // the trigger — and it's exact words, not a whole paragraph like the
-        // native long-press fallback below.
-        setSelectedText(text);
-        setShowHighlightColor(true);
-        return;
-      }
+      if (selection && String(selection).trim().length > 0) return;
     }
     setChromeVisible((visible) => !visible);
   }, []);
+
+  /**
+   * A mouse drag-select ends with mouseup, which the browser follows with a
+   * real click -- toggleChrome above catches that. A touch drag-select does
+   * NOT get a synthetic click afterward (deliberate mobile browser
+   * behavior, to stop a selection from also triggering whatever the tap
+   * would have done) -- confirmed as the reason "highlight a passage" did
+   * nothing on a phone. selectionchange fires for every selection method
+   * on every platform, so it's the one thing both share.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const anyModalOpen =
+      showHighlightColor || showSearch || showBookmarkModal || lookupLoading || !!lookupResult || !!lookupError;
+    if (anyModalOpen) return;
+
+    let settleTimer: ReturnType<typeof setTimeout>;
+    const handleSelectionChange = () => {
+      clearTimeout(settleTimer);
+      // Debounced: selectionchange fires continuously while a finger or
+      // mouse is still dragging across text. Only act once it settles.
+      settleTimer = setTimeout(() => {
+        const selection = window.getSelection?.();
+        const text = selection ? String(selection).trim() : '';
+        if (text.length > 0) {
+          setSelectedText(text);
+          setShowHighlightColor(true);
+        }
+      }, 350);
+    };
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      clearTimeout(settleTimer);
+    };
+  }, [showHighlightColor, showSearch, showBookmarkModal, lookupLoading, lookupResult, lookupError]);
 
   // ---------------------------------------------------------------- text ----
 
