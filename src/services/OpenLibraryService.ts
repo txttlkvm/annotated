@@ -27,7 +27,12 @@ export interface OpenLibraryEdition {
 }
 
 export class OpenLibraryService {
-  private static API_BASE = 'https://openlibrary.org/api';
+  // NOT https://openlibrary.org/api -- that path 404s (confirmed live: an
+  // empty 404 body was silently swallowed as "Search error: Unexpected end
+  // of JSON input" and every search from here on returned zero results, so
+  // every cover/edition lookup that needed this fallback always failed).
+  // Open Library's real search endpoint has no /api/ prefix at all.
+  private static API_BASE = 'https://openlibrary.org';
   private static COVERS_URL = 'https://covers.openlibrary.org/b';
   private static IA_DOWNLOAD_BASE = 'https://archive.org/download';
 
@@ -43,6 +48,14 @@ export class OpenLibraryService {
       const params = new URLSearchParams({ title, limit: '20' });
       if (author) params.set('author', author);
       const response = await fetch(`${this.API_BASE}/search.json?${params.toString()}`);
+      if (!response.ok) {
+        // Surfaces the real cause (404, 429 rate-limit, etc.) instead of
+        // whatever cryptic message response.json() throws on a non-JSON
+        // error body -- exactly how the /api/ URL bug above went unnoticed
+        // ("Unexpected end of JSON input" doesn't say "wrong URL").
+        console.error(`[OpenLibrary] search failed: HTTP ${response.status}`);
+        return [];
+      }
       const data = await response.json();
       return data.docs || [];
     } catch (error) {
