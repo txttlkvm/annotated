@@ -381,6 +381,39 @@ const wikimediaMusic: Record<string, string> = {
     'https://upload.wikimedia.org/wikipedia/commons/7/7d/Kyrie_Eleison_Orbis_Factor.ogg',
 };
 
+// Composer portraits / period art used as COVER IMAGES for music-type
+// library items (BookCover has no photo to fall back on for music, only a
+// typographic placeholder — this gives it a real image instead). Keyed by
+// classicalLibrary item id, not title, since AppContext looks these up by
+// item.id. Every URL below was resolved through the imageinfo API's
+// iiurlwidth param (never hand-built as a /thumb/NNNpx-file.jpg guess) and
+// verified with a real `curl -sI` returning HTTP 200 + image/* content-type
+// before being added. Where no verifiable composer portrait exists (e.g.
+// anonymous/12th-century Notre Dame school), a genuine period artifact
+// (an actual manuscript page of the piece) is used instead — never a guess.
+export const wikimediaComposerPortraits: Record<string, string> = {
+  // J.S. Bach — Haussmann's 1748 portrait (the canonical Bach portrait used
+  // on Wikipedia's infobox). Covers all four Bach works in the library.
+  'music-bach-wtc': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Johann_Sebastian_Bach.jpg/960px-Johann_Sebastian_Bach.jpg',
+  'music-bach-goldberg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Johann_Sebastian_Bach.jpg/960px-Johann_Sebastian_Bach.jpg',
+  'music-bach-brandenburg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Johann_Sebastian_Bach.jpg/960px-Johann_Sebastian_Bach.jpg',
+  'music-bach-mass-b-minor': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Johann_Sebastian_Bach.jpg/960px-Johann_Sebastian_Bach.jpg',
+  // Palestrina — the portrait used on Wikipedia's infobox for the composer.
+  'art-palestrina-papae-marcelli': 'https://upload.wikimedia.org/wikipedia/commons/1/18/Giovanni_Pierluigi_da_Palestrina.jpg',
+  // Gregorian Chant has no single composer ("Various" — plainchant tradition
+  // traditionally credited to Pope Gregory I). Used the well-known icon of
+  // Gregory the Great receiving the chant from the Holy Spirit (a dove at his
+  // ear), the standard period image for the tradition.
+  'art-gregorian-chant': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Gregory_the_Great_with_the_Holy_Spirit.jpg/960px-Gregory_the_Great_with_the_Holy_Spirit.jpg',
+  // Notre Dame School (Léonin/Pérotin) — no contemporary 12th/13th-century
+  // portraits of either composer exist (verified: no page image on either's
+  // Wikipedia article). Used an actual period artifact instead: a 13th-
+  // century manuscript page of Pérotin's "Alleluia Nativitas" from Codex
+  // Guelf.1099 (Wolfenbüttel W1), a genuine Notre Dame school source — not a
+  // fabricated or guessed image.
+  'art-notre-dame-school': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Perotin_-_Alleluia_nativitas.jpg/960px-Perotin_-_Alleluia_nativitas.jpg',
+};
+
 function getWikimediaMusicSource(title: string) {
   const directUrl = wikimediaMusic[title];
   if (directUrl) {
