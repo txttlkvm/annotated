@@ -12,6 +12,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  PanResponder,
   useWindowDimensions,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -249,7 +250,15 @@ export default function ReaderScreen() {
   const toggleChrome = useCallback(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const selection = window.getSelection?.();
-      if (selection && String(selection).trim().length > 0) return;
+      const text = selection ? String(selection).trim() : '';
+      if (text.length > 0) {
+        // A mouse has no long-press, so on web the drag-selection itself is
+        // the trigger — and it's exact words, not a whole paragraph like the
+        // native long-press fallback below.
+        setSelectedText(text);
+        setShowHighlightColor(true);
+        return;
+      }
     }
     setChromeVisible((visible) => !visible);
   }, []);
@@ -419,6 +428,23 @@ export default function ReaderScreen() {
     setCurrentPage((p) => Math.max(0, p - 1));
     setIsPlaying(false);
   }, []);
+
+  /**
+   * Swipe-to-turn: captured at onMoveShouldSetPanResponderCapture so it wins
+   * against the page's own vertical ScrollView, but ONLY for drags that are
+   * clearly horizontal (2:1 ratio) and already past a small deadzone —
+   * anything more vertical than that is left alone so scrolling still works.
+   */
+  const pageSwipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
+        Math.abs(gesture.dx) > 20 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2,
+      onPanResponderRelease: (_evt, gesture) => {
+        if (gesture.dx < -60) handleNextPage();
+        else if (gesture.dx > 60) handlePreviousPage();
+      },
+    })
+  ).current;
 
   /** First page of a given chapter index. Pages are built chapter-by-chapter,
    * so the first page whose chapterIndex matches IS the chapter's opening
@@ -601,6 +627,21 @@ export default function ReaderScreen() {
     }
   };
 
+  /** Shares selectedText verbatim — exactly what was highlighted, no
+   * truncation or page-snippet substitution like handleShare above. */
+  const handleShareSelectedText = async () => {
+    if (!selectedText) return;
+    try {
+      await Share.share({
+        message: `"${selectedText}" — ${currentBook?.title || ''}`,
+        title: currentBook?.title || 'Passage',
+      });
+      setShowHighlightColor(false);
+    } catch (error) {
+      console.error('Share error:', error);
+    }
+  };
+
   // --------------------------------------------------------- typography ----
   //
   // Declared above the early returns so no hook below is called conditionally.
@@ -730,7 +771,7 @@ export default function ReaderScreen() {
   const pageIndicator = `${safePage + 1} of ${totalPages}`;
 
   return (
-    <View style={[styles.root, { backgroundColor: palette.bg }]}>
+    <View style={[styles.root, { backgroundColor: palette.bg }]} {...pageSwipe.panHandlers}>
       {/* ---------------------------------------------------------- page --- */}
       <Shell
         scroll
@@ -1169,6 +1210,12 @@ export default function ReaderScreen() {
                 }}
               >
                 <Text style={[styles.modalButtonText, { color: palette.accent }]}>Look up</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderColor: palette.border }]}
+                onPress={handleShareSelectedText}
+              >
+                <Text style={[styles.modalButtonText, { color: palette.accent }]}>Share text</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, { borderColor: palette.border }]}

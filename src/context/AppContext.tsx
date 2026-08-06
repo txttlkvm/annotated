@@ -13,6 +13,7 @@ import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem,
 import { gutenbergIds, GutenbergRef } from '../data/gutenbergIds';
 import { GutenbergService, GutenbergBook, ParsedBook } from '../services/GutenbergService';
 import { EbookService } from '../services/EbookService';
+import { OpenLibraryService } from '../services/OpenLibraryService';
 
 /* ------------------------------------------------------------------ *
  * BOOK TEXT
@@ -607,6 +608,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addClassicalLibraryItem = async (item: ClassicalLibraryItem) => {
     const ref = gutenbergIds[item.id];
+    // Cover fallback chain: a confident Gutenberg match first, then the
+    // piece's own art/image source for art-type items (the artwork itself
+    // makes a far better cover than a generic placeholder), then a live
+    // Open Library lookup, which catches everything Gutenberg never
+    // digitized (modern Tolkien/Lewis reprints, Aquinas, Plutarch, etc).
+    // BookCover only draws its typographic fallback once all three miss.
+    let cover = ref?.coverUrl;
+    if (!cover && item.type === 'art') {
+      cover = item.sources?.find((s) => s.type === 'image')?.url;
+    }
+    if (!cover) {
+      cover = (await OpenLibraryService.getCoverByTitle(item.title, item.author)) || undefined;
+    }
     const book: Omit<Book, 'id'> = {
       title: item.title,
       author: item.author,
@@ -616,9 +630,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       fileSize: 0,
       isFavorite: false,
       isFinished: false,
-      // Real Gutenberg cover when we have a confident match; BookCover draws
-      // a typographic fallback when we don't.
-      cover: ref?.coverUrl,
+      cover,
       // Where the text comes from. Persisted (unlike the text itself), so the
       // volume stays readable across reloads.
       sourceUrl: ref?.textUrl ?? undefined,

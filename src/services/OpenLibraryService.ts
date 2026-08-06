@@ -8,7 +8,10 @@ export interface OpenLibraryBook {
   author_name?: string[];
   first_publish_year?: number;
   isbn?: string[];
-  cover_id?: number;
+  // The search API's real field is cover_i, not cover_id -- a previous
+  // version of this interface had the wrong name, so getCoverUrl below was
+  // never reachable from a live search result.
+  cover_i?: number;
   has_fulltext?: boolean;
   ia?: string[]; // Internet Archive IDs - these have actual files
 }
@@ -33,10 +36,13 @@ export class OpenLibraryService {
    */
   static async searchBook(title: string, author?: string): Promise<OpenLibraryBook[]> {
     try {
-      const query = author ? `${title} ${author}` : title;
-      const response = await fetch(
-        `${this.API_BASE}/search.json?title=${encodeURIComponent(query)}&limit=10`
-      );
+      // Separate title/author params rank far better than jamming both into
+      // the title field — a combined query buried real matches (with covers)
+      // under unrelated results with no cover at all, confirmed live for
+      // several titles before this fix.
+      const params = new URLSearchParams({ title, limit: '20' });
+      if (author) params.set('author', author);
+      const response = await fetch(`${this.API_BASE}/search.json?${params.toString()}`);
       const data = await response.json();
       return data.docs || [];
     } catch (error) {
@@ -134,5 +140,32 @@ export class OpenLibraryService {
    */
   static getCoverUrl(coverId: number, size: 'S' | 'M' | 'L' = 'M'): string {
     return `${this.COVERS_URL}/id/${coverId}-${size}.jpg`;
+  }
+
+  /**
+   * Resolves a real cover image for a title/author with no Gutenberg match.
+   * Open Library indexes cover art for editions Gutenberg never digitized
+   * (e.g. modern reprints of Plutarch, Aquinas, Tolkien), so this catches
+   * a large share of what the static Gutenberg map misses.
+   */
+  static async getCoverByTitle(title: string, author?: string): Promise<string | null> {
+    try {
+      const books = await this.searchBook(title, author);
+      // Same discipline as gutenbergIds.ts: require the author's surname to
+      // actually appear before trusting a cover, so a mismatched edition
+      // (a study guide, an unrelated book that shares a title) never gets
+      // shown as this book's cover. No match -> the typographic fallback,
+      // not a guess.
+      const surname = author?.trim().split(/\s+/).pop()?.toLowerCase();
+      const match = books.find((b) => {
+        if (!b.cover_i) return false;
+        if (!surname) return true;
+        return b.author_name?.some((a) => a.toLowerCase().includes(surname));
+      });
+      return match?.cover_i ? this.getCoverUrl(match.cover_i, 'L') : null;
+    } catch (error) {
+      console.error('Cover lookup error:', error);
+      return null;
+    }
   }
 }
