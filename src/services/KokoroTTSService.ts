@@ -70,14 +70,22 @@ export class KokoroTTSService {
   private static async getModel(onProgress?: KokoroProgressCallback): Promise<any> {
     if (!this.ttsPromise) {
       this.ttsPromise = (async () => {
-        // Metro doesn't resolve kokoro-js's package.json "exports" map (it
-        // has no legacy "main" field, so Metro falls back to guessing
-        // "./index" and fails) -- confirmed via a real `expo export --web`
-        // build. kokoro-js ships a fully self-contained browser bundle at
-        // this exact path (the same one its own jsdelivr/unpkg CDN fields
-        // point at), so importing it directly sidesteps the broken
-        // package-level resolution entirely.
-        const { KokoroTTS } = await import('kokoro-js/dist/kokoro.web.js');
+        // Metro can't bundle this dependency at all, confirmed two different
+        // ways live: (1) it doesn't resolve kokoro-js's package.json
+        // "exports" map (no legacy "main" field, so it guesses "./index" and
+        // fails), and (2) pointing directly at the shipped browser bundle
+        // (kokoro-js/dist/kokoro.web.js) got past that but Metro split it
+        // into its own chunk that references a module ID from the main
+        // bundle it never actually includes -- "Requiring unknown module"
+        // at runtime. A raw browser import() of the CDN copy (the exact
+        // build kokoro-js's own jsdelivr/unpkg package.json fields point
+        // at) sidesteps Metro's bundler entirely and is confirmed working
+        // live: model loads, generate() produces real audio. Routed through
+        // `new Function` so Metro's static import() scanner never sees this
+        // as something to bundle in the first place.
+        const { KokoroTTS } = await new Function(
+          'return import("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js")'
+        )();
         const hasWebGPU = typeof navigator !== 'undefined' && !!(navigator as any).gpu;
         const load = (device: 'webgpu' | 'wasm') =>
           KokoroTTS.from_pretrained(MODEL_ID, {
