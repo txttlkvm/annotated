@@ -458,15 +458,43 @@ export default function ReaderScreen() {
   };
 
   // Reset to the opening page whenever a different book is put on the desk.
+  // Explicitly stops audio here too, not just via the safePage-keyed effect
+  // below: if the previous book happened to also be sitting on page 0,
+  // setCurrentPage(0) wouldn't actually change safePage's value, and that
+  // effect wouldn't re-fire.
   useEffect(() => {
+    readAloudCancelRef.current = true;
+    readAloudActiveRef.current = false;
+    AudioService.stop().catch(() => {});
     setCurrentPage(0);
     setIsPlaying(false);
     setChromeVisible(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBook?.id]);
 
   // A page turn should land at the top of the new page, like a real book.
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [safePage]);
+
+  /**
+   * Stop Read Aloud whenever the visible page changes, for ANY reason --
+   * next/prev buttons, swipe, chapter jump, search-result jump, Table of
+   * Contents. Centralized here (keyed on the page value itself) rather than
+   * patched into each navigation call site individually: there are enough
+   * of those (handleNextPage, handlePreviousPage, goToChapter, the search
+   * jump, the route-param chapter jump) that stopping audio in only some of
+   * them is exactly the kind of gap that's easy to introduce by patching
+   * one at a time and easy to miss reviewing. Setting the cancel flag alone
+   * only stops the QUEUE from advancing to a new chunk -- the chunk already
+   * playing would otherwise keep audibly playing to its natural end first.
+   */
+  useEffect(() => {
+    readAloudCancelRef.current = true;
+    readAloudActiveRef.current = false;
+    AudioService.stop().catch(() => {});
+    setIsPlaying(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [safePage]);
 
   /**
@@ -629,23 +657,11 @@ export default function ReaderScreen() {
   };
 
   const handleNextPage = useCallback(() => {
-    readAloudCancelRef.current = true;
-    readAloudActiveRef.current = false;
-    // Setting the cancel flag alone only stops the QUEUE from advancing to
-    // a new chunk -- the chunk already playing would otherwise keep
-    // audibly playing to its natural end before going quiet. Actually
-    // stop it so a page turn silences Read Aloud immediately.
-    AudioService.stop().catch(() => {});
     setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
-    setIsPlaying(false);
   }, [totalPages]);
 
   const handlePreviousPage = useCallback(() => {
-    readAloudCancelRef.current = true;
-    readAloudActiveRef.current = false;
-    AudioService.stop().catch(() => {});
     setCurrentPage((p) => Math.max(0, p - 1));
-    setIsPlaying(false);
   }, []);
 
   /**
