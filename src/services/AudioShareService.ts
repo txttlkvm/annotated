@@ -5,6 +5,7 @@
 import { Platform } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { TTSService } from './TTSService';
+import { KokoroTTSService, DEFAULT_KOKORO_VOICE, KokoroVoice } from './KokoroTTSService';
 
 const isWeb = Platform.OS === 'web';
 
@@ -15,21 +16,24 @@ export class AudioShareError extends Error {
   }
 }
 
-/** data:audio/mp3;base64,XXXX -> a real File object, for Web Share's files[]. */
-function dataUriToFile(dataUri: string, fileName: string): File {
+const EXT_BY_MIME: Record<string, string> = { 'audio/mp3': 'mp3', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' };
+
+/** data:audio/xxx;base64,XXXX -> a real File object, for Web Share's files[]. */
+function dataUriToFile(dataUri: string, baseName: string): File {
   const [header, base64] = dataUri.split(',');
   const mime = header.match(/data:(.*);base64/)?.[1] || 'audio/mp3';
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new File([bytes], fileName, { type: mime });
+  return new File([bytes], `${baseName}.${EXT_BY_MIME[mime] || 'mp3'}`, { type: mime });
 }
 
 /** Web fallback when the share sheet can't take files: a plain download. */
-function downloadFile(dataUri: string, fileName: string) {
+function downloadFile(dataUri: string, baseName: string) {
+  const mime = dataUri.match(/data:(.*);base64/)?.[1] || 'audio/mp3';
   const a = document.createElement('a');
   a.href = dataUri;
-  a.download = fileName;
+  a.download = `${baseName}.${EXT_BY_MIME[mime] || 'mp3'}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -47,18 +51,26 @@ export class AudioShareService {
     text: string,
     options: { voice?: string; pitch?: number; rate?: number; title?: string } = {}
   ): Promise<'shared' | 'downloaded'> {
-    if (!TTSService.hasApiKey()) {
-      throw new AudioShareError('Set up your Google Cloud TTS key in Settings first.');
-    }
     if (!text.trim()) {
       throw new AudioShareError('Nothing selected to turn into audio.');
     }
 
-    const uri = await TTSService.synthesize(text, options.voice, options.pitch, options.rate);
-    const fileName = `${(options.title || 'passage').replace(/[^a-z0-9]+/gi, '-').slice(0, 40)}.mp3`;
+    // Kokoro runs locally in the browser (no key, no cost) so it's the
+    // default on web; native still needs the Google Cloud key since
+    // kokoro-js's WASM/WebGPU path only exists in a browser.
+    let uri: string;
+    if (KokoroTTSService.isSupported()) {
+      uri = await KokoroTTSService.synthesize(text, DEFAULT_KOKORO_VOICE as KokoroVoice, options.rate);
+    } else {
+      if (!TTSService.hasApiKey()) {
+        throw new AudioShareError('Set up your Google Cloud TTS key in Settings first.');
+      }
+      uri = await TTSService.synthesize(text, options.voice, options.pitch, options.rate);
+    }
+    const baseName = (options.title || 'passage').replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
 
     if (isWeb) {
-      const file = dataUriToFile(uri, fileName);
+      const file = dataUriToFile(uri, baseName);
       const nav = navigator as any;
       if (nav.canShare?.({ files: [file] })) {
         await nav.share({ files: [file], title: options.title || 'Audio passage' });
@@ -66,7 +78,7 @@ export class AudioShareService {
       }
       // Desktop browsers (and older mobile browsers) mostly can't share
       // files at all — hand the user a real file to attach themselves.
-      downloadFile(uri, fileName);
+      downloadFile(uri, baseName);
       return 'downloaded';
     }
 
