@@ -17,6 +17,12 @@ export class AudioService {
   private static sound: SoundHandle | null = null;
   private static playbackStatusCallback: PlaybackStatusCallback | null = null;
   private static updateInterval: ReturnType<typeof setInterval> | null = null;
+  // Resolved by waitForEnd() below. Also resolved (not just by the natural
+  // 'ended'/didJustFinish event) from stop()/cleanup() -- otherwise a
+  // caller awaiting a chunk that gets manually stopped (e.g. Kokoro's Read
+  // Aloud queue on a page turn) would hang forever, since pausing/stopping
+  // a track doesn't fire its "ended" event.
+  private static pendingEndResolve: (() => void) | null = null;
 
   static async init() {
     if (Platform.OS === 'web') return;
@@ -84,12 +90,21 @@ export class AudioService {
   }
 
   static async stop(): Promise<void> {
+    this.resolvePendingEnd();
     if (!this.sound) return;
     try {
       await this.sound.stopAsync();
       this.stopStatusUpdates();
     } catch (error) {
       console.error('Stop error:', error);
+    }
+  }
+
+  private static resolvePendingEnd(): void {
+    if (this.pendingEndResolve) {
+      const resolve = this.pendingEndResolve;
+      this.pendingEndResolve = null;
+      resolve();
     }
   }
 
@@ -112,6 +127,7 @@ export class AudioService {
   }
 
   static async cleanup(): Promise<void> {
+    this.resolvePendingEnd();
     this.stopStatusUpdates();
     if (this.sound) {
       await this.sound.unloadAsync();
@@ -135,11 +151,16 @@ export class AudioService {
   static waitForEnd(): Promise<void> {
     if (!this.sound) return Promise.resolve();
     return new Promise((resolve) => {
+      const wrappedResolve = () => {
+        if (this.pendingEndResolve === wrappedResolve) this.pendingEndResolve = null;
+        resolve();
+      };
+      this.pendingEndResolve = wrappedResolve;
       if (this.sound instanceof WebSound) {
-        this.sound.onEnded(resolve);
+        this.sound.onEnded(wrappedResolve);
       } else {
         (this.sound as Audio.Sound).setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) resolve();
+          if (status.isLoaded && status.didJustFinish) wrappedResolve();
         });
       }
     });

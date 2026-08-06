@@ -556,7 +556,10 @@ export default function ReaderScreen() {
       }
     } catch (error) {
       console.error('[ReaderScreen] Kokoro read-aloud failed:', error);
-      Alert.alert('Error', 'Failed to generate speech');
+      // Could be a synthesis failure or a playback failure (AudioService.play()
+      // now surfaces real errors instead of hanging silently) -- both land
+      // here, so the message stays generic rather than guessing which.
+      Alert.alert('Error', 'Read Aloud ran into a problem. Try pressing play again.');
     } finally {
       readAloudActiveRef.current = false;
       setIsPlaying(false);
@@ -628,6 +631,11 @@ export default function ReaderScreen() {
   const handleNextPage = useCallback(() => {
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
+    // Setting the cancel flag alone only stops the QUEUE from advancing to
+    // a new chunk -- the chunk already playing would otherwise keep
+    // audibly playing to its natural end before going quiet. Actually
+    // stop it so a page turn silences Read Aloud immediately.
+    AudioService.stop().catch(() => {});
     setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
     setIsPlaying(false);
   }, [totalPages]);
@@ -635,6 +643,7 @@ export default function ReaderScreen() {
   const handlePreviousPage = useCallback(() => {
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
+    AudioService.stop().catch(() => {});
     setCurrentPage((p) => Math.max(0, p - 1));
     setIsPlaying(false);
   }, []);
