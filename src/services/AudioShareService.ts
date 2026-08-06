@@ -50,7 +50,7 @@ export class AudioShareService {
   static async shareAsAudio(
     text: string,
     options: { voice?: string; pitch?: number; rate?: number; title?: string } = {}
-  ): Promise<'shared' | 'downloaded'> {
+  ): Promise<'shared' | 'downloaded' | 'cancelled'> {
     if (!text.trim()) {
       throw new AudioShareError('Nothing selected to turn into audio.');
     }
@@ -83,17 +83,26 @@ export class AudioShareService {
         throw error;
       }
       const nav = navigator as any;
-      try {
-        if (nav.canShare?.({ files: [file] })) {
+      if (nav.canShare?.({ files: [file] })) {
+        try {
           await nav.share({ files: [file], title: options.title || 'Audio passage' });
           return 'shared';
+        } catch (error: any) {
+          if (error?.name === 'AbortError') {
+            // The user closed the OS share sheet themselves -- respect
+            // that, don't force a download they didn't ask for.
+            return 'cancelled';
+          }
+          // Confirmed live: synthesis time (model load + inference) can eat
+          // the browser's "user activation" window, so share() rejects with
+          // NotAllowedError even from a real click by the time it's called
+          // -- not a bug, a real race against share()'s gesture requirement.
+          // Either way the user still gets their audio file via download.
+          console.error('[AudioShareService] navigator.share failed, falling back to download:', error);
         }
-      } catch (error) {
-        console.error('[AudioShareService] navigator.share failed:', error);
-        throw error;
       }
-      // Desktop browsers (and older mobile browsers) mostly can't share
-      // files at all — hand the user a real file to attach themselves.
+      // No file-sharing support, or share() failed above for a reason other
+      // than the user cancelling -- hand over a real file to attach manually.
       downloadFile(uri, baseName);
       return 'downloaded';
     }
