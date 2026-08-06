@@ -185,39 +185,63 @@ function splitOnWordBoundary(text: string): string[] {
   return pieces;
 }
 
+/** Splits a single over-long paragraph into MAX_CHUNK_CHARS-ish pieces on
+ * sentence boundaries (falling back to word boundaries -- see
+ * splitOnWordBoundary above). */
+function splitParagraph(trimmed: string): string[] {
+  const sentences = trimmed.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [trimmed];
+  const pieces: string[] = [];
+  let buffer = '';
+  const flush = () => {
+    if (!buffer) return;
+    const trimmedBuffer = buffer.trim();
+    if (trimmedBuffer.length > MAX_CHUNK_CHARS) {
+      pieces.push(...splitOnWordBoundary(trimmedBuffer));
+    } else {
+      pieces.push(trimmedBuffer);
+    }
+    buffer = '';
+  };
+  for (const sentence of sentences) {
+    if (buffer && (buffer + sentence).length > MAX_CHUNK_CHARS) flush();
+    buffer += sentence;
+  }
+  flush();
+  return pieces;
+}
+
 function buildReadAloudChunks(paragraphs: string[]): string[] {
   const chunks: string[] = [];
+  // Merge adjacent short paragraphs into one chunk (up to MAX_CHUNK_CHARS)
+  // instead of always one chunk per paragraph. Confirmed live as the real
+  // cause of long silent gaps mid-Read-Aloud: Kokoro has a real per-call
+  // fixed overhead (tokenize, phonemize, etc.) on top of its per-character
+  // cost, so a page of short paragraphs -- a book-title listing, short
+  // dialogue lines, front matter -- was producing a run of TINY chunks
+  // whose own playback (a couple seconds each) finished well before the
+  // NEXT tiny chunk's synthesis did, even though synthesis reliably beats
+  // playback time for a normal-length chunk. Batching short paragraphs
+  // together gives every synthesize() call enough content to amortize that
+  // fixed cost against, the same way it already works for ordinary prose.
+  let buffer = '';
+  const flushBuffer = () => {
+    if (buffer) chunks.push(buffer);
+    buffer = '';
+  };
   for (const paragraph of paragraphs) {
     const trimmed = paragraph.trim();
     if (!trimmed) continue;
-    if (trimmed.length <= MAX_CHUNK_CHARS) {
-      chunks.push(trimmed);
+    if (trimmed.length > MAX_CHUNK_CHARS) {
+      flushBuffer();
+      chunks.push(...splitParagraph(trimmed));
       continue;
     }
-    const sentences = trimmed.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [trimmed];
-    let buffer = '';
-    const flush = () => {
-      if (!buffer) return;
-      const trimmedBuffer = buffer.trim();
-      // The sentence regex has no length cap of its own -- a run of text
-      // with no . ! or ? in it (e.g. a bare list of titles) comes back as
-      // one huge "sentence" that could still blow past MAX_CHUNK_CHARS
-      // even after this loop's own accumulation logic.
-      if (trimmedBuffer.length > MAX_CHUNK_CHARS) {
-        chunks.push(...splitOnWordBoundary(trimmedBuffer));
-      } else {
-        chunks.push(trimmedBuffer);
-      }
-      buffer = '';
-    };
-    for (const sentence of sentences) {
-      if (buffer && (buffer + sentence).length > MAX_CHUNK_CHARS) {
-        flush();
-      }
-      buffer += sentence;
+    if (buffer && (buffer + ' ' + trimmed).length > MAX_CHUNK_CHARS) {
+      flushBuffer();
     }
-    flush();
+    buffer = buffer ? `${buffer} ${trimmed}` : trimmed;
   }
+  flushBuffer();
   return chunks;
 }
 
