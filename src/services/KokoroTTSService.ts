@@ -10,12 +10,14 @@
 import { Platform } from 'react-native';
 
 const MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
-// Confirmed live against the deployed app: a full reading page (well over
-// 1000 characters) took 90+ seconds of blocking, synchronous, in-browser
-// inference. Kokoro is only wired up for short highlighted passages (see
-// AudioShareService) -- a page-length cap doesn't fit that reality, so this
-// stays tight enough to keep worst-case generation time tolerable for the
-// "highlight a sentence or two" case it's actually used for.
+// Confirmed live against the deployed app: one Kokoro call for a full
+// reading page (well over 1000 characters) took 90+ seconds of blocking,
+// synchronous, in-browser inference. Every caller of synthesize() -- both
+// AudioShareService's highlighted-passage sharing and ReaderScreen's
+// chunked Read Aloud (see buildReadAloudChunks) -- already keeps individual
+// calls well under this by design; it's a hard backstop against a single
+// call ever ballooning back into that 90-second case, not the primary
+// mechanism keeping things fast.
 const MAX_CHARS = 500;
 
 export type KokoroVoice =
