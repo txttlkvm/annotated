@@ -10,9 +10,13 @@
 import { Platform } from 'react-native';
 
 const MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
-// Generous enough for a full reading page (roughly matches the old Google
-// TTS cap) while still bounding worst-case client-side generation time.
-const MAX_CHARS = 4000;
+// Confirmed live against the deployed app: a full reading page (well over
+// 1000 characters) took 90+ seconds of blocking, synchronous, in-browser
+// inference. Kokoro is only wired up for short highlighted passages (see
+// AudioShareService) -- a page-length cap doesn't fit that reality, so this
+// stays tight enough to keep worst-case generation time tolerable for the
+// "highlight a sentence or two" case it's actually used for.
+const MAX_CHARS = 500;
 
 export type KokoroVoice =
   | 'af_heart' | 'af_bella' | 'af_nicole' | 'af_sarah' | 'af_sky'

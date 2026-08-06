@@ -39,7 +39,6 @@ import type { ReaderSettings } from '../types';
 import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 import { AudioShareService, AudioShareError } from '../services/AudioShareService';
-import { KokoroTTSService, DEFAULT_KOKORO_VOICE } from '../services/KokoroTTSService';
 /**
  * The reading surface — the most important screen in the app.
  *
@@ -391,30 +390,32 @@ export default function ReaderScreen() {
   // ------------------------------------------------------------- actions ----
 
   const handleReadAloud = async () => {
+    // Kokoro runs synchronously in-browser -- fine for a highlighted
+    // sentence or two (see AudioShareService), but confirmed live against
+    // the deployed app that a WHOLE PAGE of text takes 90+ seconds and
+    // visibly blocks the tab while it runs. That's a real regression for
+    // this specific feature, so Read Aloud keeps the Google Cloud engine
+    // (a fast cloud round trip regardless of page length) rather than
+    // Kokoro, even though it needs a key configured in Settings.
+    if (!TTSService.hasApiKey()) {
+      Alert.alert('Setup Required', 'Please configure your Google Cloud TTS API key in settings first.');
+      return;
+    }
+
     setIsLoadingAudio(true);
     try {
       const content = getPageContent();
-      // Kokoro runs locally in the browser -- no API key, no per-request
-      // cost -- so it's the default engine on web. Falls back to the
-      // Google Cloud engine (which still needs a key in Settings) on
-      // native, where kokoro-js's WASM/WebGPU path isn't available.
-      const audioUrl = KokoroTTSService.isSupported()
-        ? await KokoroTTSService.synthesize(content, DEFAULT_KOKORO_VOICE, settings.ttsVoiceRate)
-        : await (async () => {
-            if (!TTSService.hasApiKey()) {
-              throw new Error('NO_API_KEY');
-            }
-            return TTSService.synthesize(content, settings.ttsVoice, settings.ttsVoicePitch, settings.ttsVoiceRate);
-          })();
+      const audioUrl = await TTSService.synthesize(
+        content,
+        settings.ttsVoice,
+        settings.ttsVoicePitch,
+        settings.ttsVoiceRate
+      );
       await AudioService.load(audioUrl);
       await AudioService.play();
       setIsPlaying(true);
     } catch (error) {
-      if (error instanceof Error && error.message === 'NO_API_KEY') {
-        Alert.alert('Setup Required', 'Please configure your Google Cloud TTS API key in settings first.');
-      } else {
-        Alert.alert('Error', 'Failed to generate speech');
-      }
+      Alert.alert('Error', 'Failed to generate speech');
     } finally {
       setIsLoadingAudio(false);
     }
