@@ -447,7 +447,14 @@ function getWikimediaArtSource(title: string) {
   const directUrl = wikimediaArtwork[title];
   if (directUrl) {
     return {
-      type: 'html' as const,
+      // 'image', not 'html': this URL IS the artwork file, not a page
+      // about it. AppContext.addClassicalLibraryItem finds this by
+      // filtering sources for type 'image' to use as the item's cover --
+      // it never matched anything back when this said 'html', so every
+      // art-type item fell through to Open Library and then the
+      // typographic fallback despite having a perfectly good image right
+      // here the whole time.
+      type: 'image' as const,
       provider: 'wikimedia' as const,
       url: directUrl,
     };
