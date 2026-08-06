@@ -85,6 +85,9 @@ export const gutenbergIds: Record<string, GutenbergRef> = {
   'supp-washington-rules-civility': { gutenbergId: 12029, coverUrl: 'https://www.gutenberg.org/cache/epub/12029/pg12029.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/12029.txt.utf-8' },
   'lit-norse-eddas': { gutenbergId: 73533, coverUrl: 'https://www.gutenberg.org/cache/epub/73533/pg73533.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/73533.txt.utf-8' },
   'geo-strabo-geographica': { gutenbergId: 44884, coverUrl: 'https://www.gutenberg.org/cache/epub/44884/pg44884.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/44884.txt.utf-8' },
+  // Catalog item covers three sources (Desert Fathers / Bede / Legenda
+  // Aurea); Bede's is the one with a real Gutenberg edition.
+  'lit-hagiography': { gutenbergId: 38326, coverUrl: 'https://www.gutenberg.org/cache/epub/38326/pg38326.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/38326.txt.utf-8' },
   'supp-baxter-household': { gutenbergId: 41633, coverUrl: 'https://www.gutenberg.org/cache/epub/41633/pg41633.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/41633.txt.utf-8' },
   'supp-quran': { gutenbergId: 2800, coverUrl: 'https://www.gutenberg.org/cache/epub/2800/pg2800.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/2800.txt.utf-8' },
 
