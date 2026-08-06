@@ -39,6 +39,7 @@ import type { ReaderSettings } from '../types';
 import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 import { AudioShareService, AudioShareError } from '../services/AudioShareService';
+import { KokoroTTSService, DEFAULT_KOKORO_VOICE } from '../services/KokoroTTSService';
 /**
  * The reading surface — the most important screen in the app.
  *
@@ -154,6 +155,36 @@ function formatClock(ms: number): string {
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+/** Splits page text into Kokoro-sized pieces for Read Aloud -- one call per
+ * paragraph, further split on sentence boundaries if a paragraph alone
+ * would still be slow to synthesize. Keeps each chunk fast enough that
+ * playback of the page can start almost immediately instead of waiting on
+ * the whole page at once (see playPageWithKokoro in ReaderScreen). */
+function buildReadAloudChunks(paragraphs: string[]): string[] {
+  const MAX_CHUNK_CHARS = 350;
+  const chunks: string[] = [];
+  for (const paragraph of paragraphs) {
+    const trimmed = paragraph.trim();
+    if (!trimmed) continue;
+    if (trimmed.length <= MAX_CHUNK_CHARS) {
+      chunks.push(trimmed);
+      continue;
+    }
+    const sentences = trimmed.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [trimmed];
+    let buffer = '';
+    for (const sentence of sentences) {
+      if (buffer && (buffer + sentence).length > MAX_CHUNK_CHARS) {
+        chunks.push(buffer.trim());
+        buffer = sentence;
+      } else {
+        buffer += sentence;
+      }
+    }
+    if (buffer.trim()) chunks.push(buffer.trim());
+  }
+  return chunks;
+}
+
 export default function ReaderScreen() {
   const {
     currentBook,
@@ -222,9 +253,27 @@ export default function ReaderScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Resolved when the CURRENT Kokoro Read Aloud chunk finishes playing on
+  // its own (not paused) -- see playPageWithKokoro below. Set from inside
+  // the existing playback-status callback rather than adding a second
+  // AudioService subscription, since AudioService only supports one.
+  const chunkEndResolverRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    AudioService.onPlaybackStatus(setPlaybackState);
+    AudioService.onPlaybackStatus((state) => {
+      setPlaybackState(state);
+      if (
+        chunkEndResolverRef.current &&
+        !state.isPlaying &&
+        state.duration > 0 &&
+        state.position >= state.duration - 150
+      ) {
+        const resolve = chunkEndResolverRef.current;
+        chunkEndResolverRef.current = null;
+        resolve();
+      }
+    });
     return () => {
+      readAloudCancelRef.current = true;
       AudioService.cleanup();
     };
   }, []);
@@ -420,14 +469,64 @@ export default function ReaderScreen() {
 
   // ------------------------------------------------------------- actions ----
 
+  // Confirmed live: synthesizing a WHOLE PAGE in one Kokoro call took 90+
+  // seconds and blocked the tab the entire time -- not viable as a single
+  // request. Chunking fixes this: each chunk is short enough to synthesize
+  // in a few seconds, playback of chunk N starts as soon as it's ready, and
+  // chunk N+1 synthesizes in the background *while* chunk N is playing (a
+  // paragraph takes several seconds to read aloud, comfortably longer than
+  // it takes Kokoro to generate the next one) -- so total perceived wait is
+  // one short chunk, not the whole page.
+  const readAloudCancelRef = useRef(false);
+  const readAloudActiveRef = useRef(false);
+
+  const waitForChunkEnd = () => new Promise<void>((resolve) => { chunkEndResolverRef.current = resolve; });
+
+  const playPageWithKokoro = async () => {
+    const chunks = buildReadAloudChunks(page?.paragraphs.map((p) => p.text) ?? []);
+    if (!chunks.length) return;
+
+    readAloudCancelRef.current = false;
+    readAloudActiveRef.current = true;
+    setIsLoadingAudio(true);
+    try {
+      let nextChunk: Promise<string> = KokoroTTSService.synthesize(
+        chunks[0],
+        DEFAULT_KOKORO_VOICE,
+        settings.ttsVoiceRate
+      );
+      for (let i = 0; i < chunks.length; i++) {
+        if (readAloudCancelRef.current) break;
+        const uri = await nextChunk;
+        if (readAloudCancelRef.current) break;
+        if (i + 1 < chunks.length) {
+          // Kick off the next chunk's synthesis now, so it's ready (or
+          // close to it) by the time this one finishes playing.
+          nextChunk = KokoroTTSService.synthesize(chunks[i + 1], DEFAULT_KOKORO_VOICE, settings.ttsVoiceRate);
+        }
+        setIsLoadingAudio(false);
+        await AudioService.load(uri);
+        await AudioService.play();
+        setIsPlaying(true);
+        await waitForChunkEnd();
+      }
+    } catch (error) {
+      console.error('[ReaderScreen] Kokoro read-aloud failed:', error);
+      Alert.alert('Error', 'Failed to generate speech');
+    } finally {
+      readAloudActiveRef.current = false;
+      setIsPlaying(false);
+      setIsLoadingAudio(false);
+    }
+  };
+
   const handleReadAloud = async () => {
-    // Kokoro runs synchronously in-browser -- fine for a highlighted
-    // sentence or two (see AudioShareService), but confirmed live against
-    // the deployed app that a WHOLE PAGE of text takes 90+ seconds and
-    // visibly blocks the tab while it runs. That's a real regression for
-    // this specific feature, so Read Aloud keeps the Google Cloud engine
-    // (a fast cloud round trip regardless of page length) rather than
-    // Kokoro, even though it needs a key configured in Settings.
+    if (KokoroTTSService.isSupported()) {
+      await playPageWithKokoro();
+      return;
+    }
+    // Native: kokoro-js needs a browser (WASM/WebGPU), so this stays on the
+    // Google Cloud engine, which still needs a key configured in Settings.
     if (!TTSService.hasApiKey()) {
       Alert.alert('Setup Required', 'Please configure your Google Cloud TTS API key in settings first.');
       return;
@@ -457,12 +556,32 @@ export default function ReaderScreen() {
     setIsPlaying(false);
   };
 
+  /** The round play/pause button: resumes the current chunk if a Kokoro
+   * queue is already in progress, rather than restarting the page from
+   * chunk one every time playback is paused and pressed again. */
+  const handlePlayPauseReadAloud = async () => {
+    if (isPlaying) {
+      await handlePause();
+      return;
+    }
+    if (readAloudActiveRef.current) {
+      await AudioService.play();
+      setIsPlaying(true);
+      return;
+    }
+    await handleReadAloud();
+  };
+
   const handleNextPage = useCallback(() => {
+    readAloudCancelRef.current = true;
+    readAloudActiveRef.current = false;
     setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
     setIsPlaying(false);
   }, [totalPages]);
 
   const handlePreviousPage = useCallback(() => {
+    readAloudCancelRef.current = true;
+    readAloudActiveRef.current = false;
     setCurrentPage((p) => Math.max(0, p - 1));
     setIsPlaying(false);
   }, []);
@@ -1124,7 +1243,7 @@ export default function ReaderScreen() {
 
             <TouchableOpacity
               style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
-              onPress={isPlaying ? handlePause : handleReadAloud}
+              onPress={handlePlayPauseReadAloud}
               disabled={isLoadingAudio}
               accessibilityLabel={isPlaying ? 'Pause reading' : 'Read aloud'}
             >
