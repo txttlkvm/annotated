@@ -469,6 +469,32 @@ export default function ReaderScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [safePage]);
 
+  /**
+   * Warm Kokoro up in the background as soon as a page is actually settled
+   * on (debounced past quick page-flipping), so pressing Read Aloud is
+   * close to instant instead of waiting on a cold model load. This can't
+   * jump the gun on the browser's audio-gesture requirement -- it only
+   * generates data, never calls .play() -- so there's nothing here for the
+   * user to have to interact with first; by the time they press play, the
+   * model is already loaded and the first chunk is already in
+   * KokoroTTSService's cache, keyed on the exact same (text, voice, speed)
+   * synthesize() will ask for.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !KokoroTTSService.isSupported() || !page) return;
+    const timer = setTimeout(() => {
+      const chunks = buildReadAloudChunks(page.paragraphs.map((p) => p.text));
+      if (chunks.length) {
+        KokoroTTSService.synthesize(chunks[0], DEFAULT_KOKORO_VOICE, settings.ttsVoiceRate).catch(() => {
+          // Best-effort warm-up -- a real attempt from the play button will
+          // surface any actual error to the user; this one just primes the
+          // cache when it works and is silently wasted when it doesn't.
+        });
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [page, settings.ttsVoiceRate]);
+
   const getPageContent = useCallback(() => {
     if (!page) return '';
     return page.paragraphs.map((p) => p.text).join('\n\n');
@@ -1375,16 +1401,23 @@ export default function ReaderScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <View style={styles.modalButtons}>
+            {/* Two rows of two rather than four flex:1 buttons crammed into
+                one row -- "Share as audio" was wrapping/crowding at
+                mobile widths with four-across. Cancel gets its own
+                de-emphasized row above the three real actions, so it
+                doesn't visually compete with them for the same weight. */}
+            <View style={styles.modalCancelRow}>
               <TouchableOpacity
-                style={[styles.modalButton, { borderColor: palette.border }]}
                 onPress={() => {
                   setSelectedText('');
                   setShowHighlightColor(false);
                 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: palette.muted }]}>Cancel</Text>
               </TouchableOpacity>
+            </View>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { borderColor: palette.border }]}
                 onPress={() => {
@@ -1400,8 +1433,10 @@ export default function ReaderScreen() {
               >
                 <Text style={[styles.modalButtonText, { color: palette.accent }]}>Share text</Text>
               </TouchableOpacity>
+            </View>
+            <View style={[styles.modalButtons, { marginTop: space.sm }]}>
               <TouchableOpacity
-                style={[styles.modalButton, { borderColor: palette.border }]}
+                style={[styles.modalButton, styles.modalButtonWide, { borderColor: palette.border }]}
                 onPress={handleShareAsAudio}
                 disabled={isSharingAudio}
               >
@@ -1785,6 +1820,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 23,
   },
+  modalCancelRow: { alignItems: 'flex-end', marginBottom: space.sm },
+  modalCancelText: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 0.6 },
   modalButtons: { flexDirection: 'row', gap: space.md },
   modalButton: {
     flex: 1,
@@ -1793,6 +1830,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
+  modalButtonWide: { flex: undefined, width: '100%' },
   modalButtonPrimary: { borderColor: 'transparent' },
   modalButtonText: { fontFamily: fonts.ui, fontSize: 13, letterSpacing: 0.8 },
 
