@@ -573,11 +573,9 @@ export default function ReaderScreen() {
 
   const handleShareAsAudio = async () => {
     if (!selectedText) return;
-    if (!TTSService.hasApiKey()) {
-      setShowHighlightColor(false);
-      Alert.alert('TTS not set up', 'Add your Google Cloud TTS key in Settings first.');
-      return;
-    }
+    // No pre-check here: AudioShareService uses Kokoro on web (no key
+    // needed at all) and only requires a Google Cloud key on native, where
+    // it throws its own AudioShareError -- caught and surfaced below.
     setIsSharingAudio(true);
     try {
       const result = await AudioShareService.shareAsAudio(selectedText, {
