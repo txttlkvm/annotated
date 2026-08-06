@@ -199,6 +199,45 @@ const CATALOG_REFS: Map<string, GutenbergRef> = (() => {
   return index;
 })();
 
+// Indexed by catalogKey so loadBooks's migration below can look up the
+// original catalogue item (and its resolved sources) for a stored Book row
+// that only has title/author, not the catalogue id.
+const CATALOG_ITEMS: Map<string, ClassicalLibraryItem> = (() => {
+  const index = new Map<string, ClassicalLibraryItem>();
+  for (const item of getClassicalLibraryWithSources()) {
+    index.set(catalogKey(item.title, item.author), item);
+  }
+  return index;
+})();
+
+/**
+ * Cover fallback chain: a confident Gutenberg match first, then the piece's
+ * own art/image source for art-type items (the artwork itself makes a far
+ * better cover than a generic placeholder), then a verified Wikimedia
+ * composer portrait (or period artifact) for music-type items, which have
+ * no Gutenberg entry and nothing an Open Library book search could ever
+ * match, then a live Open Library lookup, which catches everything
+ * Gutenberg never digitized (modern Tolkien/Lewis reprints, Aquinas,
+ * Plutarch, etc). BookCover only draws its typographic fallback once all
+ * four miss. Shared by addClassicalLibraryItem (new items) and loadBooks's
+ * migration (items already in the library before this chain existed, or
+ * before a given step in it did).
+ */
+async function resolveCatalogCover(item: ClassicalLibraryItem): Promise<string | undefined> {
+  const ref = gutenbergIds[item.id];
+  let cover = ref?.coverUrl;
+  if (!cover && item.type === 'art') {
+    cover = item.sources?.find((s) => s.type === 'image')?.url;
+  }
+  if (!cover && item.type === 'music') {
+    cover = wikimediaComposerPortraits[item.id];
+  }
+  if (!cover) {
+    cover = (await OpenLibraryService.getCoverByTitle(item.title, item.author)) || undefined;
+  }
+  return cover;
+}
+
 interface AppContextType {
   books: Book[];
   currentBook: Book | null;
@@ -321,6 +360,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
       setBooks(linked);
+
+      // Backfill covers for library items added before a given step in
+      // resolveCatalogCover's fallback chain existed -- most notably
+      // art/music items, which had NO cover source at all until today (art
+      // covers were then broken a second way: the source that resolves
+      // them was mislabeled and matched nothing, see resolveCatalogCover's
+      // comment). Existing rows never re-run addClassicalLibraryItem, so
+      // without this they'd stay on the typographic fallback forever even
+      // after the underlying fix shipped. Runs after the initial paint,
+      // one row at a time so a slow/failed lookup for one item can't block
+      // the rest.
+      for (const book of linked) {
+        if (book.cover) continue;
+        const item = CATALOG_ITEMS.get(catalogKey(book.title, book.author));
+        if (!item) continue;
+        resolveCatalogCover(item)
+          .then((cover) => {
+            if (!cover) return;
+            DatabaseService.updateBook(book.id, { cover }).catch((error) =>
+              console.warn('[AppContext] Could not persist backfilled cover:', error)
+            );
+            setBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, cover } : b)));
+          })
+          .catch((error) => console.warn('[AppContext] Cover backfill failed:', error));
+      }
     } catch (error) {
       console.error('Load books error:', error);
     } finally {
@@ -609,25 +673,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addClassicalLibraryItem = async (item: ClassicalLibraryItem) => {
     const ref = gutenbergIds[item.id];
-    // Cover fallback chain: a confident Gutenberg match first, then the
-    // piece's own art/image source for art-type items (the artwork itself
-    // makes a far better cover than a generic placeholder), then a verified
-    // Wikimedia composer portrait (or period artifact) for music-type items,
-    // which have no Gutenberg entry and nothing an Open Library book search
-    // could ever match, then a live Open Library lookup, which catches
-    // everything Gutenberg never digitized (modern Tolkien/Lewis reprints,
-    // Aquinas, Plutarch, etc). BookCover only draws its typographic fallback
-    // once all four miss.
-    let cover = ref?.coverUrl;
-    if (!cover && item.type === 'art') {
-      cover = item.sources?.find((s) => s.type === 'image')?.url;
-    }
-    if (!cover && item.type === 'music') {
-      cover = wikimediaComposerPortraits[item.id];
-    }
-    if (!cover) {
-      cover = (await OpenLibraryService.getCoverByTitle(item.title, item.author)) || undefined;
-    }
+    const cover = await resolveCatalogCover(item);
     const book: Omit<Book, 'id'> = {
       title: item.title,
       author: item.author,
