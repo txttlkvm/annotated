@@ -19,6 +19,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
 import { AudioService, PlaybackState } from '../services/AudioService';
+import { unlockAudioPlayback } from '../services/WebSound';
 import { GutenbergService, Paragraph } from '../services/GutenbergService';
 import BookCover from '../components/BookCover';
 import Shell, { Column, useColumn } from '../components/Shell';
@@ -564,6 +565,15 @@ export default function ReaderScreen() {
       await handlePause();
       return;
     }
+    // Synchronous, before any await: a real click satisfies the browser's
+    // "recent user gesture" requirement for audio playback right now, but
+    // Kokoro's model-load-then-synthesize chain can easily outlast that
+    // window, and by the time the real audio is ready to play the gesture
+    // has gone stale -- confirmed live as exactly why Read Aloud would load
+    // for a minute and then play nothing. Playing anything (even silence)
+    // synchronously here keeps the page "unlocked" for the real audio that
+    // follows, however long the async work in between takes.
+    if (Platform.OS === 'web') unlockAudioPlayback();
     if (readAloudActiveRef.current) {
       await AudioService.play();
       setIsPlaying(true);

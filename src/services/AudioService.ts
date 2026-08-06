@@ -58,11 +58,18 @@ export class AudioService {
     if (!this.sound) return;
     try {
       await Haptics.selectionAsync();
-      await this.sound.playAsync();
-      this.startStatusUpdates();
-    } catch (error) {
-      console.error('Play error:', error);
+    } catch {
+      // Haptics failing is irrelevant to playback -- never let it block play().
     }
+    // Deliberately NOT swallowed here (unlike the other methods below): a
+    // browser blocking play() (stale user-activation, autoplay policy) is a
+    // real failure a caller needs to know about, not something to log and
+    // silently continue past. Confirmed live: Kokoro's chunked Read Aloud
+    // would call this after a long async model-load/synthesize gap, play()
+    // would reject, and the old swallow-and-continue behavior here made the
+    // whole queue hang forever waiting for a chunk that was never playing.
+    await this.sound.playAsync();
+    this.startStatusUpdates();
   }
 
   static async pause(): Promise<void> {

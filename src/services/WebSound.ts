@@ -10,6 +10,40 @@
 // including setRateAsync, which the first version of this (written for
 // MusicPlayerScreen alone) didn't have.
 
+/**
+ * Browsers require a recent, real user gesture before allowing audio
+ * playback -- and that "recent" window is short enough that an async chain
+ * of (model download + inference) between a click and the eventual
+ * `.play()` call can outlast it, even though the click that started
+ * everything was completely genuine. Confirmed as the cause of Kokoro Read
+ * Aloud loading fully and then playing nothing: play() was rejecting
+ * silently (see the removed try/catch in AudioService.play()).
+ *
+ * The fix is the standard one for this exact problem: play something --
+ * anything, even total silence -- SYNCHRONOUSLY inside the click handler,
+ * before any async work starts. Chrome (and other browsers) treat that as
+ * satisfying the gesture requirement for audio playback on the page going
+ * forward, not just for that one element, so the real audio later in the
+ * same handler is then allowed to play even after a long async gap.
+ */
+export function unlockAudioPlayback(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    // ~12.5ms of real (silent) 16-bit PCM samples -- verified before
+    // shipping (decoded and parsed the header in Python) rather than
+    // hand-typing base64 and hoping. A zero-length data chunk was tried
+    // first and rejected once checked: valid WAV structure, but nothing to
+    // actually play, which risks the "unlock" never firing at all.
+    const silentWav =
+      'data:audio/wav;base64,UklGRuwAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YcgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+    const el = new window.Audio(silentWav);
+    el.play()?.catch(() => {});
+  } catch {
+    // Best-effort -- if this fails, the real play() call downstream will
+    // surface its own error rather than hanging silently (see AudioService).
+  }
+}
+
 export interface WebSoundStatus {
   isLoaded: true;
   isPlaying: boolean;
