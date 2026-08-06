@@ -141,8 +141,13 @@ export class KokoroTTSService {
   }
 
   /** Loads (or returns the already-loading/loaded) model. Safe to call
-   * repeatedly -- concurrent callers share the same in-flight promise. */
-  private static async getModel(onProgress?: KokoroProgressCallback): Promise<any> {
+   * repeatedly -- concurrent callers share the same in-flight promise.
+   * `forceDevice` bypasses the WebGPU-first default (used to recover from
+   * a GPU device loss -- see synthesize()'s retry path below). */
+  private static async getModel(
+    onProgress?: KokoroProgressCallback,
+    forceDevice?: 'wasm'
+  ): Promise<any> {
     if (!this.ttsPromise) {
       this.ttsPromise = (async () => {
         // Metro can't bundle this dependency at all, confirmed two different
@@ -161,7 +166,7 @@ export class KokoroTTSService {
         const { KokoroTTS } = await new Function(
           'return import("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js")'
         )();
-        const hasWebGPU = typeof navigator !== 'undefined' && !!(navigator as any).gpu;
+        const hasWebGPU = forceDevice !== 'wasm' && typeof navigator !== 'undefined' && !!(navigator as any).gpu;
         const load = (device: 'webgpu' | 'wasm') =>
           KokoroTTS.from_pretrained(MODEL_ID, {
             dtype: 'q8',
@@ -217,13 +222,26 @@ export class KokoroTTSService {
     const cached = this.audioCache.get(cacheKey);
     if (cached) return cached;
 
-    const tts = await this.getModel(onProgress);
+    let tts = await this.getModel(onProgress);
     let audio;
     try {
       audio = await tts.generate(trimmed, { voice, speed });
     } catch (error) {
-      console.error('[Kokoro] generate() failed:', error);
-      throw error;
+      console.error('[Kokoro] generate() failed, retrying once on wasm:', error);
+      // A GPU driver hang/crash mid-inference (confirmed live: "Device
+      // removed reason: DXGI_ERROR_DEVICE_HUNG") kills the WebGPU device
+      // permanently -- every future call on that session fails the same
+      // way, not just this one. Force a full reload on wasm (which doesn't
+      // depend on GPU driver health at all) and retry once rather than
+      // leaving the user with a dead session and a cryptic failure.
+      this.ttsPromise = null;
+      try {
+        tts = await this.getModel(onProgress, 'wasm');
+        audio = await tts.generate(trimmed, { voice, speed });
+      } catch (retryError) {
+        console.error('[Kokoro] wasm retry also failed:', retryError);
+        throw retryError;
+      }
     }
     let uri;
     try {

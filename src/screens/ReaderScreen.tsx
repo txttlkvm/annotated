@@ -161,8 +161,31 @@ function formatClock(ms: number): string {
  * would still be slow to synthesize. Keeps each chunk fast enough that
  * playback of the page can start almost immediately instead of waiting on
  * the whole page at once (see playPageWithKokoro in ReaderScreen). */
+const MAX_CHUNK_CHARS = 350;
+
+/** Hard fallback for a single "sentence" that's still too long on its own --
+ * confirmed live as a real case, not theoretical: a long run of book titles
+ * with no periods between them (a King James Bible front-matter listing)
+ * matched as ONE sentence by the regex below (nothing for it to split on),
+ * producing a ~29-second first chunk instead of a short one. Splits on word
+ * boundaries so this can never happen regardless of punctuation. */
+function splitOnWordBoundary(text: string): string[] {
+  const words = text.split(/\s+/);
+  const pieces: string[] = [];
+  let buffer = '';
+  for (const word of words) {
+    if (buffer && (buffer + ' ' + word).length > MAX_CHUNK_CHARS) {
+      pieces.push(buffer);
+      buffer = word;
+    } else {
+      buffer = buffer ? `${buffer} ${word}` : word;
+    }
+  }
+  if (buffer) pieces.push(buffer);
+  return pieces;
+}
+
 function buildReadAloudChunks(paragraphs: string[]): string[] {
-  const MAX_CHUNK_CHARS = 350;
   const chunks: string[] = [];
   for (const paragraph of paragraphs) {
     const trimmed = paragraph.trim();
@@ -173,15 +196,27 @@ function buildReadAloudChunks(paragraphs: string[]): string[] {
     }
     const sentences = trimmed.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [trimmed];
     let buffer = '';
+    const flush = () => {
+      if (!buffer) return;
+      const trimmedBuffer = buffer.trim();
+      // The sentence regex has no length cap of its own -- a run of text
+      // with no . ! or ? in it (e.g. a bare list of titles) comes back as
+      // one huge "sentence" that could still blow past MAX_CHUNK_CHARS
+      // even after this loop's own accumulation logic.
+      if (trimmedBuffer.length > MAX_CHUNK_CHARS) {
+        chunks.push(...splitOnWordBoundary(trimmedBuffer));
+      } else {
+        chunks.push(trimmedBuffer);
+      }
+      buffer = '';
+    };
     for (const sentence of sentences) {
       if (buffer && (buffer + sentence).length > MAX_CHUNK_CHARS) {
-        chunks.push(buffer.trim());
-        buffer = sentence;
-      } else {
-        buffer += sentence;
+        flush();
       }
+      buffer += sentence;
     }
-    if (buffer.trim()) chunks.push(buffer.trim());
+    flush();
   }
   return chunks;
 }
