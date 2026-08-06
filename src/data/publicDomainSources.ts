@@ -420,6 +420,35 @@ export const wikimediaComposerPortraits: Record<string, string> = {
   'art-notre-dame-school': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Perotin_-_Alleluia_nativitas.jpg/960px-Perotin_-_Alleluia_nativitas.jpg',
 };
 
+// Open Library cover_i ids for catalogue items with no Gutenberg match at
+// all (so no cover from that path) -- some of these are modern in-copyright
+// works (Tolkien, Lewis, Mounce, Pratico) where only the cover THUMBNAIL is
+// used, never the text; the book itself correctly stays unreadable in the
+// app since no public-domain full text exists to source. Every id below was
+// found via a real Open Library search (title + author surname match, same
+// discipline as everywhere else in this file) and curl-verified (302 -> 200
+// image/jpeg via covers.openlibrary.org) before being added -- not guessed.
+export const openLibraryCoverIds: Record<string, number> = {
+  'lit-el-poema-mio-cid': 12098552,
+  'phil-aristotle-metaphysics': 10702956,
+  'hist-declaration-constitution': 8481317,
+  'math-euclid-elements': 1736063,
+  'lit-tolkien-lotr': 14625765,
+  'lit-narnia-lion-witch': 8441376,
+  'math-descartes-geometry': 6527933,
+  'lang-cicero-de-oratore': 6749759,
+  'lang-ward-oratory': 11352942,
+  'arch-suger': 4439074,
+  'mus-rameau-harmony': 308921,
+  'theo-augustine-doctrine': 7125465,
+  'theo-ames-medulla': 10896541,
+  'lang-greek-mounce': 171250,
+  'lang-hebrew-pratico': 170171,
+  'read-scanderbeg': 4269749,
+  'read-ferdinand-saint': 6211719,
+  'mem-apostles-creed': 5604763,
+};
+
 function getWikimediaMusicSource(title: string) {
   const directUrl = wikimediaMusic[title];
   if (directUrl) {

@@ -10,11 +10,10 @@ import React, {
 import { DatabaseService } from '../services/DatabaseService';
 import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS, Collection, WordLookup, BookProgress } from '../types';
 import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
-import { gutenbergIds, GutenbergRef } from '../data/gutenbergIds';
+import { gutenbergIds, GutenbergRef, coverFor } from '../data/gutenbergIds';
 import { GutenbergService, GutenbergBook, ParsedBook } from '../services/GutenbergService';
 import { EbookService } from '../services/EbookService';
 import { OpenLibraryService } from '../services/OpenLibraryService';
-import { wikimediaComposerPortraits } from '../data/publicDomainSources';
 
 /* ------------------------------------------------------------------ *
  * BOOK TEXT
@@ -224,13 +223,18 @@ const CATALOG_ITEMS: Map<string, ClassicalLibraryItem> = (() => {
  * before a given step in it did).
  */
 async function resolveCatalogCover(item: ClassicalLibraryItem): Promise<string | undefined> {
-  const ref = gutenbergIds[item.id];
-  let cover = ref?.coverUrl;
+  // coverFor() covers every synchronous step in one call (Gutenberg, the
+  // art piece's own image, a music item's composer portrait, and the
+  // curated Open Library cover_i matches) -- same logic the Catalog browse
+  // cards use, so the library and the browse view never disagree about
+  // what an item's cover is. A live Open Library search is the last resort,
+  // for anything none of those hand-verified sources cover.
+  let cover = coverFor(item.id);
   if (!cover && item.type === 'art') {
+    // coverFor's art step only knows wikimediaArtwork by title; this item's
+    // OWN resolved sources (item.sources, from getClassicalLibraryWithSources)
+    // is the more authoritative copy of the same thing, so try it too.
     cover = item.sources?.find((s) => s.type === 'image')?.url;
-  }
-  if (!cover && item.type === 'music') {
-    cover = wikimediaComposerPortraits[item.id];
   }
   if (!cover) {
     cover = (await OpenLibraryService.getCoverByTitle(item.title, item.author)) || undefined;

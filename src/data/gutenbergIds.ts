@@ -6,10 +6,11 @@
 // are excluded. Entries absent from this map render the designed fallback
 // cover instead of a wrong book.
 //
-// 51 of 113 catalog entries resolved.
+// 62 of 113 catalog entries resolved (51 by the original generator, 11 more
+// added by hand afterward -- see the comment above those entries).
 
 import { classicalLibrary } from './classicalLibrary';
-import { wikimediaArtwork, wikimediaComposerPortraits } from './publicDomainSources';
+import { wikimediaArtwork, wikimediaComposerPortraits, openLibraryCoverIds } from './publicDomainSources';
 
 export interface GutenbergRef {
   gutenbergId: number;
@@ -69,6 +70,34 @@ export const gutenbergIds: Record<string, GutenbergRef> = {
   'mem-kipling-if': { gutenbergId: 23967, coverUrl: 'https://www.gutenberg.org/cache/epub/23967/pg23967.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/files/23967/23967-readme.txt' },
   'mem-psalms-family-melodies': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
   'mem-gospel-structure': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
+
+  // Added by hand, same discipline as the generator: title overlap + author
+  // surname match, and every URL below curl-verified (HTTP 200, both the
+  // text and cover) before being added, not guessed.
+  'lit-chesterton-father-brown': { gutenbergId: 204, coverUrl: 'https://www.gutenberg.org/cache/epub/204/pg204.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/204.txt.utf-8' },
+  'bio-plutarch-parallel-lives': { gutenbergId: 674, coverUrl: 'https://www.gutenberg.org/cache/epub/674/pg674.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/674.txt.utf-8' },
+  'bio-einhard-charlemagne': { gutenbergId: 48870, coverUrl: 'https://www.gutenberg.org/cache/epub/48870/pg48870.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/48870.txt.utf-8' },
+  'lit-sophocles-oedipus': { gutenbergId: 27673, coverUrl: 'https://www.gutenberg.org/cache/epub/27673/pg27673.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/27673.txt.utf-8' },
+  // "Key Questions" -- Prima Pars (Part I) is the most commonly excerpted
+  // part (includes the Five Ways) and the one usually meant by that phrase.
+  'phil-aquinas-summa': { gutenbergId: 17611, coverUrl: 'https://www.gutenberg.org/cache/epub/17611/pg17611.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/17611.txt.utf-8' },
+  'lang-cicero-speeches': { gutenbergId: 226, coverUrl: 'https://www.gutenberg.org/cache/epub/226/pg226.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/226.txt.utf-8' },
+  'supp-washington-rules-civility': { gutenbergId: 12029, coverUrl: 'https://www.gutenberg.org/cache/epub/12029/pg12029.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/12029.txt.utf-8' },
+  'lit-norse-eddas': { gutenbergId: 73533, coverUrl: 'https://www.gutenberg.org/cache/epub/73533/pg73533.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/73533.txt.utf-8' },
+  'geo-strabo-geographica': { gutenbergId: 44884, coverUrl: 'https://www.gutenberg.org/cache/epub/44884/pg44884.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/44884.txt.utf-8' },
+  'supp-baxter-household': { gutenbergId: 41633, coverUrl: 'https://www.gutenberg.org/cache/epub/41633/pg41633.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/41633.txt.utf-8' },
+  'supp-quran': { gutenbergId: 2800, coverUrl: 'https://www.gutenberg.org/cache/epub/2800/pg2800.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/2800.txt.utf-8' },
+
+  // These five are short-passage memorization items drawn FROM a work
+  // that's already matched above -- pointing them at that same edition (the
+  // reader can navigate to the relevant chapter/scene) rather than leaving
+  // them sourceless, matching the existing convention just above
+  // (mem-psalms-family-melodies etc. already do this against the Bible).
+  'mem-ten-commandments': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
+  'mem-beatitudes': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
+  'mem-lords-prayer': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
+  'mem-hamlet-soliloquy': { gutenbergId: 27761, coverUrl: 'https://www.gutenberg.org/cache/epub/27761/pg27761.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/27761.txt.utf-8' },
+  'mem-homer-invocation': { gutenbergId: 6130, coverUrl: 'https://www.gutenberg.org/cache/epub/6130/pg6130.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/6130.txt.utf-8' },
 };
 
 // Only used for the two cover sources that resolve synchronously with no
@@ -98,7 +127,10 @@ export function coverFor(itemId: string): string | undefined {
     const art = wikimediaArtwork[artTitle];
     if (art) return art;
   }
-  return wikimediaComposerPortraits[itemId];
+  if (wikimediaComposerPortraits[itemId]) return wikimediaComposerPortraits[itemId];
+  const olCoverId = openLibraryCoverIds[itemId];
+  if (olCoverId) return `https://covers.openlibrary.org/b/id/${olCoverId}-L.jpg`;
+  return undefined;
 }
 
 /** Plain-text URL for a catalog entry, or null if we have no edition. */
