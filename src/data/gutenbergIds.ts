@@ -8,6 +8,9 @@
 //
 // 51 of 113 catalog entries resolved.
 
+import { classicalLibrary } from './classicalLibrary';
+import { wikimediaArtwork, wikimediaComposerPortraits } from './publicDomainSources';
+
 export interface GutenbergRef {
   gutenbergId: number;
   coverUrl: string;
@@ -68,9 +71,34 @@ export const gutenbergIds: Record<string, GutenbergRef> = {
   'mem-gospel-structure': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
 };
 
-/** Cover image for a catalog entry, or undefined to use the fallback. */
+// Only used for the two cover sources that resolve synchronously with no
+// network call (a live Open Library lookup, the third step of
+// resolveCatalogCover in AppContext.tsx, needs an actual request and so
+// only ever runs once an item is added to the library -- Catalog/Curriculum
+// browse cards render many items at once and need an instant answer).
+// Built once per module load, not per coverFor() call.
+const ART_TITLE_BY_ID: Map<string, string> = (() => {
+  const index = new Map<string, string>();
+  for (const item of classicalLibrary) {
+    if (item.type === 'art') index.set(item.id, item.title);
+  }
+  return index;
+})();
+
+/** Cover image for a catalog entry, or undefined to use the fallback.
+ * Mirrors the first three steps of resolveCatalogCover (AppContext.tsx) --
+ * everything synchronous, since this powers the Catalog/Curriculum browse
+ * cards rendered before an item is ever added to the library, where the
+ * fourth step (a live Open Library search) isn't an option. */
 export function coverFor(itemId: string): string | undefined {
-  return gutenbergIds[itemId]?.coverUrl;
+  const gutenberg = gutenbergIds[itemId]?.coverUrl;
+  if (gutenberg) return gutenberg;
+  const artTitle = ART_TITLE_BY_ID.get(itemId);
+  if (artTitle) {
+    const art = wikimediaArtwork[artTitle];
+    if (art) return art;
+  }
+  return wikimediaComposerPortraits[itemId];
 }
 
 /** Plain-text URL for a catalog entry, or null if we have no edition. */

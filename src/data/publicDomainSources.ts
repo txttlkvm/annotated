@@ -313,7 +313,13 @@ export const publicDomainSources: Record<string, Array<{ type: string; url: stri
 };
 
 // Wikimedia Commons direct image download URLs for public domain artwork
-const wikimediaArtwork: Record<string, string> = {
+// Exported so gutenbergIds.ts's coverFor() (the synchronous lookup the
+// Catalog/Curriculum BROWSE cards use, before an item is ever added to the
+// library) can show the real artwork too, not just whatever a Gutenberg
+// match provides -- the async addClassicalLibraryItem/resolveCatalogCover
+// chain only ever runs once an item is actually added, so browse cards
+// never saw it.
+export const wikimediaArtwork: Record<string, string> = {
   // The original 4 entries below 400'd: Wikimedia only serves a fixed set of
   // thumbnail widths, and 800px/536px weren't on the list. Re-fetched via the
   // imageinfo API's own iiurlwidth (guarantees a width Wikimedia will
