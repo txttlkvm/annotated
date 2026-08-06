@@ -123,6 +123,28 @@ export class AudioService {
     this.playbackStatusCallback = callback;
   }
 
+  /** Resolves exactly once, when the CURRENTLY LOADED sound finishes
+   * playing on its own. Uses each platform's real end-of-playback event
+   * (WebSound's native 'ended' DOM event; expo-av's own didJustFinish
+   * status flag) rather than inferring completion from polled
+   * position/duration -- confirmed live that inference is unreliable for
+   * data: URI sources on web (Kokoro's chunked Read Aloud queue stalled
+   * forever after the first chunk: duration displayed correctly the whole
+   * time, but the polled comparison never agreed the track had actually
+   * ended). Real events have no such ambiguity. */
+  static waitForEnd(): Promise<void> {
+    if (!this.sound) return Promise.resolve();
+    return new Promise((resolve) => {
+      if (this.sound instanceof WebSound) {
+        this.sound.onEnded(resolve);
+      } else {
+        (this.sound as Audio.Sound).setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) resolve();
+        });
+      }
+    });
+  }
+
   private static startStatusUpdates() {
     this.stopStatusUpdates();
     this.updateInterval = setInterval(() => this.updateStatus(), 500);

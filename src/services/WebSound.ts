@@ -118,4 +118,16 @@ export class WebSound {
     this.el.pause();
     this.el.src = '';
   }
+
+  /** Fires exactly once when this element's playback completes naturally.
+   * The real DOM 'ended' event, not inferred from position/duration polling
+   * -- confirmed live that inference is unreliable for data: URI sources
+   * (Kokoro's chunked Read Aloud queue stalled forever after chunk one:
+   * duration displayed correctly all through playback, but the polled
+   * position/duration comparison used to detect "this chunk is done" never
+   * agreed after the track actually ended). 'ended' has no such ambiguity. */
+  onEnded(callback: () => void): () => void {
+    this.el.addEventListener('ended', callback, { once: true });
+    return () => this.el.removeEventListener('ended', callback);
+  }
 }

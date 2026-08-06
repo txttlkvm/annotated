@@ -254,25 +254,8 @@ export default function ReaderScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Resolved when the CURRENT Kokoro Read Aloud chunk finishes playing on
-  // its own (not paused) -- see playPageWithKokoro below. Set from inside
-  // the existing playback-status callback rather than adding a second
-  // AudioService subscription, since AudioService only supports one.
-  const chunkEndResolverRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    AudioService.onPlaybackStatus((state) => {
-      setPlaybackState(state);
-      if (
-        chunkEndResolverRef.current &&
-        !state.isPlaying &&
-        state.duration > 0 &&
-        state.position >= state.duration - 150
-      ) {
-        const resolve = chunkEndResolverRef.current;
-        chunkEndResolverRef.current = null;
-        resolve();
-      }
-    });
+    AudioService.onPlaybackStatus(setPlaybackState);
     return () => {
       readAloudCancelRef.current = true;
       AudioService.cleanup();
@@ -481,8 +464,6 @@ export default function ReaderScreen() {
   const readAloudCancelRef = useRef(false);
   const readAloudActiveRef = useRef(false);
 
-  const waitForChunkEnd = () => new Promise<void>((resolve) => { chunkEndResolverRef.current = resolve; });
-
   const playPageWithKokoro = async () => {
     const chunks = buildReadAloudChunks(page?.paragraphs.map((p) => p.text) ?? []);
     if (!chunks.length) return;
@@ -507,9 +488,10 @@ export default function ReaderScreen() {
         }
         setIsLoadingAudio(false);
         await AudioService.load(uri);
+        const chunkEnded = AudioService.waitForEnd();
         await AudioService.play();
         setIsPlaying(true);
-        await waitForChunkEnd();
+        await chunkEnded;
       }
     } catch (error) {
       console.error('[ReaderScreen] Kokoro read-aloud failed:', error);
