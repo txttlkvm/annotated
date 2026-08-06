@@ -43,11 +43,86 @@ export const DEFAULT_KOKORO_VOICE: KokoroVoice = 'af_heart';
 export type KokoroLoadStage = 'downloading' | 'ready';
 export type KokoroProgressCallback = (progress: { stage: KokoroLoadStage; percent: number }) => void;
 
+/**
+ * kokoro-js's RawAudio.toWav() writes IEEE-float PCM (WAV format tag 3,
+ * 32-bit float samples) -- confirmed live: a generated clip transcribed
+ * perfectly once converted to standard 16-bit integer PCM (format tag 1),
+ * but some decoders don't handle float PCM at all and instead read the
+ * float bytes as if they were a different format, which comes out as
+ * garbled, pitch-shifted noise -- exactly what got reported as sounding
+ * like a different language. Converting to 16-bit PCM here is the fix, and
+ * it's the WAV variant literally everything can play.
+ */
+function floatWavToPcm16Wav(buffer: ArrayBuffer): ArrayBuffer {
+  const view = new DataView(buffer);
+  if (view.getUint32(0, false) !== 0x52494646 /* 'RIFF' */) return buffer;
+
+  let pos = 12;
+  let fmtTag = 1;
+  let channels = 1;
+  let sampleRate = 24000;
+  let bitsPerSample = 32;
+  let dataOffset = -1;
+  let dataLength = 0;
+
+  while (pos + 8 <= view.byteLength) {
+    const chunkId = view.getUint32(pos, false);
+    const chunkSize = view.getUint32(pos + 4, true);
+    const chunkStart = pos + 8;
+    if (chunkId === 0x666d7420 /* 'fmt ' */) {
+      fmtTag = view.getUint16(chunkStart, true);
+      channels = view.getUint16(chunkStart + 2, true);
+      sampleRate = view.getUint32(chunkStart + 4, true);
+      bitsPerSample = view.getUint16(chunkStart + 14, true);
+    } else if (chunkId === 0x64617461 /* 'data' */) {
+      dataOffset = chunkStart;
+      dataLength = chunkSize;
+    }
+    pos = chunkStart + chunkSize + (chunkSize % 2);
+  }
+
+  if (fmtTag !== 3 || bitsPerSample !== 32 || dataOffset < 0) {
+    // Already standard PCM (or a shape this function doesn't recognize) --
+    // leave it alone rather than risk corrupting something it didn't cause.
+    return buffer;
+  }
+
+  const floats = new Float32Array(buffer, dataOffset, dataLength / 4);
+  const pcm16 = new Int16Array(floats.length);
+  for (let i = 0; i < floats.length; i++) {
+    const s = Math.max(-1, Math.min(1, floats[i]));
+    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+
+  const blockAlign = channels * 2;
+  const byteRate = sampleRate * blockAlign;
+  const out = new ArrayBuffer(44 + pcm16.byteLength);
+  const outView = new DataView(out);
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) outView.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  outView.setUint32(4, 36 + pcm16.byteLength, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  outView.setUint32(16, 16, true);
+  outView.setUint16(20, 1, true); // PCM
+  outView.setUint16(22, channels, true);
+  outView.setUint32(24, sampleRate, true);
+  outView.setUint32(28, byteRate, true);
+  outView.setUint16(32, blockAlign, true);
+  outView.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  outView.setUint32(40, pcm16.byteLength, true);
+  new Int16Array(out, 44).set(pcm16);
+  return out;
+}
+
 // Blob.arrayBuffer() -> base64 without String.fromCharCode(...bytes), which
 // blows the call stack once the wav is more than ~100KB (a few seconds of
 // audio at 24kHz).
 async function blobToDataUri(blob: Blob): Promise<string> {
-  const buffer = await blob.arrayBuffer();
+  const buffer = floatWavToPcm16Wav(await blob.arrayBuffer());
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
   let binary = '';
