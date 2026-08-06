@@ -589,6 +589,7 @@ export default function ReaderScreen() {
         Alert.alert('Downloaded', 'Your browser can\'t hand files to the share sheet directly — the audio file downloaded instead. Attach it to a text/email manually.');
       }
     } catch (error) {
+      console.error('[ReaderScreen] Share as audio failed:', error);
       const message = error instanceof AudioShareError ? error.message : 'Could not create the audio file.';
       Alert.alert('Error', message);
     } finally {

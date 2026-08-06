@@ -60,7 +60,12 @@ export class AudioShareService {
     // kokoro-js's WASM/WebGPU path only exists in a browser.
     let uri: string;
     if (KokoroTTSService.isSupported()) {
-      uri = await KokoroTTSService.synthesize(text, DEFAULT_KOKORO_VOICE as KokoroVoice, options.rate);
+      try {
+        uri = await KokoroTTSService.synthesize(text, DEFAULT_KOKORO_VOICE as KokoroVoice, options.rate);
+      } catch (error) {
+        console.error('[AudioShareService] Kokoro synthesize failed:', error);
+        throw error;
+      }
     } else {
       if (!TTSService.hasApiKey()) {
         throw new AudioShareError('Set up your Google Cloud TTS key in Settings first.');
@@ -70,11 +75,22 @@ export class AudioShareService {
     const baseName = (options.title || 'passage').replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
 
     if (isWeb) {
-      const file = dataUriToFile(uri, baseName);
+      let file: File;
+      try {
+        file = dataUriToFile(uri, baseName);
+      } catch (error) {
+        console.error('[AudioShareService] dataUriToFile failed:', error, 'uri length:', uri?.length);
+        throw error;
+      }
       const nav = navigator as any;
-      if (nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file], title: options.title || 'Audio passage' });
-        return 'shared';
+      try {
+        if (nav.canShare?.({ files: [file] })) {
+          await nav.share({ files: [file], title: options.title || 'Audio passage' });
+          return 'shared';
+        }
+      } catch (error) {
+        console.error('[AudioShareService] navigator.share failed:', error);
+        throw error;
       }
       // Desktop browsers (and older mobile browsers) mostly can't share
       // files at all — hand the user a real file to attach themselves.

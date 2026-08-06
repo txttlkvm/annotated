@@ -94,17 +94,28 @@ export class KokoroTTSService {
           onProgress?.({ stage: 'ready', percent: 100 });
           return tts;
         } catch (error) {
+          console.error('[Kokoro] primary device load failed:', hasWebGPU ? 'webgpu' : 'wasm', error);
           // WebGPU can be present but broken (driver/flag issues) -- wasm
           // works everywhere, so it's the safety net rather than a second
           // user-facing failure.
           if (hasWebGPU) {
-            const tts = await load('wasm');
-            onProgress?.({ stage: 'ready', percent: 100 });
-            return tts;
+            try {
+              const tts = await load('wasm');
+              onProgress?.({ stage: 'ready', percent: 100 });
+              return tts;
+            } catch (wasmError) {
+              console.error('[Kokoro] wasm fallback also failed:', wasmError);
+              throw wasmError;
+            }
           }
           throw error;
         }
-      })();
+      })().catch((error) => {
+        // Don't poison future calls with a permanently-rejected promise --
+        // let the next synthesize() attempt retry from scratch.
+        this.ttsPromise = null;
+        throw error;
+      });
     }
     return this.ttsPromise;
   }
@@ -124,8 +135,20 @@ export class KokoroTTSService {
     if (cached) return cached;
 
     const tts = await this.getModel(onProgress);
-    const audio = await tts.generate(trimmed, { voice, speed });
-    const uri = await blobToDataUri(audio.toBlob());
+    let audio;
+    try {
+      audio = await tts.generate(trimmed, { voice, speed });
+    } catch (error) {
+      console.error('[Kokoro] generate() failed:', error);
+      throw error;
+    }
+    let uri;
+    try {
+      uri = await blobToDataUri(audio.toBlob());
+    } catch (error) {
+      console.error('[Kokoro] blob->data URI conversion failed:', error);
+      throw error;
+    }
     this.audioCache.set(cacheKey, uri);
     return uri;
   }
