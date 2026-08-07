@@ -362,11 +362,14 @@ function getOpenLibrarySource(title: string, author?: string) {
 }
 
 function getStandardEbooksSource(title: string) {
+  // NOT /search -- that path 404s (confirmed live while auditing this file
+  // for the same class of bug as OpenLibraryService's wrong /api/ URL
+  // earlier tonight). Standard Ebooks' real search lives at /ebooks.
   const encoded = encodeURIComponent(title);
   return {
     type: 'html' as const,
     provider: 'standard-ebooks' as const,
-    url: `https://standardebooks.org/search?query=${encoded}`,
+    url: `https://standardebooks.org/ebooks?query=${encoded}`,
   };
 }
 
