@@ -10,7 +10,7 @@ import React, {
 import { DatabaseService } from '../services/DatabaseService';
 import { Book, Bookmark, Highlight, ReadingSession, ReaderSettings, DEFAULT_READER_SETTINGS, Collection, WordLookup, BookProgress } from '../types';
 import { classicalLibrary, getClassicalLibraryWithSources, ClassicalLibraryItem, classicalLibraryByCategory, tier1Texts, tier2Texts, grammarStageMaterial, logicStageMaterial, rhetoricStageMaterial } from '../data/classicalLibrary';
-import { gutenbergIds, GutenbergRef, coverFor } from '../data/gutenbergIds';
+import { gutenbergIds, GutenbergRef, coverFor, curatedCovers } from '../data/gutenbergIds';
 import { GutenbergService, GutenbergBook, ParsedBook } from '../services/GutenbergService';
 import { EbookService } from '../services/EbookService';
 import { OpenLibraryService } from '../services/OpenLibraryService';
@@ -356,7 +356,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!ref?.textUrl) return book;
 
         const patch: Partial<Book> = { sourceUrl: ref.textUrl };
-        if (!book.cover) patch.cover = ref.coverUrl;
+        if (!book.cover) {
+          const catalogItem = CATALOG_ITEMS.get(catalogKey(book.title, book.author));
+          patch.cover = (catalogItem && coverFor(catalogItem.id)) || ref.coverUrl;
+        }
         DatabaseService.updateBook(book.id, patch).catch(error =>
           console.warn('[AppContext] Could not persist source link:', error)
         );
@@ -375,10 +378,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       // after the underlying fix shipped. Runs after the initial paint,
       // one row at a time so a slow/failed lookup for one item can't block
       // the rest.
+      //
+      // Also re-resolves rows that DO already have a cover, when a
+      // curatedCovers entry now exists and disagrees with what's stored --
+      // otherwise a book added back when its only cover was Gutenberg's
+      // auto-generated placeholder (or a bad Open Library match) would stay
+      // on that placeholder forever, since it already "has a cover" by the
+      // check above and this loop would never touch it again.
       for (const book of linked) {
-        if (book.cover) continue;
         const item = CATALOG_ITEMS.get(catalogKey(book.title, book.author));
         if (!item) continue;
+        const curated = curatedCovers[item.id];
+        if (book.cover && (!curated || book.cover === curated)) continue;
         resolveCatalogCover(item)
           .then((cover) => {
             if (!cover) return;
