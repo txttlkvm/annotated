@@ -645,7 +645,16 @@ export default function ReaderScreen() {
     // for a minute and then play nothing. Playing anything (even silence)
     // synchronously here keeps the page "unlocked" for the real audio that
     // follows, however long the async work in between takes.
-    if (Platform.OS === 'web') unlockAudioPlayback();
+    if (Platform.OS === 'web') {
+      unlockAudioPlayback();
+      // Any leftover text selection (e.g. from highlighting a passage
+      // moments earlier) stays visibly selected -- native browser
+      // behavior, nothing clears it on its own -- for the entire time
+      // Read Aloud is running, which reads as "text highlighting while
+      // it's read" even though nothing here is actually driving a
+      // highlight off playback position.
+      window.getSelection?.()?.removeAllRanges();
+    }
     if (readAloudActiveRef.current) {
       await AudioService.play();
       setIsPlaying(true);
