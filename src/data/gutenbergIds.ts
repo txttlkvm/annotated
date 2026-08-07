@@ -9,7 +9,7 @@
 // 62 of 113 catalog entries resolved (51 by the original generator, 11 more
 // added by hand afterward -- see the comment above those entries).
 
-import { Image } from 'react-native';
+import { Asset } from 'expo-asset';
 import { classicalLibrary } from './classicalLibrary';
 import { wikimediaArtwork, wikimediaComposerPortraits, openLibraryCoverIds } from './publicDomainSources';
 
@@ -17,11 +17,14 @@ import { wikimediaArtwork, wikimediaComposerPortraits, openLibraryCoverIds } fro
 // either exists -- one is a scarce, still-copyrighted 1971 paperback).
 // Bundled as local assets (assets/covers/) rather than an external URL;
 // resolved to a URI string here so curatedCovers below can stay a plain
-// Record<string, string> like everywhere else.
-const fatherBrownIncredulityUri = Image.resolveAssetSource(
+// Record<string, string> like everywhere else. Image.resolveAssetSource
+// doesn't exist on react-native-web's Image export (it crashed the whole
+// app on load -- caught live against the deployed site and fixed same
+// session); expo-asset's Asset.fromModule works on both web and native.
+const fatherBrownIncredulityUri = Asset.fromModule(
   require('../../assets/covers/father-brown-incredulity.jpg')
 ).uri;
-const manWhoWasThursdayBallantineUri = Image.resolveAssetSource(
+const manWhoWasThursdayBallantineUri = Asset.fromModule(
   require('../../assets/covers/man-who-was-thursday-ballantine.jpg')
 ).uri;
 
