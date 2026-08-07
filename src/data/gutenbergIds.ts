@@ -117,12 +117,97 @@ const ART_TITLE_BY_ID: Map<string, string> = (() => {
   return index;
 })();
 
+// Hand-curated replacements for covers that are technically "matched" but
+// ugly or wrong -- Gutenberg's auto-generated covers are either a blank
+// scanned title page or a photo of a plain library binding, not artwork.
+// Checked BEFORE the Gutenberg coverUrl in coverFor() below, so these win
+// even though a (bad) gutenbergIds cover also exists for the same id.
+// Every URL below was downloaded and visually inspected (not just
+// HTTP-200-checked) before being added here. Wikimedia thumbnail URLs are
+// used exactly as returned by the API's imageinfo/thumburl -- never
+// hand-reconstructed with a guessed width, which 404s.
+export const curatedCovers: Record<string, string> = {
+  // Hamlet -- Millais' "Ophelia" (Google Art Project scan).
+  'lit-shakespeare-hamlet': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg/960px-John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg',
+  // Aristotle's Metaphysics -- Louvre marble bust (replaces a "back of a
+  // library book" Open Library cover).
+  'phil-aristotle-metaphysics': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Aristoteles_Louvre.jpg/960px-Aristoteles_Louvre.jpg',
+  // Summa Theologica -- Gozzoli's "Triumph of St Thomas Aquinas".
+  'phil-aquinas-summa': 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Benozzo_Gozzoli_-_Triumph_of_St_Thomas_Aquinas_-_WGA10334.jpg',
+  // Second Treatise of Government -- Kneller's portrait of Locke.
+  'hist-locke-second-treatise': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Godfrey_Kneller_-_Portrait_of_John_Locke_%28Hermitage%29.jpg/960px-Godfrey_Kneller_-_Portrait_of_John_Locke_%28Hermitage%29.jpg',
+  // Federalist Papers -- "Scene at the Signing of the Constitution".
+  'hist-federalist-papers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Scene_at_the_Signing_of_the_Constitution_of_the_United_States.jpg/960px-Scene_at_the_Signing_of_the_Constitution_of_the_United_States.jpg',
+  // Anti-Federalist Papers -- Rothermel's "Patrick Henry Before the Virginia
+  // House of Burgesses" (Henry was the leading Anti-Federalist voice; had no
+  // cover or source at all before this).
+  'hist-anti-federalist-papers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Patrick_Henry_Rothermel.jpg/960px-Patrick_Henry_Rothermel.jpg',
+  // Washington's Farewell Address -- Gilbert Stuart's Lansdowne portrait.
+  'hist-washington-farewell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Gilbert_Stuart_-_George_Washington_-_Google_Art_Project.jpg/960px-Gilbert_Stuart_-_George_Washington_-_Google_Art_Project.jpg',
+  // Republic -- Raphael's "School of Athens".
+  'phil-plato-republic': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/The_School_of_Athens_by_Raphael_%28Vatican%29.jpg/960px-The_School_of_Athens_by_Raphael_%28Vatican%29.jpg',
+  // Father Brown stories -- no free period cover art exists for this 1911
+  // original work; a real studio portrait of Chesterton is a dignified
+  // improvement over Gutenberg's blank title page.
+  'lit-chesterton-father-brown': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Gilbert_Chesterton.jpg/960px-Gilbert_Chesterton.jpg',
+  // The Man Who Was Thursday -- a different Chesterton portrait so the two
+  // books look distinct from each other.
+  'lit-chesterton-man-thursday': 'https://upload.wikimedia.org/wikipedia/commons/5/5a/GK_Chesterton_%281920s%29.jpg',
+  // Desert Fathers (catalog item also covers Bede / Legenda Aurea) -- Fra
+  // Angelico's "Scenes from the Lives of the Desert Fathers" (the Thebaid).
+  'lit-hagiography': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg/960px-Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg',
+  // Foxe's Book of Martyrs -- the 1761 edition's engraved frontispiece.
+  'lit-foxe-book-of-martyrs': 'https://upload.wikimedia.org/wikipedia/commons/1/11/Foxe%27s_Book_of_Martyrs_-_Frontispiece_%281761%29.jpg',
+  // Pilgrim's Progress -- an 1821 illustrated "Plan of the Road from the
+  // City of Destruction to the Celestial City". (A William Blake illustration
+  // of Christian fighting the demon Apollyon was considered and rejected as
+  // too frightening for a family/grammar-stage app; this period map is
+  // beautiful, detailed, and age-appropriate.)
+  'lit-bunyan-pilgrims-progress': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/John_Bunyan%2C_The_Road_From_the_City_of_Destruction_to_the_Celestial_City_1821_Cornell_CUL_PJM_1038_01.jpg/960px-John_Bunyan%2C_The_Road_From_the_City_of_Destruction_to_the_Celestial_City_1821_Cornell_CUL_PJM_1038_01.jpg',
+  // Well-Tempered Clavier -- Bach's own 1722 autograph title page (distinct
+  // from the generic Bach portrait used for Goldberg Variations below).
+  'music-bach-wtc': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Bach-wtc1-title-ms.jpg/960px-Bach-wtc1-title-ms.jpg',
+  // Goldberg Variations -- Haussmann's Bach portrait (Google Art Project
+  // scan), kept distinct from the WTC manuscript image above.
+  'music-bach-goldberg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Johann_Sebastian_Bach_-_Google_Arts_Project.jpg/960px-Johann_Sebastian_Bach_-_Google_Arts_Project.jpg',
+  // Parallel Lives -- a period engraved portrait of Plutarch.
+  'bio-plutarch-parallel-lives': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Portrait_of_Plurtarch._Wellcome_M0005616.jpg/960px-Portrait_of_Plurtarch._Wellcome_M0005616.jpg',
+  // Morte d'Arthur -- Waterhouse's "The Lady of Shalott" (Google Art Project
+  // scan; a wahooart.com-watermarked copy was considered and rejected).
+  'lit-malory-morte': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/John-William-Waterhouse-The-Lady-of-Shalott.jpg/960px-John-William-Waterhouse-The-Lady-of-Shalott.jpg',
+  // Beowulf -- J.R. Skelton's "Beowulf and the Dragon".
+  'lit-beowulf': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Beowulf_and_the_dragon.jpg/960px-Beowulf_and_the_dragon.jpg',
+  // Sir Gawain and the Green Knight -- the only surviving medieval
+  // illustration of the story, from the poem's own manuscript (British
+  // Library Cotton Nero A.x): the Green Knight on horseback holding his
+  // severed head, Arthur's court above, Gawain approaching with the axe.
+  'lit-malory-gawain': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Gawain_and_the_Green_Knight.jpg/960px-Gawain_and_the_Green_Knight.jpg',
+  // Oedipus -- the canonical Attic red-figure kylix by the "Oedipus
+  // Painter" (Vatican Museums): a clothed Oedipus questioned by the Sphinx.
+  // An Ingres oil painting and a Moreau sketch were both considered and
+  // rejected for depicting Oedipus nude, inappropriate for a family app;
+  // this vase painting is the famous, textbook-standard image of the scene
+  // and shows Oedipus in a traveler's cloak and hat.
+  'lit-sophocles-oedipus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Oedipus_being_questioned_by_the_Sphinx%2C_Attic_red-figured_kylix%2C_by_the_Oedipus_Painter%2C_470-460_BC%2C_inv._16541_-_Museo_Gregoriano_Etrusco_-_Vatican_Museums_-_DSC01041.jpg/960px-thumbnail.jpg',
+  // Lord of the Rings -- an illustrated fantasy edition cover (dragon and
+  // mountain citadel), replacing a plain red leather binding with no title
+  // or art on it at all.
+  'lit-tolkien-lotr': 'https://covers.openlibrary.org/b/id/255844-L.jpg',
+  // Decline and Fall of the Roman Empire -- Thomas Cole's "The Course of
+  // Empire: Destruction".
+  'hist-gibbon-decline-fall': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Cole_Thomas_The_Course_of_Empire_Destruction_1836.jpg/960px-Cole_Thomas_The_Course_of_Empire_Destruction_1836.jpg',
+  // Democracy in America -- Théodore Chassériau's portrait of Tocqueville.
+  'hist-tocqueville-democracy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Alexis_de_tocqueville.jpg/960px-Alexis_de_tocqueville.jpg',
+};
+
 /** Cover image for a catalog entry, or undefined to use the fallback.
  * Mirrors the first three steps of resolveCatalogCover (AppContext.tsx) --
  * everything synchronous, since this powers the Catalog/Curriculum browse
  * cards rendered before an item is ever added to the library, where the
  * fourth step (a live Open Library search) isn't an option. */
 export function coverFor(itemId: string): string | undefined {
+  const curated = curatedCovers[itemId];
+  if (curated) return curated;
   const gutenberg = gutenbergIds[itemId]?.coverUrl;
   if (gutenberg) return gutenberg;
   const artTitle = ART_TITLE_BY_ID.get(itemId);
