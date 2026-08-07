@@ -13,19 +13,24 @@ import { Asset } from 'expo-asset';
 import { classicalLibrary } from './classicalLibrary';
 import { wikimediaArtwork, wikimediaComposerPortraits, openLibraryCoverIds } from './publicDomainSources';
 
-// Two covers the user supplied directly (no free-licensed hosted copy of
-// either exists -- one is a scarce, still-copyrighted 1971 paperback).
-// Bundled as local assets (assets/covers/) rather than an external URL;
-// resolved to a URI string here so curatedCovers below can stay a plain
-// Record<string, string> like everywhere else. Image.resolveAssetSource
-// doesn't exist on react-native-web's Image export (it crashed the whole
-// app on load -- caught live against the deployed site and fixed same
-// session); expo-asset's Asset.fromModule works on both web and native.
+// Covers the user supplied directly (no free-licensed hosted copy of any
+// of these exists). Bundled as local assets (assets/covers/) rather than
+// an external URL; resolved to a URI string here so curatedCovers below
+// can stay a plain Record<string, string> like everywhere else.
+// expo-asset's Asset.fromModule works on both web and native --
+// react-native-web's Image export has no resolveAssetSource, which
+// crashed the whole app on load the first time this was tried.
 const fatherBrownIncredulityUri = Asset.fromModule(
   require('../../assets/covers/father-brown-incredulity.jpg')
 ).uri;
 const manWhoWasThursdayBallantineUri = Asset.fromModule(
   require('../../assets/covers/man-who-was-thursday-ballantine.jpg')
+).uri;
+const pilgrimsProgressGiltBindingUri = Asset.fromModule(
+  require('../../assets/covers/pilgrims-progress-gilt-binding.jpg')
+).uri;
+const hamletDelacroixUri = Asset.fromModule(
+  require('../../assets/covers/hamlet-delacroix.jpg')
 ).uri;
 
 export interface GutenbergRef {
@@ -143,8 +148,10 @@ const ART_TITLE_BY_ID: Map<string, string> = (() => {
 // used exactly as returned by the API's imageinfo/thumburl -- never
 // hand-reconstructed with a guessed width, which 404s.
 export const curatedCovers: Record<string, string> = {
-  // Hamlet -- Millais' "Ophelia" (Google Art Project scan).
-  'lit-shakespeare-hamlet': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg/960px-John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg',
+  // Hamlet -- Delacroix's "Hamlet and Horatio in the Graveyard" (the
+  // Yorick's-skull scene), supplied directly by the user in place of
+  // Millais' "Ophelia" used here previously.
+  'lit-shakespeare-hamlet': hamletDelacroixUri,
   // Aristotle's Metaphysics -- Louvre marble bust (replaces a "back of a
   // library book" Open Library cover).
   'phil-aristotle-metaphysics': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Aristoteles_Louvre.jpg/960px-Aristoteles_Louvre.jpg',
@@ -176,13 +183,14 @@ export const curatedCovers: Record<string, string> = {
   'lit-hagiography': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg/960px-Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg',
   // Foxe's Book of Martyrs -- the 1761 edition's engraved frontispiece.
   'lit-foxe-book-of-martyrs': 'https://upload.wikimedia.org/wikipedia/commons/1/11/Foxe%27s_Book_of_Martyrs_-_Frontispiece_%281761%29.jpg',
-  // Pilgrim's Progress -- an ornate Art Nouveau gilt-decorated binding
-  // (British Library), title lettered on the spine. Replaces an earlier
-  // pick (an 1821 illustrated "Plan of the Road" map, which was itself a
-  // replacement for a William Blake illustration rejected as too frightening
-  // for a family/grammar-stage app) in favor of this richer, more striking
-  // binding photo, requested directly.
-  'lit-bunyan-pilgrims-progress': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/-Single_works._Pilgrim%27s_Progress%2C_Pt._1%2C_2._English_-_The_Pilgrim%27s_Progress_..._With_original_notes_by_the_Rev._Thomas_Scott_..._The_thirteenth_edition%2C_including_the_poetry_hitherto_omitt_-_Upper_cover_and_spine_%28C108b17%29.jpg/960px-thumbnail.jpg',
+  // Pilgrim's Progress -- the exact ornate gilt-decorated binding the user
+  // asked for, supplied directly (not freely hosted anywhere online).
+  // Replaces two earlier picks: a British Library binding photo used as a
+  // stand-in when this exact image wasn't yet available as a file, and
+  // before that an 1821 illustrated "Plan of the Road" map (itself a
+  // replacement for a William Blake illustration rejected as too
+  // frightening for a family/grammar-stage app).
+  'lit-bunyan-pilgrims-progress': pilgrimsProgressGiltBindingUri,
   // Well-Tempered Clavier -- Bach's own 1722 autograph title page (distinct
   // from the generic Bach portrait used for Goldberg Variations below).
   'music-bach-wtc': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Bach-wtc1-title-ms.jpg/960px-Bach-wtc1-title-ms.jpg',
