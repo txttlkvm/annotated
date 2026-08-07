@@ -146,10 +146,10 @@ export const curatedCovers: Record<string, string> = {
   'hist-washington-farewell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Gilbert_Stuart_-_George_Washington_-_Google_Art_Project.jpg/960px-Gilbert_Stuart_-_George_Washington_-_Google_Art_Project.jpg',
   // Republic -- Raphael's "School of Athens".
   'phil-plato-republic': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/The_School_of_Athens_by_Raphael_%28Vatican%29.jpg/960px-The_School_of_Athens_by_Raphael_%28Vatican%29.jpg',
-  // Father Brown stories -- no free period cover art exists for this 1911
-  // original work; a real studio portrait of Chesterton is a dignified
-  // improvement over Gutenberg's blank title page.
-  'lit-chesterton-father-brown': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Gilbert_Chesterton.jpg/960px-Gilbert_Chesterton.jpg',
+  // Father Brown stories -- an actual illustrated dust-jacket-style cover
+  // (Art Nouveau silhouette of the character), requested in place of a
+  // plain studio photo portrait of Chesterton used here previously.
+  'lit-chesterton-father-brown': 'https://covers.openlibrary.org/b/id/13848149-L.jpg',
   // The Man Who Was Thursday -- a different Chesterton portrait so the two
   // books look distinct from each other.
   'lit-chesterton-man-thursday': 'https://upload.wikimedia.org/wikipedia/commons/5/5a/GK_Chesterton_%281920s%29.jpg',
@@ -158,12 +158,13 @@ export const curatedCovers: Record<string, string> = {
   'lit-hagiography': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg/960px-Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg',
   // Foxe's Book of Martyrs -- the 1761 edition's engraved frontispiece.
   'lit-foxe-book-of-martyrs': 'https://upload.wikimedia.org/wikipedia/commons/1/11/Foxe%27s_Book_of_Martyrs_-_Frontispiece_%281761%29.jpg',
-  // Pilgrim's Progress -- an 1821 illustrated "Plan of the Road from the
-  // City of Destruction to the Celestial City". (A William Blake illustration
-  // of Christian fighting the demon Apollyon was considered and rejected as
-  // too frightening for a family/grammar-stage app; this period map is
-  // beautiful, detailed, and age-appropriate.)
-  'lit-bunyan-pilgrims-progress': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/John_Bunyan%2C_The_Road_From_the_City_of_Destruction_to_the_Celestial_City_1821_Cornell_CUL_PJM_1038_01.jpg/960px-John_Bunyan%2C_The_Road_From_the_City_of_Destruction_to_the_Celestial_City_1821_Cornell_CUL_PJM_1038_01.jpg',
+  // Pilgrim's Progress -- an ornate Art Nouveau gilt-decorated binding
+  // (British Library), title lettered on the spine. Replaces an earlier
+  // pick (an 1821 illustrated "Plan of the Road" map, which was itself a
+  // replacement for a William Blake illustration rejected as too frightening
+  // for a family/grammar-stage app) in favor of this richer, more striking
+  // binding photo, requested directly.
+  'lit-bunyan-pilgrims-progress': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/-Single_works._Pilgrim%27s_Progress%2C_Pt._1%2C_2._English_-_The_Pilgrim%27s_Progress_..._With_original_notes_by_the_Rev._Thomas_Scott_..._The_thirteenth_edition%2C_including_the_poetry_hitherto_omitt_-_Upper_cover_and_spine_%28C108b17%29.jpg/960px-thumbnail.jpg',
   // Well-Tempered Clavier -- Bach's own 1722 autograph title page (distinct
   // from the generic Bach portrait used for Goldberg Variations below).
   'music-bach-wtc': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Bach-wtc1-title-ms.jpg/960px-Bach-wtc1-title-ms.jpg',
@@ -198,6 +199,108 @@ export const curatedCovers: Record<string, string> = {
   'hist-gibbon-decline-fall': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Cole_Thomas_The_Course_of_Empire_Destruction_1836.jpg/960px-Cole_Thomas_The_Course_of_Empire_Destruction_1836.jpg',
   // Democracy in America -- Théodore Chassériau's portrait of Tocqueville.
   'hist-tocqueville-democracy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Alexis_de_tocqueville.jpg/960px-Alexis_de_tocqueville.jpg',
+
+  // --- Second curation pass ---
+
+  // Nicomachean Ethics -- a Roman marble bust of Aristotle (Palazzo Altemps),
+  // distinct from the Louvre bust used for Metaphysics and from Politics below.
+  'phil-aristotle-ethics': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Aristotle_Altemps_Inv8575.jpg/960px-Aristotle_Altemps_Inv8575.jpg',
+  // Politics -- Leo von Klenze's "Ideal View of the Acropolis and the
+  // Areopagus at Athens": civic imagery instead of another portrait bust.
+  'phil-aristotle-politics': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Leo_von_Klenze_-_The_Acropolis_at_Athens_-_WGA12199.jpg/960px-Leo_von_Klenze_-_The_Acropolis_at_Athens_-_WGA12199.jpg',
+  // Confessions -- Botticelli's fresco "Saint Augustine in His Study", fitting
+  // the introspective/conversion theme; distinct from On Christian Doctrine's
+  // teaching-themed Augustine image below.
+  'phil-augustine-confessions': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Sandro_botticelli%2C_sant%27agostino_nello_studio%2C_1480_circa%2C_dall%27ex-coro_dei_frati_umiliati%2C_01.jpg/960px-Sandro_botticelli%2C_sant%27agostino_nello_studio%2C_1480_circa%2C_dall%27ex-coro_dei_frati_umiliati%2C_01.jpg',
+  // History of the Peloponnesian War -- a museum bust of Thucydides, cropped
+  // to head/neck only.
+  'hist-thucydides-war': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Thucydides-bust-cutout_ROM.jpg/960px-Thucydides-bust-cutout_ROM.jpg',
+
+  // Michelangelo's David and Pietà, and Fra Angelico's Annunciation -- these
+  // three already had entries in wikimediaArtwork (below), but keyed by a
+  // title string ('David', 'Pietà', 'Annunciation (Fra Angelico)') that
+  // never matched the actual classicalLibrary titles ('Michelangelo
+  // (David)', 'Michelangelo (Pietà)', 'Fra Angelico (Annunciation)') --
+  // so the art was never actually shown. Added here, keyed by id, so they
+  // resolve regardless of that mismatch.
+  'art-michelangelo-david': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Michelangelo%27s_David_2015.jpg/1280px-Michelangelo%27s_David_2015.jpg',
+  'art-michelangelo-pieta': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg/1280px-Michelangelo%27s_Pieta_5450_cropncleaned_edit.jpg',
+  'art-fra-angelico-annunciation': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Fra_Angelico_-_The_Annunciation.jpg/1280px-Fra_Angelico_-_The_Annunciation.jpg',
+
+  // On the Origin of Species -- Julia Margaret Cameron's c.1868 portrait of Darwin.
+  'sci-darwin-origin': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Charles_Darwin_by_Julia_Margaret_Cameron%2C_c._1868.jpg/960px-Charles_Darwin_by_Julia_Margaret_Cameron%2C_c._1868.jpg',
+  // Calculus (Newton-Leibniz Development) -- a portrait of Leibniz, distinct
+  // from the Principia title page used for Newton's own work below.
+  'math-newton-leibniz-calculus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Christoph_Bernhard_Francke_-_Bildnis_des_Philosophen_Leibniz_%28ca._1695%29.jpg/960px-Christoph_Bernhard_Francke_-_Bildnis_des_Philosophen_Leibniz_%28ca._1695%29.jpg',
+  // Principia Mathematica -- the actual title page of the 1687 first edition.
+  'sci-newton-principia': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Newton_-_Principia_%281687%29%2C_title%2C_p._5%2C_color.jpg/960px-Newton_-_Principia_%281687%29%2C_title%2C_p._5%2C_color.jpg',
+
+  // Constitutional Critiques & Second Bill of Rights (1944) -- a 1944 color
+  // photo of FDR, the same year as his Second Bill of Rights address; a
+  // 20th-century photograph reads clearly distinct from the founding-era
+  // oil paintings used elsewhere.
+  'hist-wilson-critique': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/FDR_1944_Color_Portrait.jpg/960px-FDR_1944_Color_Portrait.jpg',
+  // Declaration of Independence & U.S. Constitution -- Trumbull's iconic
+  // "Declaration of Independence" (Capitol Rotunda, on the $2 bill),
+  // distinct from the "Signing of the Constitution" painting used for the
+  // Federalist Papers above (different artist, composition, and moment).
+  'hist-declaration-constitution': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg/960px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg',
+  // Second Inaugural Address -- a period photograph of the ceremony itself
+  // (Capitol east portico, March 1865), not another Lincoln portrait.
+  'hist-lincoln-second-inaugural': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Lincoln%27s_second_inaugural_LCCN00650938.jpg/960px-Lincoln%27s_second_inaugural_LCCN00650938.jpg',
+  // Gettysburg Address -- the Bliss copy, Lincoln's own handwritten
+  // manuscript of the address; a manuscript image reads clearly distinct
+  // from the Second Inaugural's ceremony photo above.
+  'hist-lincoln-gettysburg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Gettysburg_Address_Bliss_copy.jpg/960px-Gettysburg_Address_Bliss_copy.jpg',
+  // Cato: A Tragedy -- a 17th-century engraved portrait of the historical
+  // Cato the Younger in Roman dress, the play's subject; ancient-Rome
+  // subject matter reads distinct from the other founding-era items above.
+  'hist-addison-cato': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Portret_van_Marcus_Porcius_Cato_Uticensis_minor_Illustrium_philosophorum_et_poetarum_effigies_%28serietitel%29_Portretten_van_Griekse_en_Romeinse_filosofen_en_schrijvers_%28serietitel%29%2C_RP-P-2007-361.jpg/960px-thumbnail.jpg',
+
+  // Orthodoxy -- a Max Beerbohm caricature of Chesterton: a third, visually
+  // distinct Chesterton image (the other two are photographs, used for
+  // Father Brown and The Man Who Was Thursday).
+  'phil-chesterton-orthodoxy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Caricature_of_Chesterton%2C_by_Beerbohm.jpg/960px-Caricature_of_Chesterton%2C_by_Beerbohm.jpg',
+  // On Christian Doctrine -- Gozzoli's fresco "St Augustine Teaching in
+  // Rome" (a teaching/preaching scene, fitting this specific work), distinct
+  // from the Confessions cover above (a contemplative, conversion-themed
+  // Augustine image).
+  'theo-augustine-doctrine': 'https://upload.wikimedia.org/wikipedia/commons/3/33/St_Augustine_Teaching_in_Rome.jpg',
+  // Rules of Civility & Decent Behaviour -- Peale's 1772 portrait of a
+  // young Colonel Washington in militia uniform, distinct from the older,
+  // standing, presidential Gilbert Stuart portrait used for the Farewell
+  // Address above.
+  'supp-washington-rules-civility': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Washington_1772.jpg/960px-Washington_1772.jpg',
+  // Household Writings -- a period portrait of Richard Baxter.
+  'supp-baxter-household': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Gustavus_Ellinthorpe_Sintzenich_%28c.1821-1892%29_%28and_studio%29_-_Richard_Baxter_%281615%E2%80%931691%29_-_28_-_Mansfield_College.jpg',
+
+  // The Quran -- a folio from the 9th/10th-century "Blue Qur'an" (gold
+  // Kufic script on indigo vellum), a beautifully illuminated historic
+  // manuscript rather than a modern printed cover.
+  'supp-quran': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Brooklyn_Museum_-_Folio_from_the_%22Blue%22_Qur%27an.jpg/960px-Brooklyn_Museum_-_Folio_from_the_%22Blue%22_Qur%27an.jpg',
+  // Islamic Golden Age Unit -- a 984 AD Iranian planispheric astrolabe,
+  // distinct in subject and color from the Qur'an folio above.
+  'supp-islamic-golden-age': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/MIA_-_Planispheric_Astrolabe%2C_Iran%2C_984_AD_%28cropped%29.jpg/960px-MIA_-_Planispheric_Astrolabe%2C_Iran%2C_984_AD_%28cropped%29.jpg',
+  // Defenders of the West -- a period portrait of King John III Sobieski of
+  // Poland, who relieved the Siege of Vienna in 1683.
+  'read-defenders-west': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Jan_Tricius_-_Portrait_of_John_III_Sobieski_%28ca._1680%29_-_Google_Art_Project.jpg/960px-Jan_Tricius_-_Portrait_of_John_III_Sobieski_%28ca._1680%29_-_Google_Art_Project.jpg',
+  // The Sword and the Scimitar -- a 15th-century illuminated manuscript
+  // page of crusaders embarking for the Seventh Crusade (departure/journey,
+  // not combat), distinct from the Sobieski portrait above.
+  'read-sword-scimitar': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/D%C3%A9part_pour_la_septi%C3%A8me_croisade_-_Fran%C3%A7ais_22495.jpg/960px-D%C3%A9part_pour_la_septi%C3%A8me_croisade_-_Fran%C3%A7ais_22495.jpg',
+  // The Servile State -- a 1910 studio portrait of Hilaire Belloc.
+  'phil-belloc-servile-state': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Hilaire_Belloc_1910.jpg/960px-Hilaire_Belloc_1910.jpg',
+
+  // If— -- an 1895 studio portrait of Rudyard Kipling.
+  'mem-kipling-if': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Rudyard_Kipling_%28portrait%29.jpg/960px-Rudyard_Kipling_%28portrait%29.jpg',
+  // Booker T. Washington biography -- the iconic Frances Benjamin Johnston
+  // studio photograph, c. 1895.
+  'bio-washington-booker-t': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Booker_T._Washington_by_Francis_Benjamin_Johnston%2C_c._1895.jpg/960px-Booker_T._Washington_by_Francis_Benjamin_Johnston%2C_c._1895.jpg',
+  // Jonathan Edwards biography -- the "Princeton Portrait" oil painting.
+  'bio-edwards-jonathan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Jonathan_Edwards_%28Princeton_Portrait%29.jpg/960px-Jonathan_Edwards_%28Princeton_Portrait%29.jpg',
+  // Wheelock's Latin -- the actual 6th-edition textbook cover (Roman
+  // mosaic), not a blank title-page scan.
+  'lang-wheelock-latin': 'https://covers.openlibrary.org/b/id/41996-L.jpg',
 };
 
 /** Cover image for a catalog entry, or undefined to use the fallback.
