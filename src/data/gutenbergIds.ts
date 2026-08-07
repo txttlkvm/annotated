@@ -9,8 +9,21 @@
 // 62 of 113 catalog entries resolved (51 by the original generator, 11 more
 // added by hand afterward -- see the comment above those entries).
 
+import { Image } from 'react-native';
 import { classicalLibrary } from './classicalLibrary';
 import { wikimediaArtwork, wikimediaComposerPortraits, openLibraryCoverIds } from './publicDomainSources';
+
+// Two covers the user supplied directly (no free-licensed hosted copy of
+// either exists -- one is a scarce, still-copyrighted 1971 paperback).
+// Bundled as local assets (assets/covers/) rather than an external URL;
+// resolved to a URI string here so curatedCovers below can stay a plain
+// Record<string, string> like everywhere else.
+const fatherBrownIncredulityUri = Image.resolveAssetSource(
+  require('../../assets/covers/father-brown-incredulity.jpg')
+).uri;
+const manWhoWasThursdayBallantineUri = Image.resolveAssetSource(
+  require('../../assets/covers/man-who-was-thursday-ballantine.jpg')
+).uri;
 
 export interface GutenbergRef {
   gutenbergId: number;
@@ -146,13 +159,15 @@ export const curatedCovers: Record<string, string> = {
   'hist-washington-farewell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Gilbert_Stuart_-_George_Washington_-_Google_Art_Project.jpg/960px-Gilbert_Stuart_-_George_Washington_-_Google_Art_Project.jpg',
   // Republic -- Raphael's "School of Athens".
   'phil-plato-republic': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/The_School_of_Athens_by_Raphael_%28Vatican%29.jpg/960px-The_School_of_Athens_by_Raphael_%28Vatican%29.jpg',
-  // Father Brown stories -- an actual illustrated dust-jacket-style cover
-  // (Art Nouveau silhouette of the character), requested in place of a
-  // plain studio photo portrait of Chesterton used here previously.
-  'lit-chesterton-father-brown': 'https://covers.openlibrary.org/b/id/13848149-L.jpg',
-  // The Man Who Was Thursday -- a different Chesterton portrait so the two
-  // books look distinct from each other.
-  'lit-chesterton-man-thursday': 'https://upload.wikimedia.org/wikipedia/commons/5/5a/GK_Chesterton_%281920s%29.jpg',
+  // Father Brown stories -- the real "Incredulity of Father Brown" dust
+  // jacket, supplied directly by the user (not freely hosted anywhere else).
+  'lit-chesterton-father-brown': fatherBrownIncredulityUri,
+  // The Man Who Was Thursday -- the real Ballantine Adult Fantasy #02305
+  // (1971) wraparound cover by Gervasio Gallardo, supplied directly by the
+  // user. It's reportedly the scarcest volume in the whole 88-book series,
+  // still under copyright, and not hosted anywhere free/public -- hence a
+  // local asset rather than an external URL, same as Father Brown above.
+  'lit-chesterton-man-thursday': manWhoWasThursdayBallantineUri,
   // Desert Fathers (catalog item also covers Bede / Legenda Aurea) -- Fra
   // Angelico's "Scenes from the Lives of the Desert Fathers" (the Thebaid).
   'lit-hagiography': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg/960px-Fra_Angelico_-_Scenes_from_the_Lives_of_the_Desert_Fathers_%28Thebaid%29_-_Google_Art_Project.jpg',
