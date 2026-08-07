@@ -144,8 +144,13 @@ export class GutenbergService {
   }
 
   /**
-   * Strip Project Gutenberg's license header and footer.
-   * The markers have shifted wording over the years, so match loosely.
+   * Strip Project Gutenberg's license header and footer, plus two
+   * transcription artifacts that leak into the reading experience: a
+   * leading "Transcriber's Note" (meta-commentary about the transcription,
+   * not the book) and underscore italics (`_word_`), Gutenberg's plain-text
+   * convention for italic markup, which otherwise render as literal
+   * underscores. The markers have shifted wording over the years, so match
+   * loosely.
    */
   static stripBoilerplate(raw: string): string {
     let text = raw.replace(/\r\n/g, '\n');
@@ -159,6 +164,18 @@ export class GutenbergService {
     if (end && end.index !== undefined) {
       text = text.slice(0, end.index);
     }
+
+    text = text.trim();
+
+    // A Transcriber's Note (when present) always sits right after the
+    // START marker, and always ends before a much bigger gap than its own
+    // internal line spacing -- the real title page/body follows a run of
+    // 3+ newlines, never seen *within* the note itself.
+    text = text.replace(/^\s*Transcribers?'?s?\s+Notes?:?[\s\S]*?\n{3,}/i, '');
+
+    // `_word_` or `_a short phrase_` -> plain text. Bounded to 120 chars and
+    // excluding newlines so it can never span a paragraph break.
+    text = text.replace(/_([^_\n]{1,120}?)_/g, '$1');
 
     return text.trim();
   }
@@ -179,36 +196,59 @@ export class GutenbergService {
     const chapterPattern =
       /^(chapter|book|canto|part|act|scene|letter|psalm)\s+([ivxlcdm\d]+)\b/i;
 
-    const paragraphs: Paragraph[] = [];
-    const chapters: Chapter[] = [];
+    const rawChapters: { title: string; startParagraph: number }[] = [];
+    const paragraphTexts: string[] = [];
     let wordCount = 0;
 
     for (const block of blocks) {
       const isHeading = chapterPattern.test(block) && block.length < 120;
 
       if (isHeading) {
-        chapters.push({
-          index: chapters.length,
-          title: block,
-          startParagraph: paragraphs.length,
-        });
+        rawChapters.push({ title: block, startParagraph: paragraphTexts.length });
         continue;
       }
 
       // One source block may yield several sync units if it is very long.
       for (const piece of splitOversized(block)) {
-        paragraphs.push({
-          index: paragraphs.length,
-          text: piece,
-          chapter: Math.max(0, chapters.length - 1),
-        });
+        paragraphTexts.push(piece);
       }
       wordCount += block.split(/\s+/).length;
     }
 
+    // A front-matter table of contents produces a run of heading-pattern
+    // blocks with nothing but blank lines between them ("BOOK I. / BOOK II.
+    // / ..."), before the real chapters -- which always have body text --
+    // start over from the beginning. A real chapter heading is never
+    // immediately followed by another heading with zero paragraphs between
+    // them except in that listing, so any heading sharing its
+    // startParagraph with another one is TOC noise, not real structure.
+    const startCounts = new Map<number, number>();
+    for (const c of rawChapters) {
+      startCounts.set(c.startParagraph, (startCounts.get(c.startParagraph) ?? 0) + 1);
+    }
+    const chapters: Chapter[] = rawChapters
+      .filter((c) => startCounts.get(c.startParagraph) === 1)
+      .map((c, index) => ({ index, title: c.title, startParagraph: c.startParagraph }));
+
     // Books with no detectable headings still need one container chapter.
     if (!chapters.length) {
       chapters.push({ index: 0, title: 'Full Text', startParagraph: 0 });
+    }
+
+    // Assign each paragraph to the chapter whose range contains it. Done as
+    // its own pass (rather than during the block loop above) because
+    // filtering TOC noise out of rawChapters shifts which chapter a given
+    // paragraph actually falls under.
+    const paragraphs: Paragraph[] = [];
+    let chapterCursor = 0;
+    for (let i = 0; i < paragraphTexts.length; i++) {
+      while (
+        chapterCursor + 1 < chapters.length &&
+        chapters[chapterCursor + 1].startParagraph <= i
+      ) {
+        chapterCursor++;
+      }
+      paragraphs.push({ index: i, text: paragraphTexts[i], chapter: chapterCursor });
     }
 
     return { paragraphs, chapters, wordCount };
