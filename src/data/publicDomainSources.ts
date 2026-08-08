@@ -522,6 +522,14 @@ const wikimediaMusicPlaylists: Record<string, string[]> = {
     'https://upload.wikimedia.org/wikipedia/commons/0/04/Missa_Papae_Marcelli_-_V._Agnus_Dei_I.flac',
     'https://upload.wikimedia.org/wikipedia/commons/6/63/Missa_Papae_Marcelli_-_VI._Agnus_Dei_II.flac',
   ],
+  // All 4 movements, one consistent real-orchestral recording (Musopen
+  // Symphony / Czech National Symphony Orchestra, public domain).
+  'Symphony No. 3 in E-flat major, "Eroica"': [
+    'https://upload.wikimedia.org/wikipedia/commons/9/99/Beethoven_-_Symphony_No._3_in_E_flat_major%2C_Op._55_%27Eroica%27_-_I._Allegro_con_brio_%28Musopen_Symphony%29.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/c/cd/Beethoven_-_Symphony_No._3_in_E_flat_major%2C_Op._55_%27Eroica%27_-_II._Marcia_funebre._Adagio_assai_%28Musopen_Symphony%29.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/8/8a/Beethoven_-_Symphony_No._3_in_E_flat_major%2C_Op._55_%27Eroica%27_-_III._Scherzo._Allegro_vivace_%28Musopen_Symphony%29.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/f/fc/Beethoven_-_Symphony_No._3_in_E_flat_major%2C_Op._55_%27Eroica%27_-_IV._Finale._Allegro_molto_%28Musopen_Symphony%29.flac',
+  ],
 };
 
 // Direct, verified public-domain recordings (real HTTP 200 + audio content-

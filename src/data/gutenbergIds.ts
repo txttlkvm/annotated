@@ -130,6 +130,15 @@ export const gutenbergIds: Record<string, GutenbergRef> = {
   'phil-pascal-pensees': { gutenbergId: 18269, coverUrl: 'https://www.gutenberg.org/cache/epub/18269/pg18269.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/18269.txt.utf-8' },
   'phil-bacon-essays': { gutenbergId: 575, coverUrl: 'https://www.gutenberg.org/cache/epub/575/pg575.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/575.txt.utf-8' },
   'phil-bacon-novum-organum': { gutenbergId: 45988, coverUrl: 'https://www.gutenberg.org/cache/epub/45988/pg45988.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/45988.txt.utf-8' },
+
+  // The Apostles', Nicene, and Athanasian creeds are too short to have
+  // their own standalone Gutenberg edition (confirmed: zero Gutendex
+  // results for "Nicene Creed"), but all three appear in full in The Book
+  // of Common Prayer, which does -- same "point at an existing source"
+  // convention as the Bible-sourced memorization items above.
+  'mem-apostles-creed': { gutenbergId: 29622, coverUrl: 'https://www.gutenberg.org/cache/epub/29622/pg29622.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/29622.txt.utf-8' },
+  'mem-nicene-creed': { gutenbergId: 29622, coverUrl: 'https://www.gutenberg.org/cache/epub/29622/pg29622.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/29622.txt.utf-8' },
+  'mem-athanasian-creed': { gutenbergId: 29622, coverUrl: 'https://www.gutenberg.org/cache/epub/29622/pg29622.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/29622.txt.utf-8' },
 };
 
 // Only used for the two cover sources that resolve synchronously with no
@@ -398,6 +407,14 @@ export const curatedCovers: Record<string, string> = {
   // Novum Organum -- the famous 1620 engraved frontispiece to the
   // Instauratio Magna, a ship sailing between the Pillars of Hercules.
   'phil-bacon-novum-organum': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Novum_Organum.jpg/960px-Novum_Organum.jpg',
+  // Symphony No. 3 "Eroica" -- Joseph Karl Stieler's iconic 1820 portrait
+  // of Beethoven holding the Missa Solemnis manuscript.
+  'music-beethoven-symphony-3': 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Joseph_Karl_Stieler%27s_Beethoven_mit_dem_Manuskript_der_Missa_solemnis.jpg',
+
+  // --- 3 new historical reference maps ---
+  'map-roman-empire': 'https://upload.wikimedia.org/wikipedia/commons/0/00/Roman_Empire_Trajan_117AD.png',
+  'map-ancient-israel': 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Kingdom_of_Israel_1020_map.svg',
+  'map-medieval-world': 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Map_of_Europe_in_1200.png',
 };
 
 /** Cover image for a catalog entry, or undefined to use the fallback.

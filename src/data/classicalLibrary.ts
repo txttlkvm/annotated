@@ -494,6 +494,19 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     notes: 'Studied in Tier 2 arts sequence'
   },
 
+  {
+    id: 'music-beethoven-symphony-3',
+    title: 'Symphony No. 3 in E-flat major, "Eroica"',
+    author: 'Ludwig van Beethoven',
+    category: 'music',
+    tier: 1,
+    stage: 'rhetoric',
+    grade: 10,
+    type: 'music',
+    description: 'The symphony that broke from Classical form into Romantic scale and drama; heroism and its cost.',
+    notes: 'Rhetoric stage; pairs with the Bach works in the arts sequence'
+  },
+
   // Biography - The Great Men Track - Tier 1
   {
     id: 'bio-plutarch-parallel-lives',
@@ -1349,6 +1362,45 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
   },
 
   {
+    id: 'map-roman-empire',
+    title: 'Map of the Roman Empire',
+    author: 'Various',
+    category: 'history',
+    tier: 1,
+    stage: 'grammar',
+    grade: 4,
+    type: 'art',
+    description: 'The empire at its territorial height under Trajan (117 AD); geographic reference for Roman history and the New Testament world.',
+    notes: 'Reference map; used alongside Roman history and Scripture readings'
+  },
+
+  {
+    id: 'map-ancient-israel',
+    title: 'Map of Ancient Israel (United Monarchy)',
+    author: 'Various',
+    category: 'history',
+    tier: 1,
+    stage: 'grammar',
+    grade: 3,
+    type: 'art',
+    description: 'The kingdom under Saul and David, with neighboring nations (Philistia, Moab, Edom, Aram) for context; geographic reference for Old Testament history.',
+    notes: 'Reference map; used alongside Scripture and ancient history readings'
+  },
+
+  {
+    id: 'map-medieval-world',
+    title: 'Map of the Medieval World',
+    author: 'Various',
+    category: 'history',
+    tier: 1,
+    stage: 'logic',
+    grade: 6,
+    type: 'art',
+    description: 'Europe and the Near East circa 1200 AD -- the Holy Roman Empire, Byzantine Empire, Crusader Jerusalem, and the Islamic caliphates side by side.',
+    notes: 'Reference map; used alongside medieval history readings'
+  },
+
+  {
     id: 'art-giotto-scrovegni',
     title: 'Giotto (Scrovegni Chapel)',
     author: 'Giotto di Bondone',
@@ -1621,6 +1673,32 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     type: 'book',
     description: 'Foundational Christian theology; part of morning rhythm.',
     notes: 'Grammar stage; daily recitation'
+  },
+
+  {
+    id: 'mem-nicene-creed',
+    title: 'Nicene Creed (Memorized)',
+    author: 'Council of Nicaea / Constantinople',
+    category: 'theology',
+    tier: 1,
+    stage: 'logic',
+    grade: 6,
+    type: 'book',
+    description: 'The Church\'s definitive answer to the Arian controversy; the fuller, conciliar counterpart to the Apostles\' Creed.',
+    notes: 'Logic stage; builds on the Apostles\' Creed memorized in grammar stage'
+  },
+
+  {
+    id: 'mem-athanasian-creed',
+    title: 'Athanasian Creed (Memorized)',
+    author: 'Attributed to Athanasius (Western, 5th-6th c.)',
+    category: 'theology',
+    tier: 1,
+    stage: 'rhetoric',
+    grade: 9,
+    type: 'book',
+    description: 'The most precisely worded Trinitarian and Christological statement of the historic creeds.',
+    notes: 'Rhetoric stage; the most theologically demanding of the three creeds'
   },
 
   {
