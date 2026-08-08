@@ -34,6 +34,36 @@ import { OpenLibraryService } from '../services/OpenLibraryService';
 /** sourceUrl -> boilerplate-stripped text. Module scope: survives remounts. */
 const textCache = new Map<string, string>();
 
+/**
+ * Which book was on the desk, so the Read tab can resume it instead of
+ * showing "No manuscript selected" on every fresh load -- currentBook
+ * itself is plain useState with no persistence, so a page reload (or a
+ * direct visit to /reading) always started from null before this.
+ * Same defensive-localStorage-access pattern as DatabaseService.
+ */
+const LAST_BOOK_ID_KEY = 'annotated:lastBookId';
+
+function getLastBookId(): string | null {
+  try {
+    return typeof globalThis !== 'undefined' && (globalThis as any).localStorage
+      ? (globalThis as any).localStorage.getItem(LAST_BOOK_ID_KEY)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLastBookId(id: string | null): void {
+  try {
+    const storage = typeof globalThis !== 'undefined' ? (globalThis as any).localStorage : null;
+    if (!storage) return;
+    if (id) storage.setItem(LAST_BOOK_ID_KEY, id);
+    else storage.removeItem(LAST_BOOK_ID_KEY);
+  } catch {
+    // Storage unavailable/blocked (private mode, quota) -- resume just won't work this session.
+  }
+}
+
 /** sourceUrl -> in-flight request, so a second open never fires a second fetch. */
 const inFlight = new Map<string, Promise<string>>();
 
@@ -335,9 +365,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
   /** Monotonic request id — only the newest download may own the status. */
   const requestSeq = useRef(0);
+  /**
+   * Guards against a mount-order race: this effect and loadBooks() both run
+   * on mount, and this one fires first (declared first) with currentBook
+   * still at its initial null -- writing that null would wipe the very
+   * lastBookId loadBooks() is about to read to restore the resumed book.
+   * Sat true once loadBooks's restore attempt (found or not) is done.
+   */
+  const lastBookHydratedRef = useRef(false);
 
   useEffect(() => {
     currentBookRef.current = currentBook;
+    if (lastBookHydratedRef.current) setLastBookId(currentBook?.id ?? null);
   }, [currentBook]);
 
   useEffect(() => {
@@ -367,6 +406,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
       setBooks(linked);
+
+      // Resume whatever book was on the desk last session, so the Read tab
+      // doesn't show "No manuscript selected" on every fresh load.
+      const lastId = getLastBookId();
+      if (lastId) {
+        const last = linked.find((b) => b.id === lastId);
+        if (last) setCurrentBook(last);
+      }
 
       // Backfill covers for library items added before a given step in
       // resolveCatalogCover's fallback chain existed -- most notably
@@ -403,6 +450,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Load books error:', error);
     } finally {
+      lastBookHydratedRef.current = true;
       setIsLoading(false);
     }
   };

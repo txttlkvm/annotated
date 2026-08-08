@@ -266,6 +266,8 @@ export default function ReaderScreen() {
   const settings = useMemo(() => withReaderDefaults(storedSettings), [storedSettings]);
 
   const [currentPage, setCurrentPage] = useState(0);
+  /** True once we've applied the one-time page restore for a resumed book — after that, a real book switch should reset to page 0 as before. */
+  const restoredInitialPageRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
@@ -481,7 +483,10 @@ export default function ReaderScreen() {
     setSearchQuery('');
   };
 
-  // Reset to the opening page whenever a different book is put on the desk.
+  // Reset to the opening page whenever a different book is put on the desk
+  // -- EXCEPT the very first time, when AppContext has just resumed
+  // whatever book was on the desk last session: that one restores its
+  // saved reading position instead of snapping back to page 1.
   // Explicitly stops audio here too, not just via the safePage-keyed effect
   // below: if the previous book happened to also be sitting on page 0,
   // setCurrentPage(0) wouldn't actually change safePage's value, and that
@@ -490,7 +495,20 @@ export default function ReaderScreen() {
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
     AudioService.stop().catch(() => {});
-    setCurrentPage(0);
+    if (!restoredInitialPageRef.current && currentBook) {
+      // currentProgress is persisted (unlike the in-memory bookProgress
+      // map) via the unmount effect below, and is 1-indexed (endPage + 1).
+      // Not clamped against totalPages here: the text -- and therefore the
+      // real page count -- usually hasn't finished loading yet at this
+      // point; `safePage` downstream already clamps against the live
+      // totalPages on every render, so this only needs to seed a
+      // reasonable starting value.
+      const saved = (currentBook.currentProgress || 1) - 1;
+      setCurrentPage(Math.max(0, saved));
+    } else {
+      setCurrentPage(0);
+    }
+    restoredInitialPageRef.current = true;
     setIsPlaying(false);
     setChromeVisible(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
