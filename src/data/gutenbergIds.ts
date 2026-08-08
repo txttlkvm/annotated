@@ -191,12 +191,10 @@ export const curatedCovers: Record<string, string> = {
   // replacement for a William Blake illustration rejected as too
   // frightening for a family/grammar-stage app).
   'lit-bunyan-pilgrims-progress': pilgrimsProgressGiltBindingUri,
-  // Well-Tempered Clavier -- Bach's own 1722 autograph title page (distinct
-  // from the generic Bach portrait used for Goldberg Variations below).
+  // Well-Tempered Clavier -- Bach's own 1722 autograph title page. (Goldberg
+  // Variations, Mass in B Minor, and Brandenburg Concertos each have their
+  // own distinct cover further below -- see the third curation pass.)
   'music-bach-wtc': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Bach-wtc1-title-ms.jpg/960px-Bach-wtc1-title-ms.jpg',
-  // Goldberg Variations -- Haussmann's Bach portrait (Google Art Project
-  // scan), kept distinct from the WTC manuscript image above.
-  'music-bach-goldberg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Johann_Sebastian_Bach_-_Google_Arts_Project.jpg/960px-Johann_Sebastian_Bach_-_Google_Arts_Project.jpg',
   // Parallel Lives -- a period engraved portrait of Plutarch.
   'bio-plutarch-parallel-lives': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Portrait_of_Plurtarch._Wellcome_M0005616.jpg/960px-Portrait_of_Plurtarch._Wellcome_M0005616.jpg',
   // Morte d'Arthur -- Waterhouse's "The Lady of Shalott" (Google Art Project
@@ -238,6 +236,11 @@ export const curatedCovers: Record<string, string> = {
   // the introspective/conversion theme; distinct from On Christian Doctrine's
   // teaching-themed Augustine image below.
   'phil-augustine-confessions': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Sandro_botticelli%2C_sant%27agostino_nello_studio%2C_1480_circa%2C_dall%27ex-coro_dei_frati_umiliati%2C_01.jpg/960px-Sandro_botticelli%2C_sant%27agostino_nello_studio%2C_1480_circa%2C_dall%27ex-coro_dei_frati_umiliati%2C_01.jpg',
+  // Confessions (in Latin) -- same underlying book as phil-augustine-
+  // confessions above (same Gutenberg edition, different catalogue id for
+  // the Latin-language track); it never got the same cover because it's a
+  // separate id. Same Botticelli image.
+  'lang-augustine-confessions-latin': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Sandro_botticelli%2C_sant%27agostino_nello_studio%2C_1480_circa%2C_dall%27ex-coro_dei_frati_umiliati%2C_01.jpg/960px-Sandro_botticelli%2C_sant%27agostino_nello_studio%2C_1480_circa%2C_dall%27ex-coro_dei_frati_umiliati%2C_01.jpg',
   // History of the Peloponnesian War -- a museum bust of Thucydides, cropped
   // to head/neck only.
   'hist-thucydides-war': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Thucydides-bust-cutout_ROM.jpg/960px-Thucydides-bust-cutout_ROM.jpg',
@@ -327,6 +330,50 @@ export const curatedCovers: Record<string, string> = {
   // Wheelock's Latin -- the actual 6th-edition textbook cover (Roman
   // mosaic), not a blank title-page scan.
   'lang-wheelock-latin': 'https://covers.openlibrary.org/b/id/41996-L.jpg',
+
+  // --- Third curation pass: Bach items no longer share one generic
+  // portrait, plus Palestrina/Gregorian Chant improvements ---
+
+  // Mass in B Minor -- Bach's own autograph manuscript page of the Kyrie
+  // (BWV 232), distinct from the WTC manuscript title page and from every
+  // other Bach item below.
+  'music-bach-mass-b-minor': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/BWV_232_Kyrie.jpg/960px-BWV_232_Kyrie.jpg',
+  // Brandenburg Concertos -- the genuine 1721 dedication title page ("Six
+  // Concerts Avec plusieurs Instruments"), handwritten and signed by Bach,
+  // presented to the Margrave of Brandenburg.
+  'music-bach-brandenburg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Title_page_of_Brandenburg_Concertos.png/960px-Title_page_of_Brandenburg_Concertos.png',
+  // Goldberg Variations -- a two-manual harpsichord (the Goldbergs'
+  // signature hand-crossing writing requires two keyboards), replacing the
+  // generic Bach portrait used here previously.
+  'music-bach-goldberg': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Harpsichord_in_the_Deutsches_Museum.jpg/960px-Harpsichord_in_the_Deutsches_Museum.jpg',
+  // Missa Papae Marcelli -- a genuine period-printed Cantus partbook page of
+  // the actual mass, replacing a plain portrait engraving of Palestrina.
+  'art-palestrina-papae-marcelli': 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Mensuralnotation-Missa_papae_marcelli.jpg',
+  // Gregorian Chant -- an illuminated Cistercian Gradual manuscript page
+  // (square-note neumes on a red staff), replacing an icon of Gregory the
+  // Great -- a specific Kyrie/Dies Irae/Agnus Dei page could not be found
+  // at comparable quality, so this is the closest beautiful chant artifact.
+  'art-gregorian-chant': 'https://upload.wikimedia.org/wikipedia/commons/2/29/Graduale_cistersiense.jpg',
+  // Byzantine Icons (Rublev's Trinity) -- had a good URL sitting unused in
+  // wikimediaArtwork under the key 'The Trinity (Rublev)', which never
+  // matched this item's actual title -- the same class of bug as the
+  // Michelangelo/Fra Angelico mismatch above, caught the same way.
+  'art-byzantine-icons': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Andrey_Rublev_-_%D0%A1%D0%B2._%D0%A2%D1%80%D0%BE%D0%B8%D1%86%D0%B0_-_Google_Art_Project.jpg/1280px-Andrey_Rublev_-_%D0%A1%D0%B2._%D0%A2%D1%80%D0%BE%D0%B8%D1%86%D0%B0_-_Google_Art_Project.jpg',
+  // Christ Pantocrator -- the 6th-century encaustic icon from Saint
+  // Catherine's Monastery, Sinai, the oldest surviving icon of Christ.
+  'art-christ-pantocrator': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Spas_vsederzhitel_sinay.jpg/960px-Spas_vsederzhitel_sinay.jpg',
+  // Theotokos of Vladimir -- the 12th-century icon, Tretyakov Gallery.
+  'art-theotokos-of-vladimir': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Vladimirskaja_ikona_Bo%C5%BEiej_Materi.jpg/960px-Vladimirskaja_ikona_Bo%C5%BEiej_Materi.jpg',
+  // Hagia Sophia Mosaics -- the Imperial Gate mosaic (Christ Pantocrator
+  // enthroned with Emperor Leo VI), chosen over the Deësis mosaic for being
+  // more complete and undamaged.
+  'art-hagia-sophia-mosaics': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Hagia_Sophia_Imperial_Gate_mosaic.jpg/960px-Hagia_Sophia_Imperial_Gate_mosaic.jpg',
+  // Giotto (Scrovegni Chapel) -- had no cover source at all. Giotto's
+  // "Lamentation of Christ" (Compianto), the chapel's most celebrated
+  // single fresco -- often cited as a turning point toward Renaissance
+  // naturalism in painting. The app shows one cover per catalogue item, so
+  // this is the single most representative fresco rather than a gallery.
+  'art-giotto-scrovegni': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Giotto_-_Scrovegni_-_-36-_-_Lamentation_%28The_Mourning_of_Christ%29_adj.jpg/960px-Giotto_-_Scrovegni_-_-36-_-_Lamentation_%28The_Mourning_of_Christ%29_adj.jpg',
 };
 
 /** Cover image for a catalog entry, or undefined to use the fallback.

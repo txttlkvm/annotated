@@ -1237,6 +1237,45 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
   },
 
   {
+    id: 'art-christ-pantocrator',
+    title: 'Christ Pantocrator (Saint Catherine\'s Monastery)',
+    author: 'Unknown (Byzantine, 6th century)',
+    category: 'art',
+    tier: 1,
+    stage: 'logic',
+    grade: 6,
+    type: 'art',
+    description: 'The oldest surviving icon of Christ; sacred visual theology.',
+    notes: 'Tier 2 arts sequence; Byzantine icon progression'
+  },
+
+  {
+    id: 'art-theotokos-of-vladimir',
+    title: 'Theotokos of Vladimir',
+    author: 'Unknown (Byzantine, 12th century)',
+    category: 'art',
+    tier: 1,
+    stage: 'logic',
+    grade: 6,
+    type: 'art',
+    description: 'One of the most venerated Marian icons in Orthodox Christianity; tenderness (Eleusa) iconography.',
+    notes: 'Tier 2 arts sequence; Byzantine icon progression'
+  },
+
+  {
+    id: 'art-hagia-sophia-mosaics',
+    title: 'Hagia Sophia Mosaics',
+    author: 'Various (Byzantine)',
+    category: 'art',
+    tier: 1,
+    stage: 'logic',
+    grade: 6,
+    type: 'art',
+    description: 'Byzantine mosaic art at its height; sacred architecture and image united.',
+    notes: 'Tier 2 arts sequence; Byzantine icon progression'
+  },
+
+  {
     id: 'art-giotto-scrovegni',
     title: 'Giotto (Scrovegni Chapel)',
     author: 'Giotto di Bondone',
