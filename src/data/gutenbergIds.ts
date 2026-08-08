@@ -122,6 +122,14 @@ export const gutenbergIds: Record<string, GutenbergRef> = {
   'mem-lords-prayer': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
   'mem-hamlet-soliloquy': { gutenbergId: 27761, coverUrl: 'https://www.gutenberg.org/cache/epub/27761/pg27761.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/27761.txt.utf-8' },
   'mem-homer-invocation': { gutenbergId: 6130, coverUrl: 'https://www.gutenberg.org/cache/epub/6130/pg6130.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/6130.txt.utf-8' },
+
+  // Added for 4 new catalogue items (5 counting both Bacon works), all
+  // curl-verified (HTTP 200, real content) before being added.
+  'lit-virgil-aeneid': { gutenbergId: 228, coverUrl: 'https://www.gutenberg.org/cache/epub/228/pg228.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/228.txt.utf-8' },
+  'lit-milton-paradise-lost': { gutenbergId: 20, coverUrl: 'https://www.gutenberg.org/cache/epub/20/pg20.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/20.txt.utf-8' },
+  'phil-pascal-pensees': { gutenbergId: 18269, coverUrl: 'https://www.gutenberg.org/cache/epub/18269/pg18269.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/18269.txt.utf-8' },
+  'phil-bacon-essays': { gutenbergId: 575, coverUrl: 'https://www.gutenberg.org/cache/epub/575/pg575.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/575.txt.utf-8' },
+  'phil-bacon-novum-organum': { gutenbergId: 45988, coverUrl: 'https://www.gutenberg.org/cache/epub/45988/pg45988.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/45988.txt.utf-8' },
 };
 
 // Only used for the two cover sources that resolve synchronously with no
@@ -374,6 +382,22 @@ export const curatedCovers: Record<string, string> = {
   // naturalism in painting. The app shows one cover per catalogue item, so
   // this is the single most representative fresco rather than a gallery.
   'art-giotto-scrovegni': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Giotto_-_Scrovegni_-_-36-_-_Lamentation_%28The_Mourning_of_Christ%29_adj.jpg/960px-Giotto_-_Scrovegni_-_-36-_-_Lamentation_%28The_Mourning_of_Christ%29_adj.jpg',
+
+  // --- Fourth curation pass: 5 newly-added books ---
+
+  // The Aeneid -- Barocci's "Aeneas' Flight from Troy" (Galleria Borghese).
+  'lit-virgil-aeneid': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Aeneas%27_Flight_from_Troy_by_Federico_Barocci.jpg/960px-Aeneas%27_Flight_from_Troy_by_Federico_Barocci.jpg',
+  // Paradise Lost -- the c.1629 "Onslow portrait" of a young Milton
+  // (National Portrait Gallery); no battle/hell imagery.
+  'lit-milton-paradise-lost': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/John-milton.jpg/500px-John-milton.jpg',
+  // Pensées -- a period portrait of Blaise Pascal (Château de Versailles).
+  'phil-pascal-pensees': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Blaise_Pascal_Versailles.JPG/960px-Blaise_Pascal_Versailles.JPG',
+  // The Essays -- a formal portrait of Bacon as Lord Chancellor in
+  // ceremonial robes, distinct from the Novum Organum frontispiece below.
+  'phil-bacon-essays': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Morris%2C_William_BrightUnknown_artist_-_Francis_Bacon%2C_Viscount_St._Alban_-_Google_Art_Project.jpg/960px-Morris%2C_William_BrightUnknown_artist_-_Francis_Bacon%2C_Viscount_St._Alban_-_Google_Art_Project.jpg',
+  // Novum Organum -- the famous 1620 engraved frontispiece to the
+  // Instauratio Magna, a ship sailing between the Pillars of Hercules.
+  'phil-bacon-novum-organum': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Novum_Organum.jpg/960px-Novum_Organum.jpg',
 };
 
 /** Cover image for a catalog entry, or undefined to use the fallback.

@@ -6,6 +6,14 @@ export interface PublicDomainSource {
   type: 'epub' | 'pdf' | 'html' | 'txt' | 'audio' | 'image';
   url: string;
   provider: string; // 'gutenberg', 'archive', 'wikimedia', 'youtube', etc.
+  /**
+   * For a multi-movement work with a complete, individually-tracked public-
+   * domain recording (e.g. all 48 preludes/fugues of the Well-Tempered
+   * Clavier): the full ordered track list. `url` above is always urls[0],
+   * kept for anything that only reads the single-URL field. Absent for
+   * works with only a single representative movement available.
+   */
+  urls?: string[];
 }
 
 export interface ClassicalLibraryItem {
@@ -104,6 +112,71 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     type: 'book',
     description: 'The Christian cosmos; the answer to Homer. Images introduced through art in grade 4; studied in full in rhetoric stage (9th gr.).',
     notes: 'Sacred architecture of Christian worldview made poetic'
+  },
+
+  {
+    id: 'lit-virgil-aeneid',
+    title: 'The Aeneid',
+    author: 'Virgil',
+    category: 'literature',
+    tier: 1,
+    stage: 'grammar',
+    grade: 4,
+    type: 'book',
+    description: 'Rome\'s founding epic; duty, piety, and the cost of empire.',
+    notes: 'Companion to the Iliad and Odyssey in the epic-poetry sequence'
+  },
+
+  {
+    id: 'lit-milton-paradise-lost',
+    title: 'Paradise Lost',
+    author: 'John Milton',
+    category: 'literature',
+    tier: 1,
+    stage: 'rhetoric',
+    grade: 10,
+    type: 'book',
+    description: 'The Fall retold as epic; free will, obedience, and cosmic order.',
+    notes: 'Rhetoric stage; pairs with the Divine Comedy in the Christian-epic sequence'
+  },
+
+  {
+    id: 'phil-pascal-pensees',
+    title: 'Pensées',
+    author: 'Blaise Pascal',
+    category: 'philosophy',
+    tier: 1,
+    stage: 'rhetoric',
+    grade: 11,
+    type: 'book',
+    description: 'Fragments in defense of the Christian faith; the wager, the reed, the hidden God.',
+    notes: 'Rhetoric stage apologetics'
+  },
+
+  {
+    id: 'phil-bacon-essays',
+    title: 'The Essays or Counsels, Civil and Moral',
+    author: 'Francis Bacon',
+    category: 'philosophy',
+    tier: 1,
+    stage: 'rhetoric',
+    grade: 11,
+    type: 'book',
+    description: 'Practical wisdom on statecraft, ambition, friendship, and truth.',
+    notes: 'Rhetoric stage; distinct from Bacon\'s Novum Organum below'
+  },
+
+  {
+    id: 'phil-bacon-novum-organum',
+    title: 'Novum Organum',
+    author: 'Francis Bacon',
+    category: 'philosophy',
+    tier: 1,
+    stage: 'rhetoric',
+    grade: 11,
+    type: 'book',
+    description: 'The founding manifesto of the scientific method; induction over Aristotelian deduction.',
+    notes: 'Rhetoric stage; distinct from Bacon\'s Essays above'
   },
 
   {

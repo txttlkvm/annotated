@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -35,13 +35,28 @@ interface MusicState {
 function isDirectAudioUrl(url?: string): boolean {
   if (!url) return false;
   if (/\/search|results\?|query=/i.test(url)) return false;
-  return /\.(mp3|ogg|wav|m4a|flac|aac)(\?|$)/i.test(url);
+  // .oga is the alternate Ogg-audio extension (vs .ogg) -- missing it
+  // silently dropped one movement from the Brandenburg Concertos playlist,
+  // caught live (18 movements instead of the real 19).
+  return /\.(mp3|ogg|oga|wav|m4a|flac|aac)(\?|$)/i.test(url);
 }
 
 export default function MusicPlayerScreen({ route, navigation }: any) {
-  const { sourceUrl, filePath, title, artist } = route.params;
+  const { sourceUrl, sourceUrls, filePath, title, artist } = route.params;
   const { settings } = useApp();
-  const playableUrl = isDirectAudioUrl(sourceUrl) ? sourceUrl : null;
+
+  /**
+   * The full ordered track list, filtered to genuinely playable direct
+   * audio URLs. sourceUrls (a complete recording, e.g. all 48 Well-
+   * Tempered Clavier movements) wins over the single sourceUrl fallback
+   * (one representative movement) when both are present.
+   */
+  const tracks: string[] = (
+    Array.isArray(sourceUrls) && sourceUrls.length ? sourceUrls : sourceUrl ? [sourceUrl] : []
+  ).filter(isDirectAudioUrl);
+
+  const [trackIndex, setTrackIndex] = useState(0);
+  const playableUrl = tracks[trackIndex] || null;
 
   const [state, setState] = useState<MusicState>({
     isLoading: true,
@@ -53,15 +68,40 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
   });
 
   const [isBuffering, setIsBuffering] = useState(false);
+  /** Set by the auto-advance handler so the next track starts playing immediately, matching what the listener was already doing. */
+  const autoAdvanceRef = useRef(false);
+  /** Unsubscribes the current track's completion listener before the next one loads. */
+  const unsubscribeEndedRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     loadAudio();
     return () => {
+      unsubscribeEndedRef.current?.();
+      unsubscribeEndedRef.current = null;
       if (state.sound) {
         state.sound.unloadAsync().catch(() => {});
       }
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackIndex]);
+
+  /**
+   * Move to the next/previous track, if there is one. Carries over whatever
+   * the playing state was (so a natural track-end while listening continues
+   * seamlessly into the next movement, and a manual skip while paused stays
+   * paused) — read before the state update below, not after.
+   */
+  const playNextTrack = () => {
+    if (trackIndex + 1 >= tracks.length) return;
+    autoAdvanceRef.current = state.isPlaying;
+    setTrackIndex((i) => i + 1);
+  };
+
+  const playPreviousTrack = () => {
+    if (trackIndex === 0) return;
+    autoAdvanceRef.current = state.isPlaying;
+    setTrackIndex((i) => i - 1);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -73,18 +113,26 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
               position: status.positionMillis,
               duration: status.durationMillis || 0,
             }));
+            // Web detects completion via the real 'ended' event (see
+            // loadAudio's onEnded subscription) — didJustFinish here is
+            // the native (expo-av) fallback, which has no such event.
+            if (Platform.OS !== 'web' && (status as any).didJustFinish) {
+              playNextTrack();
+            }
           }
         });
       }
     }, 500);
 
     return () => clearInterval(interval);
-  }, [state.isPlaying, state.sound]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.isPlaying, state.sound, trackIndex]);
 
   const loadAudio = async () => {
     // No real recording is linked for this piece — say so plainly rather
     // than attempt a load that can only fail. See isDirectAudioUrl above.
     const uri = playableUrl || (filePath ? `file://${filePath}` : null);
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
     if (!uri) {
       setState((prev) => ({
         ...prev,
@@ -94,11 +142,19 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
       return;
     }
 
+    const wantsAutoPlay = autoAdvanceRef.current;
+    autoAdvanceRef.current = false;
+
     try {
       let sound: SoundHandle;
       if (Platform.OS === 'web') {
         sound = new WebSound(uri);
         await sound.loadAsync();
+        // The real DOM 'ended' event -- not position/duration polling, which
+        // is unreliable for detecting completion (see WebSound.onEnded).
+        unsubscribeEndedRef.current = (sound as WebSound).onEnded(() => {
+          playNextTrack();
+        });
       } else {
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
@@ -111,11 +167,15 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
         sound = nativeSound;
       }
 
+      if (wantsAutoPlay) await sound.playAsync();
+
       const status = await sound.getStatusAsync();
       setState((prev) => ({
         ...prev,
         sound,
         duration: (status as any).durationMillis || 0,
+        position: 0,
+        isPlaying: wantsAutoPlay,
         isLoading: false,
       }));
     } catch (error) {
@@ -199,6 +259,11 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
         <View style={styles.metadata}>
           <Text style={[styles.title, { color: textColor }]}>{title}</Text>
           <Text style={[styles.artist, { color: secondaryColor }]}>{artist}</Text>
+          {tracks.length > 1 && (
+            <Text style={[styles.artist, { color: secondaryColor, marginTop: 4 }]}>
+              Movement {trackIndex + 1} of {tracks.length}
+            </Text>
+          )}
         </View>
 
         {/* Study Guide */}
@@ -255,6 +320,16 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
                 <Text style={[styles.controlIcon, { color: secondaryColor }]}>■</Text>
               </TouchableOpacity>
 
+              {tracks.length > 1 && (
+                <TouchableOpacity
+                  style={[styles.controlButton, { borderColor: secondaryColor, opacity: trackIndex === 0 ? 0.4 : 1 }]}
+                  onPress={playPreviousTrack}
+                  disabled={trackIndex === 0}
+                >
+                  <Text style={[styles.controlIcon, { color: secondaryColor }]}>⏮</Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 style={[styles.playButton, { backgroundColor: accentColor, borderColor: textColor }]}
                 onPress={handlePlayPause}
@@ -264,6 +339,19 @@ export default function MusicPlayerScreen({ route, navigation }: any) {
                   {isBuffering ? '◐' : state.isPlaying ? '⏸' : '▶'}
                 </Text>
               </TouchableOpacity>
+
+              {tracks.length > 1 && (
+                <TouchableOpacity
+                  style={[
+                    styles.controlButton,
+                    { borderColor: secondaryColor, opacity: trackIndex >= tracks.length - 1 ? 0.4 : 1 },
+                  ]}
+                  onPress={playNextTrack}
+                  disabled={trackIndex >= tracks.length - 1}
+                >
+                  <Text style={[styles.controlIcon, { color: secondaryColor }]}>⏭</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={[styles.controlButton, { borderColor: secondaryColor }]}

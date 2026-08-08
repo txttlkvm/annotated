@@ -373,10 +373,162 @@ function getStandardEbooksSource(title: string) {
   };
 }
 
+// Complete, individually-tracked recordings, ordered start to finish. A
+// catalogue item pointing at one of these plays the entire real work (e.g.
+// all 48 preludes/fugues of the Well-Tempered Clavier) rather than the
+// single representative movement in wikimediaMusic below -- that fallback
+// existed because most multi-movement works only ever had one movement's
+// audio file actually tracked down; this is the complete-recording upgrade
+// path as each one gets found. Every URL below curl-verified (HTTP 200,
+// audio/* or application/ogg content-type) before being added, and every
+// list re-checked for correct listening order (track 1 first) -- a
+// shuffled classical work is a real defect, not a cosmetic one.
+const wikimediaMusicPlaylists: Record<string, string[]> = {
+  // All 48 movements (24 preludes + 24 fugues), Kimiko Ishizaka's "Open
+  // Well-Tempered Clavier" (CC0). Previously just track 1 (~4 minutes);
+  // this is the real, complete, roughly 1.5-2 hour Book 1.
+  'Well-Tempered Clavier': [
+    'https://upload.wikimedia.org/wikipedia/commons/b/b6/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_01_Prelude_No._1_in_C_major%2C_BWV_846.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e1/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_02_Fugue_No._1_in_C_major%2C_BWV_846.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/4d/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_03_Prelude_No._2_in_C_minor%2C_BWV_847.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/b0/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_04_Fugue_No._2_in_C_minor%2C_BWV_847.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/59/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_05_Prelude_No._3_in_C-sharp_major%2C_BWV_848.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/b7/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_06_Fugue_No._3_in_C-sharp_major%2C_BWV_848.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f9/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_07_Prelude_No._4_in_C-sharp_minor%2C_BWV_849.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/21/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_08_Fugue_No._4_in_C-sharp_minor%2C_BWV_849.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/a/a0/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_09_Prelude_No._5_in_D_major%2C_BWV_850.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/d/d4/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_10_Fugue_No._5_in_D_major%2C_BWV_850.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/71/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_11_Prelude_No._6_in_D_minor%2C_BWV_851.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/97/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_12_Fugue_No._6_in_D_minor%2C_BWV_851.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/a/aa/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_13_Prelude_No._7_in_E-flat_major%2C_BWV_852.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/7b/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_14_Fugue_No._7_in_E-flat_major%2C_BWV_852.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/3/35/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_15_Prelude_No._8_in_E-flat_minor%2C_BWV_853.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/16/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_16_Fugue_No._8_in_D-sharp_minor%2C_BWV_853.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/bc/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_17_Prelude_No._9_in_E_major%2C_BWV_854.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/2d/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_18_Fugue_No._9_in_E_major%2C_BWV_854.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/cb/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_19_Prelude_No._10_in_E_minor%2C_BWV_855.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5c/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_20_Fugue_No._10_in_E_minor%2C_BWV_855.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/4a/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_21_Prelude_No._11_in_F_major%2C_BWV_856.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/bd/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_22_Fugue_No._11_in_F_major%2C_BWV_856.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f3/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_23_Prelude_No._12_in_F_minor%2C_BWV_857.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/b9/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_24_Fugue_No._12_in_F_minor%2C_BWV_857.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e0/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_25_Prelude_No._13_in_F-sharp_major%2C_BWV_858.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/46/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_26_Fugue_No._13_in_F-sharp_major%2C_BWV_858.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/fc/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_27_Prelude_No._14_in_F-sharp_minor%2C_BWV_859.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/0/0d/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_28_Fugue_No._14_in_F-sharp_minor%2C_BWV_859.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/8/81/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_29_Prelude_No._15_in_G_major%2C_BWV_860.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/d/d0/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_30_Fugue_No._15_in_G_major%2C_BWV_860.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/19/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_31_Prelude_No._16_in_G_minor%2C_BWV_861.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/23/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_32_Fugue_No._16_in_G_minor%2C_BWV_861.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/8/86/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_33_Prelude_No._17_in_A-flat_major%2C_BWV_862.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/fd/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_34_Fugue_No._17_in_A-flat_major%2C_BWV_862.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5c/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_35_Prelude_No._18_in_G-sharp_minor%2C_BWV_863.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/c6/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_36_Fugue_No._18_in_G-sharp_minor%2C_BWV_863.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/be/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_37_Prelude_No._19_in_A_major%2C_BWV_864.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/24/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_38_Fugue_No._19_in_A_major%2C_BWV_864.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/9f/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_39_Prelude_No._20_in_A_minor%2C_BWV_865.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/c0/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_40_Fugue_No._20_in_A_minor%2C_BWV_865.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/b0/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_41_Prelude_No._21_in_B-flat_major%2C_BWV_866.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/57/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_42_Fugue_No._21_in_B-flat_major%2C_BWV_866.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/16/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_43_Prelude_No._22_in_B-flat_minor%2C_BWV_867.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5d/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_44_Fugue_No._22_in_B-flat_minor%2C_BWV_867.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/6/63/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_45_Prelude_No._23_in_B_major%2C_BWV_868.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/8/88/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_46_Fugue_No._23_in_B_major%2C_BWV_868.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/2e/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_47_Prelude_No._24_in_B_minor%2C_BWV_869.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5d/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_48_Fugue_No._24_in_B_minor%2C_BWV_869.ogg',
+  ],
+  // All 32 tracks (Aria, 30 variations, Aria da capo), Kimiko Ishizaka's
+  // "Open Goldberg Variations" (CC0). Previously just track 1 (the Aria
+  // alone, under 5 minutes); this is the real, complete work.
+  'Goldberg Variations': [
+    'https://upload.wikimedia.org/wikipedia/commons/e/e6/Kimiko_Ishizaka_-_01_-_Aria.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/20/Kimiko_Ishizaka_-_02_-_Variatio_1_a_1_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/9e/Kimiko_Ishizaka_-_03_-_Variatio_2_a_1_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/21/Kimiko_Ishizaka_-_04_-_Variatio_3_a_1_Clav_Canone_allUnisuono.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f0/Kimiko_Ishizaka_-_05_-_Variatio_4_a_1_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/9d/Kimiko_Ishizaka_-_06_-_Variatio_5_a_1_ovvero_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f9/Kimiko_Ishizaka_-_07_-_Variatio_6_a_1_Clav_Canone_alla_Seconda.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/1b/Kimiko_Ishizaka_-_08_-_Variatio_7_a_1_ovvero_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/b/bc/Kimiko_Ishizaka_-_09_-_Variatio_8_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/21/Kimiko_Ishizaka_-_10_-_Variatio_9_a_1_Clav_Canone_alla_Terza.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f6/Kimiko_Ishizaka_-_11_-_Variatio_10_a_1_Clav_Fughetta.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/2f/Kimiko_Ishizaka_-_12_-_Variatio_11_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e2/Kimiko_Ishizaka_-_13_-_Variatio_12_Canone_alla_Quarta.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/49/Kimiko_Ishizaka_-_14_-_Variatio_13_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/d/d9/Kimiko_Ishizaka_-_15_-_Variatio_14_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/2e/Kimiko_Ishizaka_-_16_-_Variatio_15_a_1_Clav_Canone_alla_Quinta.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/a/af/Kimiko_Ishizaka_-_17_-_Variatio_16_a_1_Clav_Ouverture.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/4b/Kimiko_Ishizaka_-_18_-_Variatio_17_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/75/Kimiko_Ishizaka_-_19_-_Variatio_18_a_1_Clav_Canone_alla_Sexta.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/1e/Kimiko_Ishizaka_-_20_-_Variatio_19_a_1_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/f/f9/Kimiko_Ishizaka_-_21_-_Variatio_20_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/0/02/Kimiko_Ishizaka_-_22_-_Variatio_21_Canone_alla_Settima.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e8/Kimiko_Ishizaka_-_23_-_Variatio_22_a_1_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/ec/Kimiko_Ishizaka_-_24_-_Variatio_23_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/9f/Kimiko_Ishizaka_-_25_-_Variatio_24_a_1_Clav_Canone_allOttava.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/5/5f/Kimiko_Ishizaka_-_26_-_Variatio_25_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e4/Kimiko_Ishizaka_-_27_-_Variatio_26_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/8/8f/Kimiko_Ishizaka_-_28_-_Variatio_27_a_2_Clav_Canone_alla_Nona.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/a/a5/Kimiko_Ishizaka_-_29_-_Variatio_28_a_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/0/0d/Kimiko_Ishizaka_-_30_-_Variatio_29_a_1_ovvero_2_Clav.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/c3/Kimiko_Ishizaka_-_31_-_Variatio_30_a_1_Clav_Quodlibet.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/e/ee/Kimiko_Ishizaka_-_32_-_Aria_da_Capo_Fine.ogg',
+  ],
+  // All 6 concertos, 19 movements. Not one performer -- four separate
+  // recording projects spliced together, since no single complete public-
+  // domain recording exists on Commons: a 1935 78rpm historical transfer
+  // (Concerto 1 complete, Concerto 4 movements II-III), a 2025 IMSLP
+  // upload (Concerto 2), and a Pandora Music/ibiblio.org chamber-orchestra
+  // recording (Concertos 3, 5, 6). Concerto 4's first movement is the one
+  // real weak link: no orchestral recording of it exists freely, so it
+  // falls back to a Kevin MacLeod/incompetech synth realization, which
+  // will sound stylistically discontinuous from movements II-III right
+  // after it. Judged a better trade than omitting half the work entirely.
+  'Brandenburg Concertos': [
+    // Concerto No. 1 (4 movements)
+    'https://upload.wikimedia.org/wikipedia/commons/f/f4/Bach_-_Brandenburg_Concerto_No._1_-_1._Allegro.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/1f/Bach_-_Brandenburg_Concerto.No.1_in_F_Major-_II._Adagio.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/18/Bach_-_Brandenburg_Concerto.No._1_in_F_Major-_III._Allegro.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/95/Bach_-_Brandenburg_Concerto.No.1_in_F_Major-_IV._Menuetto%3B_Trio_1%3B_Menuetto%3B_Polacca%3B_Menuetto_and_Trio.ogg',
+    // Concerto No. 2 (3 movements)
+    'https://upload.wikimedia.org/wikipedia/commons/4/46/IMSLP83563_-_Brandenburg_Concerto_No.2_in_F_major%2C_BWV_1047_%28Bach%2C_Johann_Sebastian%29_-_1._%28Allegro%29.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/44/IMSLP83567_-_Brandenburg_Concerto_No.2_in_F_major%2C_BWV_1047_%28Bach%2C_Johann_Sebastian%29_-_2._Andante.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/3/3a/IMSLP83569_-_Brandenburg_Concerto_No.2_in_F_major%2C_BWV_1047_%28Bach%2C_Johann_Sebastian%29_-_3._Allegro_assai.ogg',
+    // Concerto No. 3 (3 movements)
+    'https://upload.wikimedia.org/wikipedia/commons/b/b0/Bach_-_Brandenburg_Concerto_No._3_-_1._Allegro.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/7/78/Bach_-_Brandenburg_Concerto_No._3_-_2._Adagio.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/c/ca/Bach_-_Brandenburg_Concerto_No._3_-_3._Allegro.ogg',
+    // Concerto No. 4 (3 movements -- movement I is the synth realization, see note above)
+    'https://upload.wikimedia.org/wikipedia/commons/3/3b/Brandenburg_Concerto_No._4_in_G%2C_Movement_I_%28Allegro%29%2C_BWV_1049_%28ISRC_USUAN1100303%29.oga',
+    'https://upload.wikimedia.org/wikipedia/commons/b/b9/Bach_-_Brandenburg_ConcertoNo._4_in_G_Major-_II._Andante.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/26/Bach_-_Brandenburg_Concerto.No.4_in_G_Major-_III._Presto.ogg',
+    // Concerto No. 5 (3 movements)
+    'https://upload.wikimedia.org/wikipedia/commons/6/68/Bach_-_Brandenburg_Concerto_5_-_1._Allegro.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/49/Bach_-_Brandenburg_Concerto_5_-_2._Affettuoso.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/12/Bach_-_Brandenburg_Concerto_5_-_3._Allegro.ogg',
+    // Concerto No. 6 (3 movements)
+    'https://upload.wikimedia.org/wikipedia/commons/f/f3/Bach_-_Brandenburg_Concerto_6_-_1._Allegro.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/3/37/Bach_-_Brandenburg_Concerto_6_-_2._Adagio.ogg',
+    'https://upload.wikimedia.org/wikipedia/commons/6/61/Bach_-_Brandenburg_Concerto_6_-_3._Allegro.ogg',
+  ],
+  // All 6 movements (Kyrie, Gloria, Credo, Sanctus, Agnus Dei I & II) of
+  // the actual mass, from one consistent recording. Previously just the
+  // Kyrie alone.
+  'Missa Papae Marcelli': [
+    'https://upload.wikimedia.org/wikipedia/commons/e/e1/Missa_Papae_Marcelli_-_I._Kyrie.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e0/Missa_Papae_Marcelli_-_II._Gloria.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/c/c8/Missa_Papae_Marcelli_-_III._Credo.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/c/ce/Missa_Papae_Marcelli_-_IV._Sanctus.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/0/04/Missa_Papae_Marcelli_-_V._Agnus_Dei_I.flac',
+    'https://upload.wikimedia.org/wikipedia/commons/6/63/Missa_Papae_Marcelli_-_VI._Agnus_Dei_II.flac',
+  ],
+};
+
 // Direct, verified public-domain recordings (real HTTP 200 + audio content-
 // type checked before being added — not guessed filenames). Most catalogue
 // music entries are large multi-movement works, so this points at one
-// representative movement, not the whole work.
+// representative movement, not the whole work, UNLESS a complete recording
+// exists in wikimediaMusicPlaylists above, which wins.
 const wikimediaMusic: Record<string, string> = {
   'Well-Tempered Clavier':
     'https://upload.wikimedia.org/wikipedia/commons/b/b6/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_01_Prelude_No._1_in_C_major%2C_BWV_846.ogg',
@@ -453,9 +605,17 @@ export const openLibraryCoverIds: Record<string, number> = {
 };
 
 function getWikimediaMusicSource(title: string) {
+  // A complete, individually-tracked recording wins over the single-
+  // movement fallback below -- MusicPlayerScreen plays the full ordered
+  // list in sequence instead of just one representative movement.
+  const playlist = wikimediaMusicPlaylists[title];
+  if (playlist && playlist.length) {
+    return { type: 'audio' as const, provider: 'wikimedia' as const, url: playlist[0], urls: playlist };
+  }
   const directUrl = wikimediaMusic[title];
   if (directUrl) {
-    return { type: 'html' as const, provider: 'wikimedia' as const, url: directUrl };
+    // Was 'html' -- a real direct audio file, not a webpage about one.
+    return { type: 'audio' as const, provider: 'wikimedia' as const, url: directUrl };
   }
   return null;
 }

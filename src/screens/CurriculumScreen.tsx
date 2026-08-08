@@ -514,7 +514,12 @@ export default function CurriculumScreen({ navigation }: any) {
     if (item.type === 'music' || item.type === 'art') {
       const source = item.sources?.[0];
       if (item.type === 'music') {
-        navigation.navigate('MusicPlayer', { sourceUrl: source?.url, title: item.title, artist: item.author });
+        navigation.navigate('MusicPlayer', {
+          sourceUrl: source?.url,
+          sourceUrls: source?.urls,
+          title: item.title,
+          artist: item.author,
+        });
       } else {
         navigation.navigate('ArtViewer', { sourceUrl: source?.url, title: item.title, artist: item.author });
       }
