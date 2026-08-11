@@ -269,6 +269,62 @@ function buildReadAloudChunks(paragraphs: string[]): ReadAloudChunk[] {
   return chunks;
 }
 
+/** Gutenberg footnote reference markers ("Shakespere[1]", "Jove.[76]") were
+ * rendering as bare inline digits at full body-text size -- readable but
+ * genuinely disruptive mid-sentence. Full footnote linking (parsing the
+ * definitions, wherever they're collected, and making the marker tap
+ * through to them) is a real feature, not a quick fix; this is the
+ * contained improvement that actually addresses the complaint -- rendering
+ * markers small and raised like real superscript typography -- without it.
+ * Composed with the Read-Aloud word-highlight range (both need to slice the
+ * same paragraph text without corrupting each other's offsets), operating
+ * on absolute offsets into the ORIGINAL text throughout so the two
+ * transforms can't desync. */
+const FOOTNOTE_MARKER = /\[\d{1,3}\]/g;
+
+function renderParagraphContent(
+  text: string,
+  highlight: { start: number; end: number } | null,
+  highlightColor: string
+): React.ReactNode[] {
+  const segments: { text: string; isFootnote: boolean; start: number; end: number }[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  FOOTNOTE_MARKER.lastIndex = 0;
+  while ((match = FOOTNOTE_MARKER.exec(text))) {
+    if (match.index > lastIndex) {
+      segments.push({ text: text.slice(lastIndex, match.index), isFootnote: false, start: lastIndex, end: match.index });
+    }
+    segments.push({ text: match[0], isFootnote: true, start: match.index, end: match.index + match[0].length });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    segments.push({ text: text.slice(lastIndex), isFootnote: false, start: lastIndex, end: text.length });
+  }
+
+  return segments.map((seg, i) => {
+    if (seg.isFootnote) {
+      return (
+        <Text key={i} style={{ fontSize: 10, lineHeight: 14, textAlignVertical: 'top' }}>
+          {seg.text}
+        </Text>
+      );
+    }
+    if (highlight && highlight.start < seg.end && highlight.end > seg.start) {
+      const localStart = Math.max(0, highlight.start - seg.start);
+      const localEnd = Math.min(seg.text.length, highlight.end - seg.start);
+      return (
+        <React.Fragment key={i}>
+          {seg.text.slice(0, localStart)}
+          <Text style={{ backgroundColor: highlightColor }}>{seg.text.slice(localStart, localEnd)}</Text>
+          {seg.text.slice(localEnd)}
+        </React.Fragment>
+      );
+    }
+    return <React.Fragment key={i}>{seg.text}</React.Fragment>;
+  });
+}
+
 export default function ReaderScreen() {
   const {
     currentBook,
@@ -1199,17 +1255,7 @@ export default function ReaderScreen() {
                   { marginBottom: i === (page?.paragraphs.length ?? 0) - 1 ? 0 : paragraphGap },
                 ]}
               >
-                {wordHighlight ? (
-                  <>
-                    {paragraph.text.slice(0, wordHighlight.start)}
-                    <Text style={{ backgroundColor: palette.accentSoft }}>
-                      {paragraph.text.slice(wordHighlight.start, wordHighlight.end)}
-                    </Text>
-                    {paragraph.text.slice(wordHighlight.end)}
-                  </>
-                ) : (
-                  paragraph.text
-                )}
+                {renderParagraphContent(paragraph.text, wordHighlight, palette.accentSoft)}
               </Text>
             );
           })}
