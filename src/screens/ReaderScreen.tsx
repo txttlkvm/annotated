@@ -41,6 +41,7 @@ import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 import { AudioShareService, AudioShareError } from '../services/AudioShareService';
 import { KokoroTTSService, DEFAULT_KOKORO_VOICE } from '../services/KokoroTTSService';
+import { estimateWordTimings, findActiveWordIndex } from '../services/ReadAloudTiming';
 /**
  * The reading surface — the most important screen in the app.
  *
@@ -210,8 +211,19 @@ function splitParagraph(trimmed: string): string[] {
   return pieces;
 }
 
-function buildReadAloudChunks(paragraphs: string[]): string[] {
-  const chunks: string[] = [];
+/** One Read-Aloud chunk, tagged with which paragraph(s) (by position in the
+ * page's paragraph array) its text came from -- a chunk can span several
+ * short paragraphs (merged, see below) or be one piece of a single long
+ * paragraph (split, see splitParagraph) -- so this is a many-to-many
+ * mapping in general, tracked per-segment to drive word highlighting back
+ * to the right paragraph and character offset during playback. */
+interface ReadAloudChunk {
+  text: string;
+  segments: { paragraphIndex: number; chunkOffsetStart: number; chunkOffsetEnd: number }[];
+}
+
+function buildReadAloudChunks(paragraphs: string[]): ReadAloudChunk[] {
+  const chunks: ReadAloudChunk[] = [];
   // Merge adjacent short paragraphs into one chunk (up to MAX_CHUNK_CHARS)
   // instead of always one chunk per paragraph. Confirmed live as the real
   // cause of long silent gaps mid-Read-Aloud: Kokoro has a real per-call
@@ -223,24 +235,36 @@ function buildReadAloudChunks(paragraphs: string[]): string[] {
   // playback time for a normal-length chunk. Batching short paragraphs
   // together gives every synthesize() call enough content to amortize that
   // fixed cost against, the same way it already works for ordinary prose.
-  let buffer = '';
+  let bufferText = '';
+  let bufferSegments: ReadAloudChunk['segments'] = [];
   const flushBuffer = () => {
-    if (buffer) chunks.push(buffer);
-    buffer = '';
+    if (bufferText) chunks.push({ text: bufferText, segments: bufferSegments });
+    bufferText = '';
+    bufferSegments = [];
   };
-  for (const paragraph of paragraphs) {
+  paragraphs.forEach((paragraph, paragraphIndex) => {
     const trimmed = paragraph.trim();
-    if (!trimmed) continue;
+    if (!trimmed) return;
     if (trimmed.length > MAX_CHUNK_CHARS) {
       flushBuffer();
-      chunks.push(...splitParagraph(trimmed));
-      continue;
+      // Each piece from splitParagraph becomes its own whole chunk, so the
+      // piece's own text *is* the chunk text -- offsets are always [0, piece.length).
+      for (const piece of splitParagraph(trimmed)) {
+        chunks.push({
+          text: piece,
+          segments: [{ paragraphIndex, chunkOffsetStart: 0, chunkOffsetEnd: piece.length }],
+        });
+      }
+      return;
     }
-    if (buffer && (buffer + ' ' + trimmed).length > MAX_CHUNK_CHARS) {
+    const candidateText = bufferText ? `${bufferText} ${trimmed}` : trimmed;
+    if (bufferText && candidateText.length > MAX_CHUNK_CHARS) {
       flushBuffer();
     }
-    buffer = buffer ? `${buffer} ${trimmed}` : trimmed;
-  }
+    const segmentStart = bufferText ? bufferText.length + 1 : 0;
+    bufferText = bufferText ? `${bufferText} ${trimmed}` : trimmed;
+    bufferSegments.push({ paragraphIndex, chunkOffsetStart: segmentStart, chunkOffsetEnd: bufferText.length });
+  });
   flushBuffer();
   return chunks;
 }
@@ -290,6 +314,13 @@ export default function ReaderScreen() {
   const [bookmarkNote, setBookmarkNote] = useState('');
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT);
   const [sessionStartTime] = useState(Date.now());
+  // Read-Aloud's current word, as a character range within one paragraph --
+  // null whenever Read Aloud isn't actively speaking a tracked word.
+  const [activeHighlight, setActiveHighlight] = useState<{
+    paragraphIndex: number;
+    start: number;
+    end: number;
+  } | null>(null);
   const [headerHeight, setHeaderHeight] = useState(92);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -568,6 +599,48 @@ export default function ReaderScreen() {
   // one short chunk, not the whole page.
   const readAloudCancelRef = useRef(false);
   const readAloudActiveRef = useRef(false);
+  const highlightTickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopHighlightTicker = () => {
+    if (highlightTickerRef.current) {
+      clearInterval(highlightTickerRef.current);
+      highlightTickerRef.current = null;
+    }
+    setActiveHighlight(null);
+  };
+
+  /** Estimated (not measured -- see ReadAloudTiming.ts) per-word highlighting
+   * for the chunk currently playing. Polls faster than AudioService's own
+   * 500ms status loop (word durations are often shorter than that) via a
+   * dedicated one-shot getStatus() call rather than the shared callback, so
+   * this doesn't change playback-bar update behavior used elsewhere. */
+  const startHighlightTicker = (chunk: ReadAloudChunk, durationMs: number) => {
+    stopHighlightTicker();
+    const timings = estimateWordTimings(chunk.text, durationMs);
+    if (!timings.length) return;
+    highlightTickerRef.current = setInterval(async () => {
+      const status = await AudioService.getStatus();
+      if (!status) return;
+      const wordIndex = findActiveWordIndex(timings, status.position);
+      if (wordIndex < 0) {
+        setActiveHighlight(null);
+        return;
+      }
+      const word = timings[wordIndex];
+      const segment = chunk.segments.find(
+        (s) => word.charStart >= s.chunkOffsetStart && word.charStart < s.chunkOffsetEnd
+      );
+      if (!segment) {
+        setActiveHighlight(null);
+        return;
+      }
+      setActiveHighlight({
+        paragraphIndex: segment.paragraphIndex,
+        start: word.charStart - segment.chunkOffsetStart,
+        end: Math.min(word.charEnd, segment.chunkOffsetEnd) - segment.chunkOffsetStart,
+      });
+    }, 80);
+  };
 
   const playPageWithKokoro = async () => {
     const chunks = buildReadAloudChunks(page?.paragraphs.map((p) => p.text) ?? []);
@@ -578,7 +651,7 @@ export default function ReaderScreen() {
     setIsLoadingAudio(true);
     try {
       let nextChunk: Promise<string> = KokoroTTSService.synthesize(
-        chunks[0],
+        chunks[0].text,
         DEFAULT_KOKORO_VOICE,
         settings.ttsVoiceRate
       );
@@ -589,14 +662,19 @@ export default function ReaderScreen() {
         if (i + 1 < chunks.length) {
           // Kick off the next chunk's synthesis now, so it's ready (or
           // close to it) by the time this one finishes playing.
-          nextChunk = KokoroTTSService.synthesize(chunks[i + 1], DEFAULT_KOKORO_VOICE, settings.ttsVoiceRate);
+          nextChunk = KokoroTTSService.synthesize(chunks[i + 1].text, DEFAULT_KOKORO_VOICE, settings.ttsVoiceRate);
         }
         setIsLoadingAudio(false);
         await AudioService.load(uri);
+        const status = await AudioService.getStatus();
+        if (status && status.duration > 0) {
+          startHighlightTicker(chunks[i], status.duration);
+        }
         const chunkEnded = AudioService.waitForEnd();
         await AudioService.play();
         setIsPlaying(true);
         await chunkEnded;
+        stopHighlightTicker();
       }
     } catch (error) {
       console.error('[ReaderScreen] Kokoro read-aloud failed:', error);
@@ -605,6 +683,7 @@ export default function ReaderScreen() {
       // here, so the message stays generic rather than guessing which.
       Alert.alert('Error', 'Read Aloud ran into a problem. Try pressing play again.');
     } finally {
+      stopHighlightTicker();
       readAloudActiveRef.current = false;
       setIsPlaying(false);
       setIsLoadingAudio(false);
@@ -1060,22 +1139,35 @@ export default function ReaderScreen() {
             </View>
           )}
 
-          {page?.paragraphs.map((paragraph, i) => (
-            <Text
-              key={paragraph.index}
-              selectable
-              onLongPress={() => {
-                setSelectedText(paragraph.text);
-                setShowHighlightColor(true);
-              }}
-              style={[
-                bodyStyle,
-                { marginBottom: i === (page?.paragraphs.length ?? 0) - 1 ? 0 : paragraphGap },
-              ]}
-            >
-              {paragraph.text}
-            </Text>
-          ))}
+          {page?.paragraphs.map((paragraph, i) => {
+            const wordHighlight = activeHighlight?.paragraphIndex === i ? activeHighlight : null;
+            return (
+              <Text
+                key={paragraph.index}
+                selectable
+                onLongPress={() => {
+                  setSelectedText(paragraph.text);
+                  setShowHighlightColor(true);
+                }}
+                style={[
+                  bodyStyle,
+                  { marginBottom: i === (page?.paragraphs.length ?? 0) - 1 ? 0 : paragraphGap },
+                ]}
+              >
+                {wordHighlight ? (
+                  <>
+                    {paragraph.text.slice(0, wordHighlight.start)}
+                    <Text style={{ backgroundColor: palette.accentSoft }}>
+                      {paragraph.text.slice(wordHighlight.start, wordHighlight.end)}
+                    </Text>
+                    {paragraph.text.slice(wordHighlight.end)}
+                  </>
+                ) : (
+                  paragraph.text
+                )}
+              </Text>
+            );
+          })}
 
           {/* Tail ornament: the eye needs to know the page ended. */}
           <View style={[styles.ornament, { marginTop: space.xxl }]}>

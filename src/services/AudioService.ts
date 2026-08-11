@@ -180,18 +180,28 @@ export class AudioService {
 
   private static async updateStatus() {
     if (!this.sound || !this.playbackStatusCallback) return;
+    const status = await this.getStatus();
+    if (status) this.playbackStatusCallback(status);
+  }
+
+  /** One-shot status read, independent of the 500ms polling loop above --
+   * for callers needing tighter timing than that loop's cadence (e.g.
+   * Read-Aloud's per-word highlighting, which polls this directly on its
+   * own faster interval rather than waiting on onPlaybackStatus). */
+  static async getStatus(): Promise<PlaybackState | null> {
+    if (!this.sound) return null;
     try {
       const status = await this.sound.getStatusAsync();
-      if (status.isLoaded) {
-        this.playbackStatusCallback({
-          isPlaying: status.isPlaying,
-          position: status.positionMillis || 0,
-          duration: status.durationMillis || 0,
-          rate: status.rate || 1,
-        });
-      }
+      if (!status.isLoaded) return null;
+      return {
+        isPlaying: status.isPlaying,
+        position: status.positionMillis || 0,
+        duration: status.durationMillis || 0,
+        rate: status.rate || 1,
+      };
     } catch (error) {
       console.error('Status update error:', error);
+      return null;
     }
   }
 }
