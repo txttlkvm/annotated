@@ -484,6 +484,32 @@ export default function ReaderScreen() {
 
   const chapterTitle = parsed?.chapters[page?.chapterIndex ?? 0]?.title || '';
 
+  /** Page-turn imitation: new content enters with a short slide+fade from
+   * the direction of travel (right-to-center going forward, left-to-center
+   * going back), like a real page settling into place. Derived from the
+   * page-number delta rather than hooked into handleNextPage/handlePreviousPage
+   * individually, so it covers every way a page can change -- swipe, button,
+   * arrow keys, chapter jump, search-result jump, TOC jump -- without having
+   * to patch each call site (the same reasoning already used for stopping
+   * Read Aloud on page change, above). Uses transform/opacity only, both
+   * native-driver-safe on web, so this never touches the JS thread once
+   * started and can't itself cause jank. */
+  const prevPageRef = useRef(safePage);
+  const pageSlideX = useRef(new Animated.Value(0)).current;
+  const pageFade = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const prev = prevPageRef.current;
+    prevPageRef.current = safePage;
+    if (safePage === prev) return;
+    const direction = safePage > prev ? 1 : -1;
+    pageSlideX.setValue(direction * 28);
+    pageFade.setValue(0);
+    Animated.parallel([
+      Animated.timing(pageSlideX, { toValue: 0, duration: 220, useNativeDriver: true }),
+      Animated.timing(pageFade, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [safePage]);
+
   /**
    * Search across the whole book, client-side over the already-parsed
    * paragraphs — no server round trip, works offline. Each hit maps back to
@@ -1138,6 +1164,7 @@ export default function ReaderScreen() {
         tailSpace={0}
         contentContainerStyle={{ paddingTop: HEAD_SPACE, paddingBottom: TAIL_SPACE }}
       >
+        <Animated.View style={{ transform: [{ translateX: pageSlideX }], opacity: pageFade }}>
         <Pressable onPress={toggleChrome} accessibilityLabel="Show reading controls">
           {page?.startsChapter && !!chapterTitle && (
             <View style={styles.chapterOpener}>
@@ -1194,6 +1221,7 @@ export default function ReaderScreen() {
             <View style={[styles.ornamentRule, { backgroundColor: palette.rule }]} />
           </View>
         </Pressable>
+        </Animated.View>
       </Shell>
 
       {/* --------------------------------------------------------- rails --- */}
