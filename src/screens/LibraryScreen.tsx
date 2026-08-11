@@ -636,6 +636,7 @@ export default function LibraryScreen({ navigation }: any) {
             author={book.author}
             itemType={book.itemType}
             width={heroCoverW}
+            compact
           />
 
           <View style={styles.heroBody}>
@@ -702,6 +703,7 @@ export default function LibraryScreen({ navigation }: any) {
           author={book.author}
           itemType={book.itemType}
           width={carouselItemW}
+          compact
         />
         <Text style={styles.cellTitle} numberOfLines={2}>
           {book.title}
@@ -736,6 +738,7 @@ export default function LibraryScreen({ navigation }: any) {
           author={book.author}
           itemType={book.itemType}
           width={gridCellW}
+          compact
         />
         <Text style={styles.cellTitle} numberOfLines={2}>
           {book.title}
@@ -776,6 +779,7 @@ export default function LibraryScreen({ navigation }: any) {
           author={book.author}
           itemType={book.itemType}
           width={listCoverW}
+          compact
         />
 
         <View style={styles.listInfo}>

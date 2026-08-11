@@ -232,6 +232,7 @@ function BandCell({
         author={item.author}
         itemType={item.type}
         width={width}
+        compact
       />
       <Text style={styles.cellTitle} numberOfLines={2}>
         {item.title}
@@ -292,6 +293,7 @@ function CurriculumRow({
           author={author}
           itemType={itemType}
           width={coverWidth}
+          compact
         />
 
         <View style={styles.cardText}>

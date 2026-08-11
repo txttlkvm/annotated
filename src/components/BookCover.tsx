@@ -10,6 +10,16 @@ interface Props {
   itemType?: 'book' | 'music' | 'art' | 'resource';
   /** Rendered width; height derives from the trade-paperback ratio. */
   width: number;
+  /** Suppress the fallback's own title/author text, keeping just the spine
+   * rule + glyph. For list/card layouts that already show a separate title
+   * label next to the cover -- without this, an item with no real cover art
+   * shows its title twice in the same card (once as fallback "book board"
+   * typography, once as the row's own label), which reads as a duplicate-
+   * render bug even though both halves are working exactly as designed.
+   * Grid/shelf contexts where BookCover is the only title display should
+   * leave this off, since the fallback typography is the only thing
+   * telling the reader what the book is. */
+  compact?: boolean;
 }
 
 const GLYPH: Record<string, string> = {
@@ -28,7 +38,7 @@ const GLYPH: Record<string, string> = {
  * rather than an icon — a spine rule, the title set in the display serif, and
  * the author beneath.
  */
-export default function BookCover({ uri, title, author, itemType = 'book', width }: Props) {
+export default function BookCover({ uri, title, author, itemType = 'book', width, compact = false }: Props) {
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(!!uri);
 
@@ -59,31 +69,33 @@ export default function BookCover({ uri, title, author, itemType = 'book', width
         <View style={styles.fallback}>
           {/* Spine rule — reads as a book board rather than an empty tile. */}
           <View style={styles.spine} />
-          <View style={[styles.fallbackBody, { paddingHorizontal: width < 90 ? 5 : 8 }]}>
-            <Text
-              style={[
-                type.title,
-                styles.fallbackTitle,
-                // React Native Web breaks mid-word rather than overflow, so a
-                // long title in a narrow spine (e.g. "Confessions" at ~58px)
-                // was splitting as "Confe-ssions". Scaling the font down with
-                // width and allowing an extra line keeps words whole far more
-                // often than the old fixed 11/13px step did.
-                { fontSize: Math.max(8, Math.min(13, Math.round(width / 7))) },
-              ]}
-              numberOfLines={width < 90 ? 5 : 4}
-            >
-              {title}
-            </Text>
-            {!!author && (
-              <>
-                <View style={styles.fallbackRule} />
-                <Text style={[type.caption, styles.fallbackAuthor]} numberOfLines={2}>
-                  {author}
-                </Text>
-              </>
-            )}
-          </View>
+          {!compact && (
+            <View style={[styles.fallbackBody, { paddingHorizontal: width < 90 ? 5 : 8 }]}>
+              <Text
+                style={[
+                  type.title,
+                  styles.fallbackTitle,
+                  // React Native Web breaks mid-word rather than overflow, so a
+                  // long title in a narrow spine (e.g. "Confessions" at ~58px)
+                  // was splitting as "Confe-ssions". Scaling the font down with
+                  // width and allowing an extra line keeps words whole far more
+                  // often than the old fixed 11/13px step did.
+                  { fontSize: Math.max(8, Math.min(13, Math.round(width / 7))) },
+                ]}
+                numberOfLines={width < 90 ? 5 : 4}
+              >
+                {title}
+              </Text>
+              {!!author && (
+                <>
+                  <View style={styles.fallbackRule} />
+                  <Text style={[type.caption, styles.fallbackAuthor]} numberOfLines={2}>
+                    {author}
+                  </Text>
+                </>
+              )}
+            </View>
+          )}
           <Text style={styles.glyph}>{GLYPH[itemType] || GLYPH.book}</Text>
         </View>
       )}

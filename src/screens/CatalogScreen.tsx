@@ -193,6 +193,7 @@ function ItemCard({
           author={item.author}
           itemType={item.type}
           width={coverWidth}
+          compact
         />
 
         <View style={styles.cardBody}>
