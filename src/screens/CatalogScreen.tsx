@@ -19,11 +19,13 @@
 //    selected state is a solid gold fill; the old hairline-over-dark version
 //    read as a strikethrough, i.e. as "excluded" rather than "chosen".
 //
-// SEARCH, FILTERING AND ADD BEHAVIOUR ARE UNCHANGED: the same exclusion of
-// already-shelved ids, the same tier/stage/category predicates, the same
-// 50-vs-30 result cap, and the same add path — `addClassicalLibraryItem`, the
-// optimistic removal from the results, and the inline confirmation banner that
-// exists because react-native-web does not implement `Alert.alert`.
+// FILTERING AND ADD BEHAVIOUR ARE UNCHANGED: the same exclusion of
+// already-shelved ids, the same tier/stage/category predicates, and the same
+// add path — `addClassicalLibraryItem`, the optimistic removal from the
+// results, and the inline confirmation banner that exists because
+// react-native-web does not implement `Alert.alert`. Search ranking and the
+// result cap were fixed separately -- see matchRank() and the 150 constant
+// below.
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
@@ -302,23 +304,39 @@ export default function CatalogScreen() {
       const bookIds = new Set(books.map(b => b.id));
       const query = searchQuery.trim().toLowerCase();
 
-      const results = library.filter(item => {
-        if (bookIds.has(item.id)) return false; // Already in library
-        if (tierFilter !== 'all' && item.tier !== tierFilter) return false;
-        if (stageFilter !== 'all' && item.stage !== stageFilter) return false;
-        if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
-        if (!query) return true;
-        return (
-          item.title.toLowerCase().includes(query) ||
-          item.author.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query)
-        );
-      });
+      // Match rank: 0 = title, 1 = author, 2 = description ("topic" per the
+      // placeholder). Description is only searched for queries of 4+ chars --
+      // a short query like "Ili" is a substring of enough ordinary English
+      // words (Ilium, civilization, hostility...) to flood long description
+      // prose with noise. Results are sorted by rank so title/author matches
+      // -- what the placeholder leads with -- always surface above
+      // description-only matches instead of interleaving by array order.
+      const matchRank = (item: ClassicalLibraryItem): number => {
+        if (!query) return 0;
+        const q = query;
+        if (item.title.toLowerCase().includes(q)) return 0;
+        if (item.author.toLowerCase().includes(q)) return 1;
+        if (q.length >= 4 && item.description.toLowerCase().includes(q)) return 2;
+        return -1;
+      };
 
-      // Same caps as before: a wider net once the reader has narrowed things
-      // down, a browsable sample when they haven't.
-      const limit = query || filtersActive ? 50 : 30;
-      setFilteredItems(results.slice(0, limit));
+      const results = library
+        .filter(item => {
+          if (bookIds.has(item.id)) return false; // Already in library
+          if (tierFilter !== 'all' && item.tier !== tierFilter) return false;
+          if (stageFilter !== 'all' && item.stage !== stageFilter) return false;
+          if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
+          return matchRank(item) >= 0;
+        })
+        .sort((a, b) => matchRank(a) - matchRank(b));
+
+      // The catalog is small (127 items total) -- cap high enough that
+      // nothing is silently hidden. The old 30-item default-view cap
+      // combined with tier ordering in the source data (Tier I listed
+      // before Tier II) meant every one of the 32 Tier II texts was
+      // invisible whenever "All tiers" -- the active, checked filter --
+      // was selected, which read as a real bug, not a curated sample.
+      setFilteredItems(results.slice(0, 150));
     } catch (error) {
       console.error('Search error:', error);
       Alert.alert('Error', 'Could not search catalog');
