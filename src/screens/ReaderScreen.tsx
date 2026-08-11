@@ -841,6 +841,24 @@ export default function ReaderScreen() {
   useEffect(() => {
     sessionRef.current = { bookId: currentBook?.id || '', page: safePage, totalPages };
   }, [currentBook?.id, safePage, totalPages]);
+  // Persist the stopping point on every page turn, debounced, rather than
+  // only in the unmount cleanup below. The unmount write is async and has
+  // no guarantee of completing before a hard browser reload actually tears
+  // the page down -- confirmed live as why position reset to page 1 on
+  // reload despite the write "happening". This also fixes BookDetailsScreen
+  // and the Library grid showing stale progress for the entire duration of
+  // an active reading session, since they only ever saw the unmount write.
+  useEffect(() => {
+    if (!currentBook?.id || !restoredInitialPageRef.current) return;
+    const timer = setTimeout(() => {
+      updateBook(currentBook.id, {
+        currentProgress: safePage + 1,
+        totalPages,
+        lastReadDate: Date.now(),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [currentBook?.id, safePage, totalPages]);
   useEffect(() => {
     return () => {
       const { bookId, page: endPage, totalPages: endTotal } = sessionRef.current;
