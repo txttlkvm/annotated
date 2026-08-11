@@ -5,7 +5,7 @@
 import { Platform } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { TTSService } from './TTSService';
-import { KokoroTTSService, DEFAULT_KOKORO_VOICE, KokoroVoice } from './KokoroTTSService';
+import { KokoroTTSService, KOKORO_VOICES, DEFAULT_KOKORO_VOICE, KokoroVoice } from './KokoroTTSService';
 
 const isWeb = Platform.OS === 'web';
 
@@ -60,8 +60,17 @@ export class AudioShareService {
     // kokoro-js's WASM/WebGPU path only exists in a browser.
     let uri: string;
     if (KokoroTTSService.isSupported()) {
+      // options.voice is settings.ttsVoice, shared with the native Google-
+      // Cloud voice ID namespace -- was being ignored entirely here in
+      // favor of the hardcoded default, silently dropping whatever voice
+      // the reader picked in Settings for every shared clip.
+      const voice = (
+        options.voice && KOKORO_VOICES.some((v) => v.id === options.voice)
+          ? options.voice
+          : DEFAULT_KOKORO_VOICE
+      ) as KokoroVoice;
       try {
-        uri = await KokoroTTSService.synthesize(text, DEFAULT_KOKORO_VOICE as KokoroVoice, options.rate);
+        uri = await KokoroTTSService.synthesize(text, voice, options.rate);
       } catch (error) {
         console.error('[AudioShareService] Kokoro synthesize failed:', error);
         throw error;

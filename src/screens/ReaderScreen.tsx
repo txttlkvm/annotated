@@ -40,7 +40,16 @@ import type { ReaderSettings } from '../types';
 import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 import { AudioShareService, AudioShareError } from '../services/AudioShareService';
-import { KokoroTTSService, DEFAULT_KOKORO_VOICE } from '../services/KokoroTTSService';
+import { KokoroTTSService, KOKORO_VOICES, DEFAULT_KOKORO_VOICE, KokoroVoice } from '../services/KokoroTTSService';
+
+/** settings.ttsVoice is shared between the native Google-Cloud voice ID
+ * ("en-US-Neural2-C") and Kokoro's own voice IDs ("af_heart") -- same field,
+ * different namespace depending on platform (see SettingsScreen). Guards
+ * against a stored value from the wrong namespace (or the pre-Kokoro
+ * default) being handed to Kokoro, which doesn't know what to do with it. */
+function resolveKokoroVoice(stored: string): KokoroVoice {
+  return (KOKORO_VOICES.some((v) => v.id === stored) ? stored : DEFAULT_KOKORO_VOICE) as KokoroVoice;
+}
 import { estimateWordTimings, findActiveWordIndex } from '../services/ReadAloudTiming';
 /**
  * The reading surface — the most important screen in the app.
@@ -732,9 +741,10 @@ export default function ReaderScreen() {
     readAloudActiveRef.current = true;
     setIsLoadingAudio(true);
     try {
+      const voice = resolveKokoroVoice(settings.ttsVoice);
       let nextChunk: Promise<string> = KokoroTTSService.synthesize(
         chunks[0].text,
-        DEFAULT_KOKORO_VOICE,
+        voice,
         settings.ttsVoiceRate
       );
       for (let i = 0; i < chunks.length; i++) {
@@ -744,7 +754,7 @@ export default function ReaderScreen() {
         if (i + 1 < chunks.length) {
           // Kick off the next chunk's synthesis now, so it's ready (or
           // close to it) by the time this one finishes playing.
-          nextChunk = KokoroTTSService.synthesize(chunks[i + 1].text, DEFAULT_KOKORO_VOICE, settings.ttsVoiceRate);
+          nextChunk = KokoroTTSService.synthesize(chunks[i + 1].text, voice, settings.ttsVoiceRate);
         }
         setIsLoadingAudio(false);
         await AudioService.load(uri);

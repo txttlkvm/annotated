@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
+  Platform,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
+import { KOKORO_VOICES, DEFAULT_KOKORO_VOICE, KokoroVoice } from '../services/KokoroTTSService';
 import { READER_THEMES } from '../types';
 import { colors, fonts, space, radius, type, elevation, readerPalettes } from '../theme';
 
@@ -282,70 +284,112 @@ export default function SettingsScreen() {
       </Section>
 
       {/* ------------------------------------------------------------ Voice */}
-      <Section title="Voice" caption="Google Cloud Text-to-Speech reads aloud to you.">
-        <Field label="API key" last={false}>
-          <View style={styles.keyWrap}>
-            <TextInput
-              style={styles.keyInput}
-              placeholder="Paste your Google Cloud API key"
-              placeholderTextColor={colors.bronze}
-              value={apiKey}
-              onChangeText={setApiKey}
-              secureTextEntry={!showApiKey}
-              multiline
+      {/* Web's Read Aloud runs on Kokoro (client-side, no account or API key)
+          -- native has no WASM/WebGPU path for it and stays on Google Cloud
+          TTS, which does need a key. This section used to describe Google
+          Cloud unconditionally even on web, telling users they needed to go
+          set up a Cloud console project and API key for a feature that
+          already worked out of the box; "Voice pitch" also did nothing
+          there, since Kokoro's synthesize() takes a speed but no pitch
+          parameter at all. */}
+      {Platform.OS === 'web' ? (
+        <Section
+          title="Voice"
+          caption="Kokoro reads aloud to you -- runs on this device, no account or API key needed."
+        >
+          <Field label="Voice" value={KOKORO_VOICES.find(v => v.id === settings.ttsVoice)?.label ?? DEFAULT_KOKORO_VOICE}>
+            <Segmented
+              options={KOKORO_VOICES.map(v => ({ label: v.label, value: v.id }))}
+              selected={v => (settings.ttsVoice as KokoroVoice) === v}
+              onSelect={v => updateSettings({ ttsVoice: v })}
             />
+          </Field>
+
+          <Field label="Speaking rate" value={`${settings.ttsVoiceRate.toFixed(1)}×`}>
+            <Segmented
+              options={[0.8, 0.9, 1.0, 1.1, 1.2, 1.3].map(r => ({
+                label: r.toFixed(1),
+                value: r,
+              }))}
+              selected={v => near(settings.ttsVoiceRate, v)}
+              onSelect={v => updateSettings({ ttsVoiceRate: v })}
+            />
+          </Field>
+
+          <ToggleRow
+            label="Read Aloud"
+            hint="Enable the Read Aloud control in the reader."
+            value={settings.enableTTS}
+            onValueChange={v => updateSettings({ enableTTS: v })}
+            last
+          />
+        </Section>
+      ) : (
+        <Section title="Voice" caption="Google Cloud Text-to-Speech reads aloud to you.">
+          <Field label="API key" last={false}>
+            <View style={styles.keyWrap}>
+              <TextInput
+                style={styles.keyInput}
+                placeholder="Paste your Google Cloud API key"
+                placeholderTextColor={colors.bronze}
+                value={apiKey}
+                onChangeText={setApiKey}
+                secureTextEntry={!showApiKey}
+                multiline
+              />
+              <TouchableOpacity
+                onPress={() => setShowApiKey(!showApiKey)}
+                style={styles.revealButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.revealText}>{showApiKey ? 'Hide' : 'Show'}</Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
-              onPress={() => setShowApiKey(!showApiKey)}
-              style={styles.revealButton}
+              style={styles.primaryButton}
+              activeOpacity={0.85}
+              onPress={handleSaveApiKey}
               accessibilityRole="button"
             >
-              <Text style={styles.revealText}>{showApiKey ? 'Hide' : 'Show'}</Text>
+              <Text style={styles.primaryButtonText}>Save key</Text>
             </TouchableOpacity>
-          </View>
 
-          <TouchableOpacity
-            style={styles.primaryButton}
-            activeOpacity={0.85}
-            onPress={handleSaveApiKey}
-            accessibilityRole="button"
-          >
-            <Text style={styles.primaryButtonText}>Save key</Text>
-          </TouchableOpacity>
+            <Text style={styles.help}>
+              Free to obtain: create a project at console.cloud.google.com, enable the
+              Cloud Text-to-Speech API, then issue an API key. It is stored on this
+              device only.
+            </Text>
+          </Field>
 
-          <Text style={styles.help}>
-            Free to obtain: create a project at console.cloud.google.com, enable the
-            Cloud Text-to-Speech API, then issue an API key. It is stored on this
-            device only.
-          </Text>
-        </Field>
+          <Field label="Voice pitch" value={settings.ttsVoicePitch.toFixed(1)}>
+            <Segmented
+              options={[0.8, 0.9, 1.0, 1.1, 1.2].map(p => ({ label: p.toFixed(1), value: p }))}
+              selected={v => near(settings.ttsVoicePitch, v)}
+              onSelect={v => updateSettings({ ttsVoicePitch: v })}
+            />
+          </Field>
 
-        <Field label="Voice pitch" value={settings.ttsVoicePitch.toFixed(1)}>
-          <Segmented
-            options={[0.8, 0.9, 1.0, 1.1, 1.2].map(p => ({ label: p.toFixed(1), value: p }))}
-            selected={v => near(settings.ttsVoicePitch, v)}
-            onSelect={v => updateSettings({ ttsVoicePitch: v })}
+          <Field label="Speaking rate" value={`${settings.ttsVoiceRate.toFixed(1)}×`}>
+            <Segmented
+              options={[0.8, 0.9, 1.0, 1.1, 1.2, 1.3].map(r => ({
+                label: r.toFixed(1),
+                value: r,
+              }))}
+              selected={v => near(settings.ttsVoiceRate, v)}
+              onSelect={v => updateSettings({ ttsVoiceRate: v })}
+            />
+          </Field>
+
+          <ToggleRow
+            label="Neural voices"
+            hint="Richer, slower to synthesise, and metered."
+            value={settings.enableTTS}
+            onValueChange={v => updateSettings({ enableTTS: v })}
+            last
           />
-        </Field>
-
-        <Field label="Speaking rate" value={`${settings.ttsVoiceRate.toFixed(1)}×`}>
-          <Segmented
-            options={[0.8, 0.9, 1.0, 1.1, 1.2, 1.3].map(r => ({
-              label: r.toFixed(1),
-              value: r,
-            }))}
-            selected={v => near(settings.ttsVoiceRate, v)}
-            onSelect={v => updateSettings({ ttsVoiceRate: v })}
-          />
-        </Field>
-
-        <ToggleRow
-          label="Neural voices"
-          hint="Richer, slower to synthesise, and metered."
-          value={settings.enableTTS}
-          onValueChange={v => updateSettings({ enableTTS: v })}
-          last
-        />
-      </Section>
+        </Section>
+      )}
 
       {/* ------------------------------------------------------------ About */}
       <View style={styles.section}>
