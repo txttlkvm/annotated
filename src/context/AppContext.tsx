@@ -736,6 +736,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addClassicalLibraryItem = async (item: ClassicalLibraryItem) => {
     const ref = gutenbergIds[item.id];
+    // The Catalog screen already filters out items whose id is in the
+    // current library from its own results, but that check reads from
+    // in-memory `books` state that can be stale by the time this actually
+    // runs -- a double-click before the first add's state update lands, or
+    // two tabs open on the same origin, both slip past it. Confirmed live:
+    // two separate Iliad records (410 vs 411 pages -- the pagination
+    // differs because each was fetched/paginated independently) ended up
+    // in the same library. Guard the actual insert, not just the picker
+    // UI, by matching on the same source URL every copy of this catalog
+    // item would resolve to.
+    if (ref?.textUrl) {
+      const existing = books.find((b) => b.sourceUrl === ref.textUrl);
+      if (existing) return existing.id;
+    }
     const cover = await resolveCatalogCover(item);
     const book: Omit<Book, 'id'> = {
       title: item.title,
