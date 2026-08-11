@@ -852,6 +852,28 @@ export default function ReaderScreen() {
     await handleReadAloud();
   };
 
+  const RATE_STEPS = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3];
+
+  const handleCycleRate = () => {
+    const idx = RATE_STEPS.findIndex((r) => Math.abs(r - settings.ttsVoiceRate) < 0.01);
+    const next = RATE_STEPS[(idx + 1 + RATE_STEPS.length) % RATE_STEPS.length];
+    updateSettings({ ttsVoiceRate: next });
+  };
+
+  const handleRestartChunk = () => {
+    AudioService.seek(0).catch(() => {});
+  };
+
+  /** Advances to the next Read-Aloud chunk immediately, without waiting for
+   * the current one to finish. AudioService.stop() resolves the loop's
+   * pending waitForEnd() (see AudioService.ts), which is exactly the signal
+   * playPageWithKokoro's for-loop needs to move to chunk i+1 -- it does NOT
+   * touch readAloudCancelRef, so unlike a real stop this can't end the
+   * session, only the current chunk. */
+  const handleSkipChunk = () => {
+    AudioService.stop().catch(() => {});
+  };
+
   const handleNextPage = useCallback(() => {
     setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
   }, [totalPages]);
@@ -1501,18 +1523,49 @@ export default function ReaderScreen() {
         ]}
       >
         <Column maxWidth={columnCap} gutter={gutter}>
-          {isPlaying && (
-            <View style={styles.audioBar}>
-              <View style={[styles.audioTrack, { backgroundColor: palette.rule }]}>
-                <View
-                  style={[
-                    styles.audioFill,
-                    {
-                      backgroundColor: palette.accent,
-                      width: `${playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0}%`,
-                    },
-                  ]}
-                />
+          {(isPlaying || isLoadingAudio) && (
+            <View style={styles.nowPlaying}>
+              <View style={styles.nowPlayingHeader}>
+                <Text style={[styles.nowPlayingVoice, { color: palette.accent }]} numberOfLines={1}>
+                  {isLoadingAudio
+                    ? 'Preparing voice…'
+                    : `${KOKORO_VOICES.find((v) => v.id === resolveKokoroVoice(settings.ttsVoice))?.label ?? 'Read Aloud'}`}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleCycleRate}
+                  accessibilityLabel="Change speaking rate"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={[styles.rateBadge, { color: palette.muted, borderColor: palette.border }]}>
+                    {settings.ttsVoiceRate.toFixed(1)}×
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.audioTrackWrap}>
+                <View style={[styles.audioTrack, { backgroundColor: palette.rule }]}>
+                  <View
+                    style={[
+                      styles.audioFill,
+                      {
+                        backgroundColor: palette.accent,
+                        width: `${playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                {playbackState.duration > 0 && (
+                  <View
+                    style={[
+                      styles.audioThumb,
+                      {
+                        backgroundColor: palette.accent,
+                        borderColor: palette.surface,
+                        left: `${(playbackState.position / playbackState.duration) * 100}%`,
+                      },
+                    ]}
+                  />
+                )}
               </View>
               <Text style={[styles.audioTime, { color: palette.muted }]}>
                 {formatClock(playbackState.position)} / {formatClock(playbackState.duration)}
@@ -1525,21 +1578,42 @@ export default function ReaderScreen() {
           </Text>
 
           <View style={styles.controlRow}>
+            {isPlaying ? (
+              <TouchableOpacity
+                style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
+                onPress={handleRestartChunk}
+                accessibilityLabel="Restart this passage"
+              >
+                <View style={styles.skipGlyph}>
+                  <ChevronLeftIcon size={14} color={palette.accent} strokeWidth={2} />
+                  <ChevronLeftIcon size={14} color={palette.accent} strokeWidth={2} style={styles.skipGlyphOverlap} />
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.roundButton,
+                  { borderColor: palette.border, backgroundColor: palette.raised },
+                  safePage === 0 && styles.disabled,
+                ]}
+                onPress={handlePreviousPage}
+                disabled={safePage === 0}
+                accessibilityLabel="Previous page"
+              >
+                <ChevronLeftIcon size={19} color={palette.accent} strokeWidth={1.9} />
+              </TouchableOpacity>
+            )}
+
+            {/* The hero transport control -- filled and larger only while
+                actively reading, so it reads as "the media player" rather
+                than a third identical round icon button in the row. */}
             <TouchableOpacity
               style={[
-                styles.roundButton,
-                { borderColor: palette.border, backgroundColor: palette.raised },
-                safePage === 0 && styles.disabled,
+                styles.playButton,
+                isPlaying
+                  ? { backgroundColor: palette.accent, borderColor: palette.accent }
+                  : { borderColor: palette.border, backgroundColor: palette.raised },
               ]}
-              onPress={handlePreviousPage}
-              disabled={safePage === 0}
-              accessibilityLabel="Previous page"
-            >
-              <ChevronLeftIcon size={19} color={palette.accent} strokeWidth={1.9} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
               onPress={handlePlayPauseReadAloud}
               disabled={isLoadingAudio}
               accessibilityLabel={isPlaying ? 'Pause reading' : 'Read aloud'}
@@ -1547,26 +1621,39 @@ export default function ReaderScreen() {
               {isLoadingAudio ? (
                 <ActivityIndicator color={palette.accent} size="small" />
               ) : isPlaying ? (
-                <PauseIcon size={17} color={palette.accent} />
+                <PauseIcon size={20} color={palette.surface} />
               ) : (
-                <PlayIcon size={17} color={palette.accent} />
+                <PlayIcon size={19} color={palette.accent} />
               )}
             </TouchableOpacity>
 
-            {/* The one saturated control on the page: the next thing to do. */}
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                { backgroundColor: colors.action },
-                safePage >= totalPages - 1 && styles.disabled,
-              ]}
-              onPress={handleNextPage}
-              disabled={safePage >= totalPages - 1}
-              accessibilityLabel="Next page"
-            >
-              <Text style={styles.nextLabel}>Next</Text>
-              <ChevronRightIcon size={15} color={colors.actionInk} strokeWidth={2.1} />
-            </TouchableOpacity>
+            {isPlaying ? (
+              <TouchableOpacity
+                style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
+                onPress={handleSkipChunk}
+                accessibilityLabel="Skip to next passage"
+              >
+                <View style={styles.skipGlyph}>
+                  <ChevronRightIcon size={14} color={palette.accent} strokeWidth={2} />
+                  <ChevronRightIcon size={14} color={palette.accent} strokeWidth={2} style={styles.skipGlyphOverlap} />
+                </View>
+              </TouchableOpacity>
+            ) : (
+              /* The one saturated control on the page: the next thing to do. */
+              <TouchableOpacity
+                style={[
+                  styles.nextButton,
+                  { backgroundColor: colors.action },
+                  safePage >= totalPages - 1 && styles.disabled,
+                ]}
+                onPress={handleNextPage}
+                disabled={safePage >= totalPages - 1}
+                accessibilityLabel="Next page"
+              >
+                <Text style={styles.nextLabel}>Next</Text>
+                <ChevronRightIcon size={15} color={colors.actionInk} strokeWidth={2.1} />
+              </TouchableOpacity>
+            )}
           </View>
         </Column>
       </Animated.View>
@@ -1946,10 +2033,54 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
 
-  audioBar: { paddingBottom: space.md },
-  audioTrack: { height: 3, borderRadius: 2, overflow: 'hidden', marginBottom: space.sm },
+  nowPlaying: { paddingBottom: space.md },
+  nowPlayingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: space.sm,
+  },
+  nowPlayingVoice: {
+    fontFamily: fonts.ui,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    flexShrink: 1,
+  },
+  rateBadge: {
+    fontFamily: fonts.ui,
+    fontSize: 12,
+    letterSpacing: 0.3,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.sm,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
+  audioTrackWrap: { position: 'relative', justifyContent: 'center', marginBottom: space.sm },
+  audioTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   audioFill: { height: '100%', borderRadius: 2 },
+  audioThumb: {
+    position: 'absolute',
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    borderWidth: 2,
+    marginLeft: -5.5,
+    elevation: 2,
+  },
   audioTime: { fontFamily: fonts.ui, fontSize: 12, textAlign: 'center', letterSpacing: 0.6 },
+
+  playButton: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skipGlyph: { flexDirection: 'row', alignItems: 'center' },
+  skipGlyphOverlap: { marginLeft: -9 },
 
   // --- menu ----------------------------------------------------------------
 
