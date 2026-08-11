@@ -144,6 +144,16 @@ export default function SettingsScreen() {
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
 
+  // settings.ttsVoice is shared with native's Google-Cloud voice-ID
+  // namespace ("en-US-Neural2-C"), so on a fresh install (or after
+  // switching from native) it won't match any Kokoro voice at all --
+  // resolve to the same default ReaderScreen/AudioShareService fall back
+  // to, so the picker both labels and highlights the voice that will
+  // actually be used, not a raw unmatched ID.
+  const effectiveKokoroVoice: KokoroVoice = KOKORO_VOICES.some((v) => v.id === settings.ttsVoice)
+    ? (settings.ttsVoice as KokoroVoice)
+    : DEFAULT_KOKORO_VOICE;
+
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) {
       Alert.alert('Error', 'Please enter a valid API key');
@@ -297,10 +307,13 @@ export default function SettingsScreen() {
           title="Voice"
           caption="Kokoro reads aloud to you -- runs on this device, no account or API key needed."
         >
-          <Field label="Voice" value={KOKORO_VOICES.find(v => v.id === settings.ttsVoice)?.label ?? DEFAULT_KOKORO_VOICE}>
+          <Field
+            label="Voice"
+            value={KOKORO_VOICES.find((v) => v.id === effectiveKokoroVoice)!.label}
+          >
             <Segmented
               options={KOKORO_VOICES.map(v => ({ label: v.label, value: v.id }))}
-              selected={v => (settings.ttsVoice as KokoroVoice) === v}
+              selected={v => effectiveKokoroVoice === v}
               onSelect={v => updateSettings({ ttsVoice: v })}
             />
           </Field>
