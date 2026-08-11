@@ -177,6 +177,16 @@ export class GutenbergService {
     // excluding newlines so it can never span a paragraph break.
     text = text.replace(/_([^_\n]{1,120}?)_/g, '$1');
 
+    // Gutenberg's plate-illustration marker -- "[Illustration: <optional
+    // description>]" -- has no rendering in a plain-text reader and was
+    // leaking through as a literal bracketed tag. Any real caption text
+    // (confirmed live: illustrated editions often follow it with one on
+    // the same line, e.g. "[Illustration: ] HOMER INVOKING THE MUSE")
+    // sits outside the brackets and is left untouched -- only the tag
+    // itself, including any description packed inside the brackets, is
+    // removed.
+    text = text.replace(/\[Illustration:?[^\]\n]*\]\s*/gi, '');
+
     return text.trim();
   }
 
@@ -193,8 +203,18 @@ export class GutenbergService {
       .map((b) => b.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
       .filter((b) => b.length > 0);
 
+    // Numbered divisions ("BOOK I.", "CHAPTER IV") need a trailing numeral;
+    // front-matter sections ("INTRODUCTION.", "POPE'S PREFACE TO THE ILIAD
+    // OF HOMER") never have one, so they're matched separately, allowing up
+    // to 4 leading words before the keyword. Confirmed live as the reason a
+    // whole Introduction/Preface (59 pages in Pope's Iliad edition) was
+    // getting merged into "BOOK I.": with only the numbered pattern, the
+    // first successfully-matched heading was Book I itself, so everything
+    // before it -- since there was no earlier chapter boundary at all --
+    // fell into that same chapter by construction (see the chapterCursor
+    // assignment pass below).
     const chapterPattern =
-      /^(chapter|book|canto|part|act|scene|letter|psalm)\s+([ivxlcdm\d]+)\b/i;
+      /^(?:(chapter|book|canto|part|act|scene|letter|psalm)\s+([ivxlcdm\d]+)\b|(?:[\w']+\s+){0,4}(preface|introduction)\b)/i;
 
     const rawChapters: { title: string; startParagraph: number }[] = [];
     const paragraphTexts: string[] = [];
