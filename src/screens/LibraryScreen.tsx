@@ -31,6 +31,7 @@ import {
   Text,
   TextInput,
   ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { EbookService } from '../services/EbookService';
@@ -124,6 +125,18 @@ const EMPTY_SHELF: Array<{ title: string; author: string; tilt: string }> = [
   { title: 'The Iliad', author: 'Homer', tilt: '0deg' },
   { title: 'Consolation', author: 'Boethius', tilt: '7deg' },
 ];
+
+/** CC0, no attribution required -- credited anyway as good practice (see
+ * SettingsScreen's HERITAGE_IMAGES for the full curated set and license
+ * notes; this is the same source, upload.wikimedia.org, the app already
+ * pulls classical-library cover art from). The empty library is the first
+ * thing a brand-new reader sees, before they've added a single book --
+ * highest-visibility moment in the app for the classical/Byzantine framing
+ * to actually be felt rather than just claimed in copy. */
+const EMPTY_STATE_BACKDROP = {
+  uri: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Interior_of_the_Hagia_Sophia_Grand_Mosque%2C_Istanbul_%2853808370434%29.jpg',
+  credit: 'Hagia Sophia, Constantinople',
+};
 
 /** '#c9a961' + 0.3 -> '#c9a9614d'. Eight-digit hex is fine on web and native. */
 function withAlpha(hex: string, alpha: number): string {
@@ -830,7 +843,12 @@ export default function LibraryScreen({ navigation }: any) {
     }
 
     return (
-      <View style={styles.empty}>
+      <ImageBackground
+        source={{ uri: EMPTY_STATE_BACKDROP.uri }}
+        style={styles.empty}
+        imageStyle={styles.emptyBgImage}
+      >
+        <View style={styles.emptyBgOverlay} pointerEvents="none" />
         <View style={styles.emptyShelf}>
           {EMPTY_SHELF.map(spine => (
             <View
@@ -847,6 +865,7 @@ export default function LibraryScreen({ navigation }: any) {
         <Text style={styles.emptyBody}>
           Bring a manuscript in from this device, or add one from the classical catalogue.
         </Text>
+        <Text style={styles.emptyBgCredit}>{EMPTY_STATE_BACKDROP.credit}</Text>
 
         {/* With no book in progress there is no hero, so THIS is the screen's
             single action and it carries the accent. */}
@@ -872,7 +891,7 @@ export default function LibraryScreen({ navigation }: any) {
           EPUB and TXT are read in full. PDF and MOBI can be shelved, but their text cannot be
           extracted yet.
         </Text>
-      </View>
+      </ImageBackground>
     );
   };
 
@@ -1266,6 +1285,20 @@ const styles = StyleSheet.create({
     paddingTop: space.xl,
     paddingBottom: space.xxxl,
     paddingHorizontal: space.sm,
+    overflow: 'hidden',
+  },
+  emptyBgImage: { opacity: 0.22 },
+  emptyBgOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.bg,
+    opacity: 0.55,
+  },
+  emptyBgCredit: {
+    ...t.caption,
+    fontSize: 10,
+    color: colors.bronze,
+    marginTop: space.xs,
+    marginBottom: space.md,
   },
   emptyShelf: {
     flexDirection: 'row',

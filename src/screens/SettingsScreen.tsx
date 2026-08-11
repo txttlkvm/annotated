@@ -8,6 +8,7 @@ import {
   TextInput,
   Switch,
   Platform,
+  Image,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { TTSService } from '../services/TTSService';
@@ -134,6 +135,45 @@ function ToggleRow({
     </View>
   );
 }
+
+/* ------------------------------------------------------------------ *
+ * Heritage gallery -- the visual "why" behind the classical/Christian
+ * framing, five verified public-domain/CC0 pieces spanning exactly what
+ * the app claims to be a reader for. Same source (upload.wikimedia.org)
+ * the app already pulls classical-library cover art from -- see
+ * gutenbergIds.ts -- just curated for this specific purpose rather than
+ * per-book. Licenses checked individually: all public domain or CC0,
+ * no attribution legally required, credited in the caption anyway as
+ * good practice.
+ * ------------------------------------------------------------------ */
+
+const HERITAGE_IMAGES: { uri: string; caption: string; credit: string }[] = [
+  {
+    uri: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Book_of_Kells_ChiRho_Folio_34R.png',
+    caption: 'The Book of Kells',
+    credit: 'Illuminated manuscript, c. 800 AD · Public domain',
+  },
+  {
+    uri: 'https://upload.wikimedia.org/wikipedia/commons/6/6d/Christ_Pantocrator_mosaic_from_Hagia_Sophia_2744_x_2900_pixels_3.1_MB.jpg',
+    caption: 'Christ Pantocrator',
+    credit: 'Deësis mosaic, Hagia Sophia, c. 1261 · Public domain',
+  },
+  {
+    uri: 'https://upload.wikimedia.org/wikipedia/commons/0/02/Wells_Cathedral_Nave.jpg',
+    caption: 'Wells Cathedral',
+    credit: 'Gothic nave, Somerset · CC0, Michael D Beckwith',
+  },
+  {
+    uri: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Interior_of_the_Hagia_Sophia_Grand_Mosque%2C_Istanbul_%2853808370434%29.jpg',
+    caption: 'Hagia Sophia',
+    credit: 'Constantinople, 6th century · CC0',
+  },
+  {
+    uri: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/Colonnade_Parthenon_Acropolis%2C_Athens%2C_Greece.jpg',
+    caption: 'The Parthenon',
+    credit: 'Acropolis of Athens · CC0, Jebulon',
+  },
+];
 
 /* ------------------------------------------------------------------ *
  * Screen
@@ -407,6 +447,26 @@ export default function SettingsScreen() {
       {/* ------------------------------------------------------------ About */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.heritageScroll}
+          contentContainerStyle={styles.heritageScrollContent}
+        >
+          {HERITAGE_IMAGES.map((item) => (
+            <View key={item.uri} style={styles.heritageCard}>
+              <Image source={{ uri: item.uri }} style={styles.heritageImage} resizeMode="cover" />
+              <Text style={styles.heritageCaption} numberOfLines={1}>
+                {item.caption}
+              </Text>
+              <Text style={styles.heritageCredit} numberOfLines={1}>
+                {item.credit}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+
         <View style={styles.card}>
           <View style={[styles.field, styles.fieldLast]}>
             <Text style={styles.aboutName}>Annotated</Text>
@@ -415,7 +475,10 @@ export default function SettingsScreen() {
             <Text style={styles.aboutBody}>
               A reader for the classical Christian tradition — goodness, beauty,
               and truth, with annotations, voice, and a library of public-domain
-              texts.
+              texts. Eleven centuries of Christian and classical civilization —
+              from an Irish scriptorium to a Byzantine basilica to an Athenian
+              hilltop — made the books in this library. Annotated exists to hand
+              them to you.
             </Text>
             <Text style={styles.aboutFine}>© 2024. All rights reserved.</Text>
           </View>
@@ -631,4 +694,27 @@ const styles = StyleSheet.create({
   },
   aboutBody: { ...type.body, color: colors.inkMuted },
   aboutFine: { ...type.caption, color: colors.bronze, marginTop: space.md },
+
+  heritageScroll: { marginBottom: space.md },
+  heritageScrollContent: { gap: space.sm, paddingRight: space.lg },
+  heritageCard: { width: 128 },
+  heritageImage: {
+    width: 128,
+    height: 96,
+    borderRadius: radius.md,
+    backgroundColor: colors.board,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: space.xs,
+  },
+  heritageCaption: {
+    ...type.caption,
+    fontWeight: '600',
+    color: colors.gold,
+  },
+  heritageCredit: {
+    ...type.caption,
+    fontSize: 10,
+    color: colors.bronze,
+  },
 });
