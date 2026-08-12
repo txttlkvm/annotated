@@ -78,6 +78,43 @@ export default function BookDetailsScreen({ route, navigation }: any) {
     setStats(bookStats);
   };
 
+  /**
+   * Tapping a book from the shelf used to always land here first, requiring
+   * a SECOND tap on "Begin/Continue Reading" before any text appeared --
+   * confirmed live as real friction, especially the first time a book is
+   * opened ("Downloads on first open" sitting behind its own button press).
+   * Auto-starts the same flow handleStartReading below runs on a tap, once
+   * per book landed on here. This screen (favourite/mark read/remove/stats)
+   * stays reachable exactly as before -- navigating TO the reader pushes a
+   * new screen onto the stack, it doesn't replace this one, so the back
+   * gesture from the reader still returns here.
+   */
+  const autoStartedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!book || book.itemType === 'music' || book.itemType === 'art') return;
+    if (autoStartedRef.current === book.id) return;
+    autoStartedRef.current = book.id;
+
+    const alreadyBusy = textLoad.status === 'loading' && textLoad.bookId === book.id;
+    if (alreadyBusy) return;
+    clearTextError();
+
+    if (book.content || !book.sourceUrl) {
+      setCurrentBook(book);
+      navigation.navigate('Reading', { screen: 'ReaderHome' });
+      return;
+    }
+
+    openBook(book)
+      .then((loaded) => {
+        if (mountedRef.current && loaded.content) {
+          navigation.navigate('Reading', { screen: 'ReaderHome' });
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book?.id]);
+
   if (!book) {
     return (
       <View style={styles.emptyState}>

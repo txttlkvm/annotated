@@ -41,7 +41,7 @@ import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 import { AudioShareService, AudioShareError } from '../services/AudioShareService';
 import { KokoroTTSService, KOKORO_VOICES, DEFAULT_KOKORO_VOICE, KokoroVoice } from '../services/KokoroTTSService';
-import { LattimoreNarrationService, NarrationCue } from '../services/LattimoreNarrationService';
+import { LattimoreNarrationService } from '../services/LattimoreNarrationService';
 
 /** settings.ttsVoice is shared between the native Google-Cloud voice ID
  * ("en-US-Neural2-C") and Kokoro's own voice IDs ("af_heart") -- same field,
@@ -52,6 +52,15 @@ function resolveKokoroVoice(stored: string): KokoroVoice {
   return (KOKORO_VOICES.some((v) => v.id === stored) ? stored : DEFAULT_KOKORO_VOICE) as KokoroVoice;
 }
 import { estimateWordTimings, findActiveWordIndex } from '../services/ReadAloudTiming';
+
+/** '#c9a961' + 0.3 -> '#c9a9614d'. Eight-digit hex is fine on web and native. */
+function withAlpha(hex: string, alpha: number): string {
+  const clamped = Math.max(0, Math.min(1, alpha));
+  const suffix = Math.round(clamped * 255)
+    .toString(16)
+    .padStart(2, '0');
+  return `${hex}${suffix}`;
+}
 /**
  * The reading surface — the most important screen in the app.
  *
@@ -232,56 +241,6 @@ interface ReadAloudChunk {
   segments: { paragraphIndex: number; chunkOffsetStart: number; chunkOffsetEnd: number }[];
 }
 
-/** Quote/dash normalization only (no whitespace collapsing -- paragraph
- * text is already whitespace-clean by the time it reaches this), so
- * offsets found in the normalized string are still valid offsets into the
- * ORIGINAL string: every substitution here is exactly one character for
- * one character. */
-function normalizeQuotes(s: string): string {
-  return s
-    .replace(/[‘’]/g, "'")
-    .replace(/[“”]/g, '"')
-    .replace(/[–—]/g, '-');
-}
-
-/** Where a narration cue's phrase STARTS within its paragraph's text, for
- * real phrase-level karaoke highlighting rather than lighting up the whole
- * paragraph for as long as ANY cue inside it is active -- which reads as
- * static/unsynced the moment a paragraph holds more than one cue (most of
- * them do: cue boundaries are ASR sentence breaks, not <p> breaks, so a
- * cue's own text routinely runs past its paragraph's end). Confirmed
- * offline against the full 24-book cue set: a cue's FULL text is an exact
- * substring of its assigned paragraph only ~32% of the time (exactly this
- * spillover), but a shrinking-prefix search for just where it STARTS
- * succeeds ~92% of the time -- the boundary this function is actually
- * responsible for; the phrase's END is bounded by wherever the next cue in
- * the same paragraph starts (or the paragraph's own end, for the last cue
- * in it), not by this cue's own possibly-overflowing length. */
-function findPhraseStart(paragraphText: string, cueText: string): number {
-  const normParagraph = normalizeQuotes(paragraphText);
-  const normCue = normalizeQuotes(cueText.trim());
-  for (const len of [normCue.length, 60, 40, 25, 15]) {
-    if (len < 15) break;
-    const prefix = normCue.slice(0, len);
-    const idx = normParagraph.indexOf(prefix);
-    if (idx !== -1) return idx;
-  }
-  return -1;
-}
-
-function findPhraseRange(
-  paragraphText: string,
-  cue: NarrationCue,
-  nextCueSameParagraph: NarrationCue | undefined
-): { start: number; end: number } {
-  const start = findPhraseStart(paragraphText, cue.t);
-  if (start === -1) return { start: 0, end: paragraphText.length };
-  if (nextCueSameParagraph) {
-    const nextStart = findPhraseStart(paragraphText, nextCueSameParagraph.t);
-    if (nextStart > start) return { start, end: nextStart };
-  }
-  return { start, end: paragraphText.length };
-}
 
 function buildReadAloudChunks(paragraphs: string[]): ReadAloudChunk[] {
   const chunks: ReadAloudChunk[] = [];
@@ -417,7 +376,7 @@ export default function ReaderScreen() {
     duration: 0,
     rate: 1,
   });
-  const [chromeVisible, setChromeVisible] = useState(false);
+  const [chromeVisible, setChromeVisible] = useState(true);
   const [showMenus, setShowMenus] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [showHighlightColor, setShowHighlightColor] = useState(false);
@@ -483,6 +442,16 @@ export default function ReaderScreen() {
     }).start();
     if (!chromeVisible) setShowMenus(false);
   }, [chromeVisible, chromeAnim]);
+
+  // Read Aloud starting (loading OR already playing) reveals the transport
+  // controls itself rather than leaving them hidden behind a tap the reader
+  // has no reason to know they need -- confirmed live as a real point of
+  // confusion: the play button lives in this same hidden chrome, so with
+  // chrome hidden by default there was no visible way to even START Read
+  // Aloud without first discovering the tap-to-reveal gesture.
+  useEffect(() => {
+    if (isPlaying || isLoadingAudio) setChromeVisible(true);
+  }, [isPlaying, isLoadingAudio]);
 
   /**
    * Tap the page to reveal the furniture. On web a click that merely ends a
@@ -684,7 +653,10 @@ export default function ReaderScreen() {
     }
     restoredInitialPageRef.current = true;
     setIsPlaying(false);
-    setChromeVisible(false);
+    // Visible by default -- the Read Aloud play button lives in this same
+    // chrome, and a reader has no way to discover the tap-to-reveal gesture
+    // that used to gate it. Confirmed live as a real point of confusion.
+    setChromeVisible(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBook?.id]);
 
@@ -916,6 +888,15 @@ export default function ReaderScreen() {
 
         stopHighlightTicker();
         let lastPageShown = -1;
+        // Text-based phrase-position highlighting was tried and pulled: even
+        // disambiguated, matching a phrase's position from its own text is
+        // inherently approximate, and Homer's epic diction leans hard on
+        // repeated formulaic lines ("son of Atreus", stock epithets) that
+        // make "approximate" occasionally wrong in a way that reads as
+        // broken rather than just imprecise. Page tracking below is the
+        // reliable part -- built on the same per-paragraph cue mapping, but
+        // only needs to know WHICH paragraph is active, not where inside its
+        // text, so it isn't exposed to that ambiguity at all.
         highlightTickerRef.current = setInterval(async () => {
           const status = await AudioService.getStatus();
           if (!status) return;
@@ -927,22 +908,6 @@ export default function ReaderScreen() {
             lastPageShown = targetPage;
             lattimoreAutoAdvanceRef.current = true;
             setCurrentPage(targetPage);
-          }
-          const shownPage = targetPage !== -1 ? pages[targetPage] : pages[lastPageShown];
-          const localIdx = shownPage?.paragraphs?.findIndex((p) => p.index === globalIdx) ?? -1;
-          if (localIdx >= 0) {
-            const cueIdx = cues.indexOf(cue);
-            const nextCue = cues[cueIdx + 1];
-            const range = findPhraseRange(
-              shownPage.paragraphs[localIdx].text,
-              cue,
-              nextCue && nextCue.p === cue.p ? nextCue : undefined
-            );
-            setActiveHighlight({
-              paragraphIndex: localIdx,
-              start: range.start,
-              end: range.end,
-            });
           }
         }, 200);
 
@@ -1703,7 +1668,11 @@ export default function ReaderScreen() {
         style={[
           styles.chromeBottom,
           chromeStyle,
-          { backgroundColor: palette.surface, borderTopColor: palette.rule },
+          // Translucent, not a solid panel -- floats over the last line or
+          // two of text instead of reading as a bar that ate part of the
+          // page. No border: a hard edge on a translucent surface looks like
+          // a mistake, not a deliberate seam.
+          { backgroundColor: withAlpha(palette.surface, 0.82) },
         ]}
       >
         <Column maxWidth={columnCap} gutter={gutter}>
@@ -2124,9 +2093,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 20,
-    paddingTop: space.md,
-    paddingBottom: space.lg,
-    borderTopWidth: 1,
+    paddingTop: space.sm,
+    paddingBottom: space.md,
     alignItems: 'center',
   },
   controlRow: {
