@@ -71,6 +71,7 @@ export function AlertHost() {
                 ]}
                 onPress={() => dismiss(b)}
                 accessibilityRole="button"
+                accessibilityLabel={b.text}
               >
                 <Text
                   style={[
