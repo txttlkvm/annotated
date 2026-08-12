@@ -655,6 +655,10 @@ export default function ReaderScreen() {
    * playing would otherwise keep audibly playing to its natural end first.
    */
   useEffect(() => {
+    if (lattimoreAutoAdvanceRef.current) {
+      lattimoreAutoAdvanceRef.current = false;
+      return;
+    }
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
     AudioService.stop().catch(() => {});
@@ -692,6 +696,15 @@ export default function ReaderScreen() {
   const readAloudCancelRef = useRef(false);
   const readAloudActiveRef = useRef(false);
   const highlightTickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Set immediately before playPageWithLattimore calls setCurrentPage to
+   * follow the narration onto a new page -- the safePage-keyed effect below
+   * stops Read Aloud on ANY page change since that's normally a sign the
+   * reader navigated away by hand (next/prev, swipe, TOC). Without this
+   * distinction, Lattimore's own auto-advance would cancel itself the
+   * instant it tried to turn the page. Consumed (reset false) by that
+   * effect on the very next run, so a REAL manual navigation right after an
+   * auto-advance still stops playback as it should. */
+  const lattimoreAutoAdvanceRef = useRef(false);
 
   const stopHighlightTicker = () => {
     if (highlightTickerRef.current) {
@@ -861,10 +874,11 @@ export default function ReaderScreen() {
           const targetPage = findPageForParagraph(globalIdx);
           if (targetPage !== -1 && targetPage !== lastPageShown) {
             lastPageShown = targetPage;
+            lattimoreAutoAdvanceRef.current = true;
             setCurrentPage(targetPage);
           }
-          const shownPage = pages[targetPage !== -1 ? targetPage : lastPageShown];
-          const localIdx = shownPage?.paragraphs.findIndex((p) => p.index === globalIdx) ?? -1;
+          const shownPage = targetPage !== -1 ? pages[targetPage] : pages[lastPageShown];
+          const localIdx = shownPage?.paragraphs?.findIndex((p) => p.index === globalIdx) ?? -1;
           if (localIdx >= 0) {
             setActiveHighlight({
               paragraphIndex: localIdx,
