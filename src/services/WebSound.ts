@@ -62,20 +62,47 @@ export class WebSound {
 
   async loadAsync(): Promise<void> {
     await new Promise<void>((resolve, reject) => {
+      let settled = false;
       const onReady = () => {
+        if (settled) return;
+        settled = true;
         cleanup();
         resolve();
       };
       const onError = () => {
+        if (settled) return;
+        settled = true;
         cleanup();
         reject(this.el.error || new Error('Audio failed to load'));
       };
       const cleanup = () => {
-        this.el.removeEventListener('canplaythrough', onReady);
+        this.el.removeEventListener('canplay', onReady);
         this.el.removeEventListener('error', onError);
+        clearTimeout(timeoutId);
       };
-      this.el.addEventListener('canplaythrough', onReady, { once: true });
+      // 'canplay' (enough buffered to START now), not 'canplaythrough'
+      // (enough buffered to reach the END without ever rebuffering again).
+      // Confirmed live as the actual cause of Read Aloud's spinner hanging
+      // indefinitely on a real narrated chapter (tens of MB, tens of
+      // minutes long) over an ordinary connection: canplaythrough waits
+      // until the browser is confident the WHOLE file can play without a
+      // single future stall, which for a long file can take a very long
+      // time or effectively never resolve on a slower/inconsistent
+      // connection -- invisible when testing on a fast connection, and
+      // never an issue for Kokoro's data: URIs (already fully in memory,
+      // nothing to buffer). The browser buffers the rest progressively
+      // during playback exactly as any normal streaming player does.
+      this.el.addEventListener('canplay', onReady, { once: true });
       this.el.addEventListener('error', onError, { once: true });
+      // Backstop: a real network failure that never fires 'error' either
+      // (a stalled connection, not a rejected one) would otherwise hang
+      // this promise forever with no way out.
+      const timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error('Audio load timed out'));
+      }, 20000);
       this.el.load();
     });
   }
