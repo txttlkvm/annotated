@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   Text,
-  TouchableOpacity,
   Pressable,
   ActivityIndicator,
   Animated,
@@ -22,6 +21,7 @@ import { AudioService, PlaybackState } from '../services/AudioService';
 import { unlockAudioPlayback } from '../services/WebSound';
 import { GutenbergService, Paragraph } from '../services/GutenbergService';
 import BookCover from '../components/BookCover';
+import ScaleTouchable from '../components/ScaleTouchable';
 import Shell, { Column, useColumn } from '../components/Shell';
 import {
   BookmarkIcon,
@@ -1229,7 +1229,7 @@ export default function ReaderScreen() {
                     : 'This volume has no readable edition yet. Add it again from the catalogue, or import a file with EPUB or plain-text content.'}
               </Text>
               {failedThisBook && (
-                <TouchableOpacity
+                <ScaleTouchable
                   style={styles.retryButton}
                   onPress={() => {
                     retryTextLoad().catch(() => {});
@@ -1237,7 +1237,7 @@ export default function ReaderScreen() {
                   accessibilityRole="button"
                 >
                   <Text style={styles.retryLabel}>Try again</Text>
-                </TouchableOpacity>
+                </ScaleTouchable>
               )}
             </>
           )}
@@ -1378,7 +1378,7 @@ export default function ReaderScreen() {
             <View style={styles.chromeTitles}>
               {!!chapterTitle && (
                 <View style={styles.chapterNavRow}>
-                  <TouchableOpacity
+                  <ScaleTouchable
                     onPress={handlePreviousChapter}
                     disabled={currentChapterIndex === 0}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -1389,8 +1389,8 @@ export default function ReaderScreen() {
                       color={currentChapterIndex === 0 ? palette.rule : palette.accentSoft}
                       strokeWidth={2}
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </ScaleTouchable>
+                  <ScaleTouchable
                     onPress={() => navigation.navigate('TableOfContents')}
                     style={{ flex: 1 }}
                     accessibilityLabel="Open table of contents"
@@ -1398,8 +1398,8 @@ export default function ReaderScreen() {
                     <Text style={[styles.overline, { color: palette.accentSoft }]} numberOfLines={1}>
                       {chapterTitle.toUpperCase()}
                     </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </ScaleTouchable>
+                  <ScaleTouchable
                     onPress={handleNextChapter}
                     disabled={currentChapterIndex >= chapterCount - 1}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -1410,7 +1410,7 @@ export default function ReaderScreen() {
                       color={currentChapterIndex >= chapterCount - 1 ? palette.rule : palette.accentSoft}
                       strokeWidth={2}
                     />
-                  </TouchableOpacity>
+                  </ScaleTouchable>
                 </View>
               )}
               <Text style={[styles.bookTitle, { color: palette.accent }]} numberOfLines={1}>
@@ -1423,23 +1423,23 @@ export default function ReaderScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity
+            <ScaleTouchable
               style={[styles.iconButton, { borderColor: palette.border }]}
               onPress={() => setShowSearch(true)}
               accessibilityLabel="Search this book"
             >
               <SearchIcon size={16} color={palette.accent} strokeWidth={1.8} />
-            </TouchableOpacity>
+            </ScaleTouchable>
 
-            <TouchableOpacity
+            <ScaleTouchable
               style={[styles.iconButton, { borderColor: palette.border }]}
               onPress={() => setShowBookmarkModal(true)}
               accessibilityLabel="Add bookmark"
             >
               <BookmarkIcon size={17} color={palette.accent} strokeWidth={1.7} />
-            </TouchableOpacity>
+            </ScaleTouchable>
 
-            <TouchableOpacity
+            <ScaleTouchable
               style={[
                 styles.iconButton,
                 { borderColor: palette.border, backgroundColor: showMenus ? palette.raised : 'transparent' },
@@ -1448,7 +1448,7 @@ export default function ReaderScreen() {
               accessibilityLabel="Reading menu"
             >
               <MenuIcon size={17} color={palette.accent} strokeWidth={1.7} />
-            </TouchableOpacity>
+            </ScaleTouchable>
           </View>
         </Column>
 
@@ -1507,14 +1507,14 @@ export default function ReaderScreen() {
                 { label: 'Share this passage', onPress: () => { setShowMenus(false); handleShare(); } },
                 { label: 'Close menu', onPress: () => setShowMenus(false) },
               ].map((item, i) => (
-                <TouchableOpacity
+                <ScaleTouchable
                   key={item.label}
                   onPress={item.onPress}
                   style={[styles.menuItem, i > 0 && { borderTopWidth: 1, borderTopColor: palette.rule }]}
                 >
                   <Text style={[styles.menuLabel, { color: palette.accent }]}>{item.label}</Text>
                   <Text style={[styles.menuChevron, { color: palette.accentSoft }]}>›</Text>
-                </TouchableOpacity>
+                </ScaleTouchable>
               ))}
             </View>
           </Column>
@@ -1539,7 +1539,7 @@ export default function ReaderScreen() {
                     ? 'Preparing voice…'
                     : `${KOKORO_VOICES.find((v) => v.id === resolveKokoroVoice(settings.ttsVoice))?.label ?? 'Read Aloud'}`}
                 </Text>
-                <TouchableOpacity
+                <ScaleTouchable
                   onPress={handleCycleRate}
                   accessibilityLabel="Change speaking rate"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -1547,7 +1547,7 @@ export default function ReaderScreen() {
                   <Text style={[styles.rateBadge, { color: palette.muted, borderColor: palette.border }]}>
                     {settings.ttsVoiceRate.toFixed(1)}×
                   </Text>
-                </TouchableOpacity>
+                </ScaleTouchable>
               </View>
 
               <View style={styles.audioTrackWrap}>
@@ -1587,7 +1587,7 @@ export default function ReaderScreen() {
 
           <View style={styles.controlRow}>
             {isPlaying ? (
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
                 onPress={handleRestartChunk}
                 accessibilityLabel="Restart this passage"
@@ -1596,9 +1596,9 @@ export default function ReaderScreen() {
                   <ChevronLeftIcon size={14} color={palette.accent} strokeWidth={2} />
                   <ChevronLeftIcon size={14} color={palette.accent} strokeWidth={2} style={styles.skipGlyphOverlap} />
                 </View>
-              </TouchableOpacity>
+              </ScaleTouchable>
             ) : (
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[
                   styles.roundButton,
                   { borderColor: palette.border, backgroundColor: palette.raised },
@@ -1609,13 +1609,13 @@ export default function ReaderScreen() {
                 accessibilityLabel="Previous page"
               >
                 <ChevronLeftIcon size={19} color={palette.accent} strokeWidth={1.9} />
-              </TouchableOpacity>
+              </ScaleTouchable>
             )}
 
             {/* The hero transport control -- filled and larger only while
                 actively reading, so it reads as "the media player" rather
                 than a third identical round icon button in the row. */}
-            <TouchableOpacity
+            <ScaleTouchable
               style={[
                 styles.playButton,
                 isPlaying
@@ -1633,10 +1633,10 @@ export default function ReaderScreen() {
               ) : (
                 <PlayIcon size={19} color={palette.accent} />
               )}
-            </TouchableOpacity>
+            </ScaleTouchable>
 
             {isPlaying ? (
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[styles.roundButton, { borderColor: palette.border, backgroundColor: palette.raised }]}
                 onPress={handleSkipChunk}
                 accessibilityLabel="Skip to next passage"
@@ -1645,10 +1645,10 @@ export default function ReaderScreen() {
                   <ChevronRightIcon size={14} color={palette.accent} strokeWidth={2} />
                   <ChevronRightIcon size={14} color={palette.accent} strokeWidth={2} style={styles.skipGlyphOverlap} />
                 </View>
-              </TouchableOpacity>
+              </ScaleTouchable>
             ) : (
               /* The one saturated control on the page: the next thing to do. */
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[
                   styles.nextButton,
                   { backgroundColor: colors.action },
@@ -1660,7 +1660,7 @@ export default function ReaderScreen() {
               >
                 <Text style={styles.nextLabel}>Next</Text>
                 <ChevronRightIcon size={15} color={colors.actionInk} strokeWidth={2.1} />
-              </TouchableOpacity>
+              </ScaleTouchable>
             )}
           </View>
         </Column>
@@ -1693,18 +1693,18 @@ export default function ReaderScreen() {
               multiline
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[styles.modalButton, { borderColor: palette.border }]}
                 onPress={() => setShowBookmarkModal(false)}
               >
                 <Text style={[styles.modalButtonText, { color: palette.muted }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </ScaleTouchable>
+              <ScaleTouchable
                 style={[styles.modalButton, styles.modalButtonPrimary, { backgroundColor: colors.action }]}
                 onPress={handleAddBookmark}
               >
                 <Text style={[styles.modalButtonText, { color: colors.actionInk }]}>Save</Text>
-              </TouchableOpacity>
+              </ScaleTouchable>
             </View>
           </View>
         </View>
@@ -1726,7 +1726,7 @@ export default function ReaderScreen() {
             </Text>
             <View style={styles.swatchRow}>
               {HIGHLIGHT_SWATCHES.map((s) => (
-                <TouchableOpacity
+                <ScaleTouchable
                   key={s.value}
                   accessibilityLabel={s.label}
                   style={[
@@ -1737,7 +1737,7 @@ export default function ReaderScreen() {
                 >
                   <View style={[styles.swatchDot, { backgroundColor: s.value }]} />
                   <Text style={[styles.swatchLabel, { color: palette.muted }]}>{s.label}</Text>
-                </TouchableOpacity>
+                </ScaleTouchable>
               ))}
             </View>
             {/* Two rows of two rather than four flex:1 buttons crammed into
@@ -1746,7 +1746,7 @@ export default function ReaderScreen() {
                 de-emphasized row above the three real actions, so it
                 doesn't visually compete with them for the same weight. */}
             <View style={styles.modalCancelRow}>
-              <TouchableOpacity
+              <ScaleTouchable
                 onPress={() => {
                   setSelectedText('');
                   setShowHighlightColor(false);
@@ -1754,10 +1754,10 @@ export default function ReaderScreen() {
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Text style={[styles.modalCancelText, { color: palette.muted }]}>Cancel</Text>
-              </TouchableOpacity>
+              </ScaleTouchable>
             </View>
             <View style={styles.modalButtons}>
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[styles.modalButton, { borderColor: palette.border }]}
                 onPress={() => {
                   setShowHighlightColor(false);
@@ -1765,16 +1765,16 @@ export default function ReaderScreen() {
                 }}
               >
                 <Text style={[styles.modalButtonText, { color: palette.accent }]}>Look up</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </ScaleTouchable>
+              <ScaleTouchable
                 style={[styles.modalButton, { borderColor: palette.border }]}
                 onPress={handleShareSelectedText}
               >
                 <Text style={[styles.modalButtonText, { color: palette.accent }]}>Share text</Text>
-              </TouchableOpacity>
+              </ScaleTouchable>
             </View>
             <View style={[styles.modalButtons, { marginTop: space.sm }]}>
-              <TouchableOpacity
+              <ScaleTouchable
                 style={[styles.modalButton, styles.modalButtonWide, { borderColor: palette.border }]}
                 onPress={handleShareAsAudio}
                 disabled={isSharingAudio}
@@ -1784,7 +1784,7 @@ export default function ReaderScreen() {
                 ) : (
                   <Text style={[styles.modalButtonText, { color: palette.accent }]}>Share as audio</Text>
                 )}
-              </TouchableOpacity>
+              </ScaleTouchable>
             </View>
           </View>
         </View>
@@ -1824,7 +1824,7 @@ export default function ReaderScreen() {
                 </>
               )
             )}
-            <TouchableOpacity
+            <ScaleTouchable
               style={[styles.modalButton, { borderColor: palette.border, marginTop: space.md }]}
               onPress={() => {
                 setLookupResult(null);
@@ -1832,7 +1832,7 @@ export default function ReaderScreen() {
               }}
             >
               <Text style={[styles.modalButtonText, { color: palette.muted }]}>Close</Text>
-            </TouchableOpacity>
+            </ScaleTouchable>
           </View>
         </View>
       </Modal>
@@ -1858,9 +1858,9 @@ export default function ReaderScreen() {
                 onChangeText={setSearchQuery}
                 autoFocus
               />
-              <TouchableOpacity onPress={() => setShowSearch(false)} accessibilityLabel="Close search">
+              <ScaleTouchable onPress={() => setShowSearch(false)} accessibilityLabel="Close search">
                 <CloseIcon size={16} color={palette.muted} strokeWidth={1.8} />
-              </TouchableOpacity>
+              </ScaleTouchable>
             </View>
 
             {searchQuery.trim().length >= 2 && (
@@ -1872,7 +1872,7 @@ export default function ReaderScreen() {
 
             <ScrollView style={styles.searchResults} keyboardShouldPersistTaps="handled">
               {searchResults.map((r) => (
-                <TouchableOpacity
+                <ScaleTouchable
                   key={r.paragraphIndex}
                   style={[styles.searchResultRow, { borderColor: palette.rule }]}
                   onPress={() => jumpToSearchResult(r.pageIndex)}
@@ -1883,7 +1883,7 @@ export default function ReaderScreen() {
                   <Text style={[styles.searchPageLabel, { color: palette.muted }]}>
                     Page {r.pageIndex + 1}
                   </Text>
-                </TouchableOpacity>
+                </ScaleTouchable>
               ))}
             </ScrollView>
           </View>

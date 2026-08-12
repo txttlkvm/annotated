@@ -27,7 +27,6 @@ import {
   View,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   Text,
   TextInput,
   ActivityIndicator,
@@ -38,6 +37,7 @@ import { EbookService } from '../services/EbookService';
 import type { PickedFile } from '../services/EbookService';
 import { Book } from '../types';
 import BookCover from '../components/BookCover';
+import ScaleTouchable from '../components/ScaleTouchable';
 import Shell, { useColumnWidth } from '../components/Shell';
 import Section from '../components/Section';
 import Carousel from '../components/Carousel';
@@ -584,13 +584,13 @@ export default function LibraryScreen({ navigation }: any) {
           </View>
 
           {!isWorking && (
-            <TouchableOpacity
+            <ScaleTouchable
               style={styles.bannerClose}
               onPress={() => setImportStatus(IDLE)}
               accessibilityLabel="Dismiss"
             >
               <Text style={styles.bannerCloseText}>×</Text>
-            </TouchableOpacity>
+            </ScaleTouchable>
           )}
         </View>
 
@@ -611,12 +611,12 @@ export default function LibraryScreen({ navigation }: any) {
         )}
 
         {phase === 'error' && (
-          <TouchableOpacity
+          <ScaleTouchable
             style={[styles.bannerAction, { borderColor: withAlpha(accent, 0.5) }]}
             onPress={handleUploadBook}
           >
             <Text style={[styles.bannerActionText, { color: accent }]}>Try another file</Text>
-          </TouchableOpacity>
+          </ScaleTouchable>
         )}
       </View>
     );
@@ -636,7 +636,7 @@ export default function LibraryScreen({ navigation }: any) {
 
     return (
       <View style={styles.hero}>
-        <TouchableOpacity
+        <ScaleTouchable
           style={styles.heroRow}
           activeOpacity={0.85}
           onPress={() => openDetails(book)}
@@ -676,10 +676,10 @@ export default function LibraryScreen({ navigation }: any) {
               </Text>
             </View>
           </View>
-        </TouchableOpacity>
+        </ScaleTouchable>
 
         {/* The single accent on this screen. Nothing else may be this colour. */}
-        <TouchableOpacity
+        <ScaleTouchable
           style={[styles.cta, isBusy && styles.ctaBusy]}
           activeOpacity={0.9}
           onPress={() => handleContinue(book)}
@@ -695,7 +695,7 @@ export default function LibraryScreen({ navigation }: any) {
               <Text style={styles.ctaLabel}>{started ? 'Continue Reading' : 'Begin Reading'}</Text>
             </>
           )}
-        </TouchableOpacity>
+        </ScaleTouchable>
       </View>
     );
   };
@@ -704,7 +704,7 @@ export default function LibraryScreen({ navigation }: any) {
   const renderCarouselItem = (book: Book) => {
     const pct = progressPercent(book);
     return (
-      <TouchableOpacity
+      <ScaleTouchable
         activeOpacity={0.85}
         onPress={() => openDetails(book)}
         accessibilityRole="button"
@@ -729,7 +729,7 @@ export default function LibraryScreen({ navigation }: any) {
             <View style={[styles.cellFill, { width: `${pct}%` }]} />
           </View>
         )}
-      </TouchableOpacity>
+      </ScaleTouchable>
     );
   };
 
@@ -738,7 +738,7 @@ export default function LibraryScreen({ navigation }: any) {
     const isLastInRow = index % gridCols === gridCols - 1;
 
     return (
-      <TouchableOpacity
+      <ScaleTouchable
         style={[styles.gridCell, { width: gridCellW }, !isLastInRow && { marginRight: gridGap }]}
         activeOpacity={0.85}
         onPress={() => openDetails(book)}
@@ -771,7 +771,7 @@ export default function LibraryScreen({ navigation }: any) {
             </Text>
           )
         )}
-      </TouchableOpacity>
+      </ScaleTouchable>
     );
   };
 
@@ -779,7 +779,7 @@ export default function LibraryScreen({ navigation }: any) {
     const pct = progressPercent(book);
 
     return (
-      <TouchableOpacity
+      <ScaleTouchable
         style={styles.listCard}
         activeOpacity={0.85}
         onPress={() => openDetails(book)}
@@ -821,7 +821,7 @@ export default function LibraryScreen({ navigation }: any) {
         <View style={styles.listChevron}>
           <ChevronRightIcon size={15} color={colors.bronze} strokeWidth={2} />
         </View>
-      </TouchableOpacity>
+      </ScaleTouchable>
     );
   };
 
@@ -835,9 +835,9 @@ export default function LibraryScreen({ navigation }: any) {
           <Text style={styles.emptyBody}>
             No volume in your library matches “{searchText.trim()}”.
           </Text>
-          <TouchableOpacity style={styles.ghostButton} onPress={() => setSearchText('')}>
+          <ScaleTouchable style={styles.ghostButton} onPress={() => setSearchText('')}>
             <Text style={styles.ghostButtonText}>Clear search</Text>
-          </TouchableOpacity>
+          </ScaleTouchable>
         </View>
       );
     }
@@ -869,7 +869,7 @@ export default function LibraryScreen({ navigation }: any) {
 
         {/* With no book in progress there is no hero, so THIS is the screen's
             single action and it carries the accent. */}
-        <TouchableOpacity
+        <ScaleTouchable
           style={[styles.cta, styles.emptyCta, isBusy && styles.ctaBusy]}
           onPress={handleUploadBook}
           disabled={isBusy}
@@ -885,7 +885,7 @@ export default function LibraryScreen({ navigation }: any) {
               <Text style={styles.ctaLabel}>Import a file</Text>
             </>
           )}
-        </TouchableOpacity>
+        </ScaleTouchable>
 
         <Text style={styles.emptyFootnote}>
           EPUB and TXT are read in full. PDF and MOBI can be shelved, but their text cannot be
@@ -921,7 +921,7 @@ export default function LibraryScreen({ navigation }: any) {
             first-run shelf — once a book exists that CTA stops rendering, so
             this pair is the only way in for anyone with an existing library. */}
         <View style={styles.mastheadActions}>
-          <TouchableOpacity
+          <ScaleTouchable
             style={styles.addButton}
             onPress={() => navigation.navigate('Catalog')}
             activeOpacity={0.8}
@@ -930,8 +930,8 @@ export default function LibraryScreen({ navigation }: any) {
           >
             <PlusIcon size={13} color={colors.gold} strokeWidth={2.2} />
             <Text style={styles.addButtonText}>Add</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </ScaleTouchable>
+          <ScaleTouchable
             style={[styles.addButton, isBusy && styles.addButtonBusy]}
             onPress={handleUploadBook}
             disabled={isBusy}
@@ -947,7 +947,7 @@ export default function LibraryScreen({ navigation }: any) {
                 <Text style={styles.addButtonText}>Import</Text>
               </>
             )}
-          </TouchableOpacity>
+          </ScaleTouchable>
         </View>
       </View>
 
@@ -967,14 +967,14 @@ export default function LibraryScreen({ navigation }: any) {
               accessibilityLabel="Search your library"
             />
             {searching && (
-              <TouchableOpacity
+              <ScaleTouchable
                 onPress={() => setSearchText('')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
               >
                 <CloseIcon size={14} color={colors.bronze} strokeWidth={1.8} />
-              </TouchableOpacity>
+              </ScaleTouchable>
             )}
           </View>
 
@@ -984,7 +984,7 @@ export default function LibraryScreen({ navigation }: any) {
             {SORTS.map(s => {
               const active = sortBy === s.key;
               return (
-                <TouchableOpacity
+                <ScaleTouchable
                   key={s.key}
                   style={[styles.chip, active && styles.chipActive]}
                   onPress={() => setSortBy(s.key)}
@@ -994,13 +994,13 @@ export default function LibraryScreen({ navigation }: any) {
                   accessibilityLabel={`Sort by ${s.label.toLowerCase()}`}
                 >
                   <Text style={[styles.chipText, active && styles.chipTextActive]}>{s.label}</Text>
-                </TouchableOpacity>
+                </ScaleTouchable>
               );
             })}
 
             <View style={styles.controlsSpacer} />
 
-            <TouchableOpacity
+            <ScaleTouchable
               style={styles.viewButton}
               onPress={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
               activeOpacity={0.8}
@@ -1012,7 +1012,7 @@ export default function LibraryScreen({ navigation }: any) {
               ) : (
                 <MenuIcon size={17} color={colors.gold} strokeWidth={1.7} />
               )}
-            </TouchableOpacity>
+            </ScaleTouchable>
           </View>
         </>
       )}
