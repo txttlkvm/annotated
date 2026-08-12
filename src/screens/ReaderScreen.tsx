@@ -872,7 +872,7 @@ export default function ReaderScreen() {
           if (!cue) return;
           const globalIdx = chapterStartParagraph + cue.p;
           const targetPage = findPageForParagraph(globalIdx);
-          console.log('[DEBUG-LAT]', { pos: status.position / 1000, cueP: cue.p, chapterStartParagraph, globalIdx, targetPage, lastPageShown, pagesLen: pages.length });
+          console.log('[DEBUG-LAT] ' + JSON.stringify({ pos: Math.round(status.position / 100) / 10, cueP: cue.p, globalIdx, targetPage, lastPageShown, pagesLen: pages.length, p1first: pages[1]?.paragraphs[0]?.index, p1last: pages[1]?.paragraphs[pages[1].paragraphs.length - 1]?.index, p2first: pages[2]?.paragraphs[0]?.index }));
           if (targetPage !== -1 && targetPage !== lastPageShown) {
             lastPageShown = targetPage;
             lattimoreAutoAdvanceRef.current = true;
