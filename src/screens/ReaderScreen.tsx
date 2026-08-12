@@ -767,6 +767,14 @@ export default function ReaderScreen() {
         setIsPlaying(true);
         await chunkEnded;
         stopHighlightTicker();
+        // The next chunk's synthesis (kicked off above, in parallel with this
+        // chunk's playback) doesn't always finish first -- synthesis is a
+        // CPU-bound WASM inference call and can outlast the audio it's
+        // replacing, especially for longer chunks. Confirmed live: without
+        // this, the transport shows "Pause reading" with a frozen time
+        // counter for several seconds between chunks, since nothing signals
+        // that the wait for `nextChunk` below is still in flight.
+        if (i + 1 < chunks.length) setIsLoadingAudio(true);
       }
     } catch (error) {
       console.error('[ReaderScreen] Kokoro read-aloud failed:', error);
