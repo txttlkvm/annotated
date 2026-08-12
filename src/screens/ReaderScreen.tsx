@@ -435,6 +435,7 @@ export default function ReaderScreen() {
   const chromeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    console.log('[DEBUG-CHROME] animating to', chromeVisible ? 1 : 0, 'at', Date.now());
     Animated.timing(chromeAnim, {
       toValue: chromeVisible ? 1 : 0,
       duration: 180,
@@ -466,7 +467,10 @@ export default function ReaderScreen() {
       const selection = window.getSelection?.();
       if (selection && String(selection).trim().length > 0) return;
     }
-    setChromeVisible((visible) => !visible);
+    setChromeVisible((visible) => {
+      console.log('[DEBUG-CHROME] toggleChrome flipping', visible, '->', !visible, 'at', Date.now());
+      return !visible;
+    });
   }, []);
 
   /**
@@ -635,6 +639,7 @@ export default function ReaderScreen() {
   // setCurrentPage(0) wouldn't actually change safePage's value, and that
   // effect wouldn't re-fire.
   useEffect(() => {
+    console.log('[DEBUG-CHROME] book-id effect firing, currentBook?.id=', currentBook?.id, 'at', Date.now());
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
     AudioService.stop().catch(() => {});
