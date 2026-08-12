@@ -11,7 +11,6 @@ import {
   Modal,
   TextInput,
   Platform,
-  PanResponder,
   useWindowDimensions,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -435,7 +434,6 @@ export default function ReaderScreen() {
   const chromeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    console.log('[DEBUG-CHROME] animating to', chromeVisible ? 1 : 0, 'at', Date.now());
     Animated.timing(chromeAnim, {
       toValue: chromeVisible ? 1 : 0,
       duration: 180,
@@ -467,10 +465,7 @@ export default function ReaderScreen() {
       const selection = window.getSelection?.();
       if (selection && String(selection).trim().length > 0) return;
     }
-    setChromeVisible((visible) => {
-      console.log('[DEBUG-CHROME] toggleChrome flipping', visible, '->', !visible, 'at', Date.now());
-      return !visible;
-    });
+    setChromeVisible((visible) => !visible);
   }, []);
 
   /**
@@ -639,7 +634,6 @@ export default function ReaderScreen() {
   // setCurrentPage(0) wouldn't actually change safePage's value, and that
   // effect wouldn't re-fire.
   useEffect(() => {
-    console.log('[DEBUG-CHROME] book-id effect firing, currentBook?.id=', currentBook?.id, 'at', Date.now());
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
     AudioService.stop().catch(() => {});
@@ -1037,21 +1031,50 @@ export default function ReaderScreen() {
   }, []);
 
   /**
-   * Swipe-to-turn: captured at onMoveShouldSetPanResponderCapture so it wins
-   * against the page's own vertical ScrollView, but ONLY for drags that are
-   * clearly horizontal (2:1 ratio) and already past a small deadzone —
-   * anything more vertical than that is left alone so scrolling still works.
+   * Swipe-to-turn. PanResponder (RN's built-in gesture responder system)
+   * doesn't fire reliably on web -- confirmed live: neither a synthetic
+   * touch-event drag nor a mouse-event drag ever triggered
+   * onMoveShouldSetPanResponderCapture, on a build where the responder
+   * negotiation it depends on apparently never engages in this react-
+   * native-web version. Replaced with plain start/end coordinate tracking
+   * over real DOM touch AND mouse events instead of PanResponder's capture-
+   * phase negotiation -- start position on press, compare against release
+   * position, same thresholds as before (60px to commit, 2:1 horizontal-to-
+   * vertical ratio so a vertical scroll gesture is never mistaken for a
+   * page turn).
    */
-  const pageSwipe = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
-        Math.abs(gesture.dx) > 20 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2,
-      onPanResponderRelease: (_evt, gesture) => {
-        if (gesture.dx < -60) handleNextPage();
-        else if (gesture.dx > 60) handlePreviousPage();
-      },
-    })
-  ).current;
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const handleSwipeStart = useCallback((x: number, y: number) => {
+    swipeStartRef.current = { x, y };
+  }, []);
+  const handleSwipeEnd = useCallback(
+    (x: number, y: number) => {
+      const start = swipeStartRef.current;
+      swipeStartRef.current = null;
+      if (!start) return;
+      const dx = x - start.x;
+      const dy = y - start.y;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 2) return;
+      if (dx < 0) handleNextPage();
+      else handlePreviousPage();
+    },
+    [handleNextPage, handlePreviousPage]
+  );
+  const swipeHandlers = {
+    onTouchStart: (e: any) => {
+      const t = e.nativeEvent.touches?.[0];
+      if (t) handleSwipeStart(t.pageX, t.pageY);
+    },
+    onTouchEnd: (e: any) => {
+      const t = e.nativeEvent.changedTouches?.[0];
+      if (t) handleSwipeEnd(t.pageX, t.pageY);
+    },
+    // Mouse equivalents for desktop trackpad/mouse drag -- not part of RN's
+    // typed ViewProps (web-only), forwarded to the underlying DOM node by
+    // react-native-web regardless.
+    onMouseDown: (e: any) => handleSwipeStart(e.nativeEvent.clientX, e.nativeEvent.clientY),
+    onMouseUp: (e: any) => handleSwipeEnd(e.nativeEvent.clientX, e.nativeEvent.clientY),
+  } as any;
 
   /** First page of a given chapter index. Pages are built chapter-by-chapter,
    * so the first page whose chapterIndex matches IS the chapter's opening
@@ -1395,7 +1418,7 @@ export default function ReaderScreen() {
   const pageIndicator = `${safePage + 1} of ${totalPages}`;
 
   return (
-    <View style={[styles.root, { backgroundColor: palette.bg }]} {...pageSwipe.panHandlers}>
+    <View style={[styles.root, { backgroundColor: palette.bg }]} {...swipeHandlers}>
       {/* ---------------------------------------------------------- page --- */}
       <Shell
         scroll
