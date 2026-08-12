@@ -171,7 +171,35 @@ export class GutenbergService {
     // START marker, and always ends before a much bigger gap than its own
     // internal line spacing -- the real title page/body follows a run of
     // 3+ newlines, never seen *within* the note itself.
-    text = text.replace(/^\s*Transcribers?'?s?\s+Notes?:?[\s\S]*?\n{3,}/i, '');
+    //
+    // (?:\r?\n){3,}, not \r?\n{3,} -- confirmed live the naive version is a
+    // real bug on CRLF source text: \r?\n{3,} only allows ONE optional \r
+    // for the whole run, so it requires 3+ bare \n in a row, which a CRLF
+    // blank-line run (\r\n\r\n\r\n) never produces -- the terminator simply
+    // never matches and the whole replace silently no-ops. Whether this bit
+    // in production depends on whether upstream fetching happens to
+    // normalize line endings; grouping the optional \r with each \n fixes
+    // it regardless of source line-ending convention.
+    text = text.replace(/^\s*Transcribers?'?s?\s+Notes?:?[\s\S]*?(?:\r?\n){3,}/i, '');
+
+    // The "Contents" and "Illustrations" front-matter sections (a table of
+    // contents, and a list of every plate caption in the book -- ~90 entries
+    // for an illustrated edition) have no blank lines between their own
+    // entries, so the paragraph splitter below (which joins everything
+    // between blank lines into one flowing paragraph, correct for prose
+    // wrapped at ~72 chars) was folding each entire section into one
+    // unreadable wall of run-on text dumped as its own "page". Neither
+    // section is useful in a plain-text reader (no illustrations are ever
+    // rendered, and the app's own chapter/TOC navigation already covers
+    // what the Contents section would tell you), so both are stripped
+    // outright rather than reformatted. Anchored specifically to these two
+    // heading strings alone on their own line -- a real poem body would
+    // essentially never contain a standalone line reading exactly
+    // "Contents" or "Illustrations", so this can't accidentally eat real
+    // verse the way a general "short lines = list" heuristic would (the
+    // Iliad's own body IS mostly short lines, one per line of verse).
+    text = text.replace(/^[ \t]*Contents[ \t]*\r?\n[\s\S]*?(?:\r?\n){3,}/im, '');
+    text = text.replace(/^[ \t]*Illustrations[ \t]*\r?\n[\s\S]*?(?:\r?\n){3,}/im, '');
 
     // `_word_` or `_a short phrase_` -> plain text. Bounded to 120 chars and
     // excluding newlines so it can never span a paragraph break.
@@ -179,13 +207,16 @@ export class GutenbergService {
 
     // Gutenberg's plate-illustration marker -- "[Illustration: <optional
     // description>]" -- has no rendering in a plain-text reader and was
-    // leaking through as a literal bracketed tag. Any real caption text
-    // (confirmed live: illustrated editions often follow it with one on
-    // the same line, e.g. "[Illustration: ] HOMER INVOKING THE MUSE")
-    // sits outside the brackets and is left untouched -- only the tag
-    // itself, including any description packed inside the brackets, is
-    // removed.
-    text = text.replace(/\[Illustration:?[^\]\n]*\]\s*/gi, '');
+    // leaking through as a literal bracketed tag. Illustrated editions
+    // often follow the marker with a caption on the same line, e.g.
+    // "[Illustration: ] HOMER INVOKING THE MUSE" -- confirmed live (polish
+    // audit) that leaving that caption behind reads as a jarring bare
+    // ALL-CAPS non-sequitur interrupting the verse, with no image for it to
+    // actually caption. Strip the caption along with the marker: an
+    // optional run of leading-and-trailing-alphanumeric ALL-CAPS text
+    // (allowing internal spaces/commas/periods/apostrophes/hyphens, e.g.
+    // "VENUS, DISGUISED, INVITING HELEN TO THE CHAMBER OF") right after it.
+    text = text.replace(/\[Illustration:?[^\]\n]*\]\s*([A-Z][A-Z0-9 ,.’'-]*[A-Z0-9])?\s*/gi, '');
 
     return text.trim();
   }
