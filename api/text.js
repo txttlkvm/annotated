@@ -13,6 +13,10 @@ const ALLOWED_HOSTS = new Set([
   'www.gutenberg.org',
   'standardebooks.org',
   'www.standardebooks.org',
+  // This app's own Vercel Blob store (the Lattimore Iliad's narration text).
+  // Not a general "any blob store" allowance -- one specific, first-party
+  // store this deployment controls, same trust level as the hosts above.
+  'xowrit6wi1heskze.public.blob.vercel-storage.com',
 ]);
 
 // Largest Gutenberg plain-text files run ~2-3MB; 12MB leaves room for EPUBs.
