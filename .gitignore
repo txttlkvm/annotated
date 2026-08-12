@@ -14,3 +14,8 @@ web-build/
 .env.local
 .DS_Store
 .vercel
+.env*.local
+# Scratch working directory for scripts/*.py/.sh -- large intermediate
+# audio/text artifacts, not source. The scripts themselves are committed.
+build/
+scripts/__pycache__/

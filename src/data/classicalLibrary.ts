@@ -70,6 +70,29 @@ export const classicalLibrary: ClassicalLibraryItem[] = [
     ]
   },
 
+  // Same poem, Lattimore's verse translation -- narrated by a professional
+  // voice actor with real, forced-aligned word-timed highlighting (see
+  // LattimoreNarrationService), not synthesized. A different, purchased
+  // edition, kept as its own catalog entry rather than replacing the free
+  // one above: the text itself differs (verse vs. the Gutenberg prose
+  // translation), and the free edition should stay available on its own.
+  {
+    id: 'lit-homer-iliad-lattimore',
+    title: 'The Iliad (Lattimore, Narrated)',
+    author: 'Homer',
+    category: 'literature',
+    tier: 1,
+    stage: 'grammar',
+    grade: 4,
+    type: 'book',
+    description: 'Richmond Lattimore’s verse translation, with a real narrated audiobook and karaoke-style word-synced highlighting.',
+    notes: 'Same tier/stage as the free edition above -- a premium narrated alternative, not a separate curriculum entry',
+    sources: [
+      { type: 'txt', url: 'https://xowrit6wi1heskze.public.blob.vercel-storage.com/iliad/text/full.txt', provider: 'blob' },
+      { type: 'audio', url: 'https://xowrit6wi1heskze.public.blob.vercel-storage.com/iliad/audio/book01.m4a', provider: 'blob' }
+    ]
+  },
+
   {
     id: 'lit-homer-odyssey',
     title: 'Odyssey',

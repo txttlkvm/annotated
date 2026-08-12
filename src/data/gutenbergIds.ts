@@ -42,6 +42,10 @@ export interface GutenbergRef {
 export const gutenbergIds: Record<string, GutenbergRef> = {
   'scripture-bible': { gutenbergId: 10, coverUrl: 'https://www.gutenberg.org/cache/epub/10/pg10.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/10.txt.utf-8' },
   'lit-homer-iliad': { gutenbergId: 6130, coverUrl: 'https://www.gutenberg.org/cache/epub/6130/pg6130.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/6130.txt.utf-8' },
+  // Not a Gutenberg edition -- gutenbergId is unused for this entry (only
+  // textUrl/coverUrl are read). Reuses the free edition's cover since this
+  // specific print edition has no cover art of its own available.
+  'lit-homer-iliad-lattimore': { gutenbergId: 0, coverUrl: 'https://www.gutenberg.org/cache/epub/6130/pg6130.cover.medium.jpg', textUrl: 'https://xowrit6wi1heskze.public.blob.vercel-storage.com/iliad/text/full.txt' },
   'lit-homer-odyssey': { gutenbergId: 1727, coverUrl: 'https://www.gutenberg.org/cache/epub/1727/pg1727.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/1727.txt.utf-8' },
   'lit-dante-divine-comedy': { gutenbergId: 8800, coverUrl: 'https://www.gutenberg.org/cache/epub/8800/pg8800.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/8800.txt.utf-8' },
   'lit-foxe-book-of-martyrs': { gutenbergId: 22400, coverUrl: 'https://www.gutenberg.org/cache/epub/22400/pg22400.cover.medium.jpg', textUrl: 'https://www.gutenberg.org/ebooks/22400.txt.utf-8' },

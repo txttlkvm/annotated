@@ -41,6 +41,7 @@ import { Alert } from '../components/Alert';
 import { WikipediaService, WikipediaSummary } from '../services/WikipediaService';
 import { AudioShareService, AudioShareError } from '../services/AudioShareService';
 import { KokoroTTSService, KOKORO_VOICES, DEFAULT_KOKORO_VOICE, KokoroVoice } from '../services/KokoroTTSService';
+import { LattimoreNarrationService } from '../services/LattimoreNarrationService';
 
 /** settings.ttsVoice is shared between the native Google-Cloud voice ID
  * ("en-US-Neural2-C") and Kokoro's own voice IDs ("af_heart") -- same field,
@@ -790,7 +791,110 @@ export default function ReaderScreen() {
     }
   };
 
+  /** Which rendered page (if any) currently shows a given GLOBAL paragraph
+   * index -- the bridge between a narration cue's chapter-relative position
+   * and what's actually on screen. -1 if it's on a page not yet reached
+   * (shouldn't happen in practice: playPageWithLattimore only starts a
+   * chapter's audio once its pages exist). */
+  const findPageForParagraph = useCallback(
+    (globalIndex: number) => {
+      return pages.findIndex((pg) => {
+        const first = pg.paragraphs[0]?.index;
+        const last = pg.paragraphs[pg.paragraphs.length - 1]?.index;
+        return first !== undefined && last !== undefined && globalIndex >= first && globalIndex <= last;
+      });
+    },
+    [pages]
+  );
+
+  /**
+   * Read Aloud for the one book with a real, professionally narrated,
+   * forced-aligned audiobook (the Lattimore Iliad -- see
+   * LattimoreNarrationService) instead of Kokoro's live synthesis. Plays
+   * real audio from Blob storage; sync is driven by the actual playback
+   * position against the pre-computed cue timings, not estimated word
+   * durations, and auto-advances both the highlighted paragraph and the
+   * visible PAGE as narration moves ahead of what's currently on screen --
+   * a whole book's audio spans many paginated pages, unlike Kokoro's
+   * one-page-at-a-time chunks.
+   */
+  const playPageWithLattimore = async (startBookNum: number) => {
+    readAloudCancelRef.current = false;
+    readAloudActiveRef.current = true;
+    setIsLoadingAudio(true);
+    try {
+      let bookNum = startBookNum;
+      while (bookNum <= 24) {
+        if (readAloudCancelRef.current) break;
+        const audioUrl = LattimoreNarrationService.getAudioUrl(bookNum);
+        const cues = LattimoreNarrationService.getCues(bookNum);
+        if (!audioUrl || !cues.length) break;
+
+        const chapterIdx = bookNum - 1;
+        const chapterStartParagraph = parsed?.chapters[chapterIdx]?.startParagraph ?? 0;
+
+        // Resume from wherever the reader currently is, if that happens to
+        // be inside this same chapter; a fresh chapter (auto-advanced from
+        // the previous book, or jumped to directly) starts from its top.
+        let startSeconds = 0;
+        if (page?.chapterIndex === chapterIdx && page.paragraphs.length) {
+          const localStart = page.paragraphs[0].index - chapterStartParagraph;
+          const startCue = cues.find((c) => c.p >= localStart);
+          if (startCue) startSeconds = startCue.s;
+        }
+
+        await AudioService.load(audioUrl);
+        await AudioService.seek(startSeconds * 1000);
+        const chapterEnded = AudioService.waitForEnd();
+        await AudioService.play();
+        setIsPlaying(true);
+        setIsLoadingAudio(false);
+
+        stopHighlightTicker();
+        let lastPageShown = -1;
+        highlightTickerRef.current = setInterval(async () => {
+          const status = await AudioService.getStatus();
+          if (!status) return;
+          const cue = LattimoreNarrationService.findActiveCue(cues, status.position / 1000);
+          if (!cue) return;
+          const globalIdx = chapterStartParagraph + cue.p;
+          const targetPage = findPageForParagraph(globalIdx);
+          if (targetPage !== -1 && targetPage !== lastPageShown) {
+            lastPageShown = targetPage;
+            setCurrentPage(targetPage);
+          }
+          const shownPage = pages[targetPage !== -1 ? targetPage : lastPageShown];
+          const localIdx = shownPage?.paragraphs.findIndex((p) => p.index === globalIdx) ?? -1;
+          if (localIdx >= 0) {
+            setActiveHighlight({
+              paragraphIndex: localIdx,
+              start: 0,
+              end: shownPage.paragraphs[localIdx].text.length,
+            });
+          }
+        }, 200);
+
+        await chapterEnded;
+        stopHighlightTicker();
+        if (readAloudCancelRef.current) break;
+        bookNum += 1;
+      }
+    } catch (error) {
+      console.error('[ReaderScreen] Lattimore read-aloud failed:', error);
+      Alert.alert('Error', 'Read Aloud ran into a problem. Try pressing play again.');
+    } finally {
+      stopHighlightTicker();
+      readAloudActiveRef.current = false;
+      setIsPlaying(false);
+      setIsLoadingAudio(false);
+    }
+  };
+
   const handleReadAloud = async () => {
+    if (currentBook && LattimoreNarrationService.isLattimoreIliad(currentBook)) {
+      await playPageWithLattimore((page?.chapterIndex ?? 0) + 1);
+      return;
+    }
     if (KokoroTTSService.isSupported()) {
       await playPageWithKokoro();
       return;
