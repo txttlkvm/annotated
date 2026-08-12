@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { GutenbergService } from '../services/GutenbergService';
@@ -59,24 +59,30 @@ export default function TableOfContentsScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={chapters}
-          keyExtractor={(c) => String(c.index)}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => jumpTo(item.index)}
-              accessibilityRole="button"
-              accessibilityLabel={`Go to ${item.title}`}
-            >
-              <Text style={styles.rowTitle} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <ChevronRightIcon size={14} color={colors.bronze} strokeWidth={1.8} />
-            </TouchableOpacity>
-          )}
-        />
+        // Plain map, not FlatList -- confirmed live (polish audit) that a
+        // FlatList with scrollEnabled={false} nested inside this screen's
+        // own scrolling Shell silently truncates to its default
+        // initialNumToRender (10): disabling the FlatList's own scroll
+        // hands scrolling to the outer Shell, but that means the FlatList
+        // itself never receives the scroll events its virtualization needs
+        // to render further items, so anything past the 10th chapter never
+        // appears (exactly what happened to the Iliad's 24-book contents
+        // list -- truncated after "BOOK VIII."). A chapter list is at most
+        // a few dozen items, never worth virtualizing in the first place.
+        chapters.map((item) => (
+          <TouchableOpacity
+            key={item.index}
+            style={styles.row}
+            onPress={() => jumpTo(item.index)}
+            accessibilityRole="button"
+            accessibilityLabel={`Go to ${item.title}`}
+          >
+            <Text style={styles.rowTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <ChevronRightIcon size={14} color={colors.bronze} strokeWidth={1.8} />
+          </TouchableOpacity>
+        ))
       )}
     </Shell>
   );

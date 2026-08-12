@@ -219,8 +219,12 @@ export class KokoroTTSService {
       const pending = this.pending.get(data.requestId);
       if (!pending) return;
       this.pending.delete(data.requestId);
-      const uri = bufferToDataUri(data.wav as ArrayBuffer);
-      pending.resolve(uri);
+      try {
+        const uri = bufferToDataUri(data.wav as ArrayBuffer);
+        pending.resolve(uri);
+      } catch (error) {
+        pending.reject(error as Error);
+      }
     } else if (data.type === 'error' && data.requestId) {
       const pending = this.pending.get(data.requestId);
       if (!pending) return;

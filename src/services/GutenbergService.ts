@@ -244,8 +244,18 @@ export class GutenbergService {
     // before it -- since there was no earlier chapter boundary at all --
     // fell into that same chapter by construction (see the chapterCursor
     // assignment pass below).
+    //
+    // Back-matter sections ("CONCLUDING NOTE.", "Footnotes") share the same
+    // gap in reverse: confirmed live that a book's trailing endnotes/
+    // appendix pages, having no recognized heading of their own, silently
+    // inherit the last real chapter's label (a reader paging past the end
+    // of Pope's Iliad into its footnotes apparatus kept seeing "BOOK
+    // XXIV." on pages that were no longer part of Book XXIV at all).
+    // Words chosen are generic English back-matter conventions, not
+    // specific to this one book, on the same reasoning as Preface/
+    // Introduction above.
     const chapterPattern =
-      /^(?:(chapter|book|canto|part|act|scene|letter|psalm)\s+([ivxlcdm\d]+)\b|(?:[\w']+\s+){0,4}(preface|introduction)\b)/i;
+      /^(?:(chapter|book|canto|part|act|scene|letter|psalm)\s+([ivxlcdm\d]+)\b|(?:[\w']+\s+){0,4}(preface|introduction|concluding\s+note|footnotes?|appendix|glossary|bibliography|epilogue|afterword)\b)/i;
 
     const rawChapters: { title: string; startParagraph: number }[] = [];
     const paragraphTexts: string[] = [];

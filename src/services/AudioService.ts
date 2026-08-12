@@ -82,6 +82,20 @@ export class AudioService {
     if (!this.sound) return;
     try {
       await Haptics.selectionAsync();
+    } catch {
+      // Haptics failing is irrelevant to pausing -- never let it block
+      // pause(), the same reasoning already applied to play() above.
+      // Confirmed live (polish audit) that this method DIDN'T have that
+      // isolation: Haptics.selectionAsync() throws unconditionally on web
+      // (no native module), and since it shared one try/catch with the
+      // real pauseAsync() call below, the throw prevented pauseAsync()
+      // from ever running at all -- the UI still flipped to "paused"
+      // regardless (ReaderScreen's handlePause() doesn't check this
+      // method's outcome), so the underlying sound could keep playing
+      // silently in the background while every control claimed it was
+      // paused.
+    }
+    try {
       await this.sound.pauseAsync();
       this.stopStatusUpdates();
     } catch (error) {
