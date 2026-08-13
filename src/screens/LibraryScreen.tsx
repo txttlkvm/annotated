@@ -969,6 +969,7 @@ export default function LibraryScreen({ navigation }: any) {
             {searching && (
               <ScaleTouchable
                 onPress={() => setSearchText('')}
+                style={styles.hitTarget}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
@@ -1123,6 +1124,9 @@ const styles = StyleSheet.create({
     height: 44,
     marginBottom: space.md,
   },
+  /** Real 44px box for a small glyph control; hitSlop alone is honoured
+   *  unreliably by react-native-web. The glyph inside keeps its own size. */
+  hitTarget: { minHeight: HIT_SLOP_MIN, minWidth: HIT_SLOP_MIN, alignItems: 'center', justifyContent: 'center' },
   searchInput: {
     flex: 1,
     minWidth: 0,

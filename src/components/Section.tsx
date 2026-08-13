@@ -34,7 +34,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, space, type as typeScale } from '../theme';
+import { colors, space, type as typeScale, HIT_SLOP_MIN } from '../theme';
 import { ChevronRightIcon } from './icons';
 
 export interface SectionProps {
@@ -98,7 +98,10 @@ export default function Section({
         onPress={onAction}
         activeOpacity={0.7}
         // The label is small; give it a real touch target without letting it
-        // push the header taller.
+        // push the header taller. hitSlop alone is honoured unreliably by
+        // react-native-web, so the box is set explicitly and the label inside
+        // stays the size it was.
+        style={styles.actionHit}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityRole="button"
         accessibilityLabel={title ? `${actionLabel} ${title}` : actionLabel}
@@ -164,6 +167,10 @@ const styles = StyleSheet.create({
   right: {
     flexShrink: 0,
     marginLeft: space.md,
+  },
+  actionHit: {
+    minHeight: HIT_SLOP_MIN,
+    justifyContent: 'center',
   },
   action: {
     flexDirection: 'row',

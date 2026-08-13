@@ -50,7 +50,7 @@ import Section from '../components/Section';
 import Carousel from '../components/Carousel';
 import { SearchIcon, CloseIcon, CheckIcon, ChevronRightIcon } from '../components/icons';
 import { coverFor } from '../data/gutenbergIds';
-import { colors, fonts, space, radius, type as t, elevation, layout } from '../theme';
+import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN } from '../theme';
 
 import { Alert } from '../components/Alert';
 const categories = [
@@ -607,6 +607,7 @@ export default function CurriculumScreen({ navigation }: any) {
         {!!searchText && (
           <TouchableOpacity
             onPress={() => setSearchText('')}
+            style={styles.hitTarget}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel="Clear search"
@@ -624,6 +625,7 @@ export default function CurriculumScreen({ navigation }: any) {
             <TouchableOpacity
               onPress={clearFilters}
               activeOpacity={0.7}
+              style={styles.hitTargetWide}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityRole="button"
               accessibilityLabel="Clear all filters"
@@ -729,6 +731,13 @@ export default function CurriculumScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   /** The page gutter lives on the column, not on Shell — see the note on `col`. */
   content: { paddingHorizontal: layout.gutter },
+
+  /** Real 44px boxes for small glyph/label controls; hitSlop alone is honoured
+   *  unreliably by react-native-web. Content inside keeps its own size.
+   *  `hitTargetWide` omits the width floor for controls that are already wide
+   *  enough horizontally and only need the vertical reach. */
+  hitTarget: { minHeight: HIT_SLOP_MIN, minWidth: HIT_SLOP_MIN, alignItems: 'center', justifyContent: 'center' },
+  hitTargetWide: { minHeight: HIT_SLOP_MIN, justifyContent: 'center' },
 
   /* masthead */
   masthead: {

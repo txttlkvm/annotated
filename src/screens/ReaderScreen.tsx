@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -61,7 +61,7 @@ function withAlpha(hex: string, alpha: number): string {
   return `${hex}${suffix}`;
 }
 /**
- * The reading surface — the most important screen in the app.
+ * The reading surface â€” the most important screen in the app.
  *
  * Everything here serves one goal: a line of text that is comfortable to read
  * for an hour. That means
@@ -70,7 +70,7 @@ function withAlpha(hex: string, alpha: number): string {
  *              is an option the reader offers, not the state it opens in.
  *   MEASURE    ~34em / 660px, centred. Uncapped, a 1365px desktop window ran
  *              the text edge to edge at ~180 characters a line, which is
- *              unreadable — the eye cannot find the next line's start.
+ *              unreadable â€” the eye cannot find the next line's start.
  *   NO CHROME  the page and a whisper of a page number. Header and controls
  *              are hidden until the page is tapped.
  *
@@ -104,7 +104,7 @@ const TAIL_SPACE = 112;
  *
  * The reader opens on PAPER and JUSTIFIED. `DEFAULT_READER_SETTINGS` still
  * ships `theme: 'dark'` / `textAlignment: 'left'` and that file is not this
- * pass's to change, so the reader resolves the two itself — once — and then
+ * pass's to change, so the reader resolves the two itself â€” once â€” and then
  * writes them into the store so the status bar and the Settings previews are
  * describing the same page the reader is drawing.
  *
@@ -140,13 +140,13 @@ function withReaderDefaults(settings: ReaderSettings): ReaderSettings {
   return Object.keys(patch).length ? { ...settings, ...patch } : settings;
 }
 
-/** Themes that read as paper — used to label the light/dark toggle. */
+/** Themes that read as paper â€” used to label the light/dark toggle. */
 const PAPER_THEMES = new Set(['light', 'sepia']);
 
 /**
  * Highlight inks. The VALUE is what gets persisted on Highlight.color, so it
  * must be a real colour string and must stay in the canonical set that
- * HighlightsScreen filters by — storing a semantic key like 'sage' here makes
+ * HighlightsScreen filters by â€” storing a semantic key like 'sage' here makes
  * the mark unfilterable and paints an unparseable colour on native.
  * Keep these literals in sync with HIGHLIGHT_COLORS in HighlightsScreen.tsx;
  * they are stored data, so they must not be swapped for theme tokens.
@@ -160,7 +160,7 @@ const HIGHLIGHT_SWATCHES = [
 
 const DEFAULT_HIGHLIGHT = HIGHLIGHT_SWATCHES[0].value;
 
-/** A page is a run of whole paragraphs — never a mid-word character slice. */
+/** A page is a run of whole paragraphs â€” never a mid-word character slice. */
 interface ReaderPage {
   paragraphs: Paragraph[];
   chapterIndex: number;
@@ -405,7 +405,7 @@ export default function ReaderScreen() {
 
   /**
    * Publish the reader's defaults to the store once, so the status bar, the
-   * Settings previews and the reader are all describing the same page — and so
+   * Settings previews and the reader are all describing the same page â€” and so
    * that from here on every setting is read back verbatim.
    */
   useEffect(() => {
@@ -454,7 +454,7 @@ export default function ReaderScreen() {
 
   /**
    * Tap the page to reveal the furniture. On web a click that merely ends a
-   * text selection must not count — otherwise highlighting a sentence always
+   * text selection must not count â€” otherwise highlighting a sentence always
    * throws the chrome up over the line you were reading. The selection
    * itself is picked up separately below (mobile browsers don't fire a
    * click after a touch-drag selection at all, so this check alone would
@@ -597,7 +597,7 @@ export default function ReaderScreen() {
 
   /**
    * Search across the whole book, client-side over the already-parsed
-   * paragraphs — no server round trip, works offline. Each hit maps back to
+   * paragraphs â€” no server round trip, works offline. Each hit maps back to
    * the exact page it lives on via `pages`, and shows a short excerpt around
    * the match rather than the full paragraph, matching how every ereader's
    * search results list actually reads.
@@ -612,7 +612,7 @@ export default function ReaderScreen() {
       const pageIndex = pages.findIndex((p) => p.paragraphs.some((pp) => pp.index === paragraph.index));
       if (pageIndex === -1) continue;
       const start = Math.max(0, idx - 40);
-      const snippet = `${start > 0 ? '…' : ''}${paragraph.text.slice(start, idx + q.length + 40).trim()}…`;
+      const snippet = `${start > 0 ? 'â€¦' : ''}${paragraph.text.slice(start, idx + q.length + 40).trim()}â€¦`;
       out.push({ paragraphIndex: paragraph.index, pageIndex, snippet });
       if (out.length >= 100) break;
     }
@@ -1081,7 +1081,7 @@ export default function ReaderScreen() {
 
   /** First page of a given chapter index. Pages are built chapter-by-chapter,
    * so the first page whose chapterIndex matches IS the chapter's opening
-   * page — no separate lookup table needed. */
+   * page â€” no separate lookup table needed. */
   const goToChapter = useCallback(
     (chapterIndex: number) => {
       const target = pages.findIndex((p) => p.chapterIndex === chapterIndex);
@@ -1104,7 +1104,7 @@ export default function ReaderScreen() {
 
   // TableOfContentsScreen sends the chosen chapter back as a route param
   // rather than a prop, since it is a sibling screen in the same stack, not
-  // a child — this is the normal RN Navigation way to pass a result back.
+  // a child â€” this is the normal RN Navigation way to pass a result back.
   useEffect(() => {
     const target = route?.params?.jumpToChapter;
     if (typeof target === 'number' && pages.length > 0) {
@@ -1114,7 +1114,7 @@ export default function ReaderScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route?.params?.jumpToChapter, pages.length]);
 
-  // Arrow keys turn pages on web — the expected gesture for a desktop reader.
+  // Arrow keys turn pages on web â€” the expected gesture for a desktop reader.
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
     const onKey = (e: any) => {
@@ -1126,7 +1126,7 @@ export default function ReaderScreen() {
     return () => window.removeEventListener('keydown', onKey);
   }, [handleNextPage, handlePreviousPage]);
 
-  // Record the sitting when the reader is left, and — separately — write the
+  // Record the sitting when the reader is left, and â€” separately â€” write the
   // stopping point back onto the book itself. `currentPage` was local state
   // only: BookDetailsScreen, the Library grid and the Continue Reading card
   // all read Book.currentProgress, so without this write every one of them
@@ -1237,7 +1237,7 @@ export default function ReaderScreen() {
       });
       setShowHighlightColor(false);
       if (result === 'downloaded') {
-        Alert.alert('Downloaded', 'Your browser can\'t hand files to the share sheet directly — the audio file downloaded instead. Attach it to a text/email manually.');
+        Alert.alert('Downloaded', 'Your browser can\'t hand files to the share sheet directly â€” the audio file downloaded instead. Attach it to a text/email manually.');
       }
     } catch (error) {
       console.error('[ReaderScreen] Share as audio failed:', error);
@@ -1250,7 +1250,7 @@ export default function ReaderScreen() {
 
   /**
    * `color` is a HEX STRING from HIGHLIGHT_SWATCHES and is persisted verbatim
-   * on Highlight.color. It must never become a semantic key ('rose', 'sage') —
+   * on Highlight.color. It must never become a semantic key ('rose', 'sage') â€”
    * HighlightsScreen filters on the hex, and native cannot paint a keyword.
    */
   const handleHighlight = async (color: string) => {
@@ -1276,7 +1276,7 @@ export default function ReaderScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `"${getPageContent().substring(0, 240).trim()}…" — ${currentBook?.title || ''}`,
+        message: `"${getPageContent().substring(0, 240).trim()}â€¦" â€” ${currentBook?.title || ''}`,
         title: currentBook?.title || 'Passage',
       });
     } catch (error) {
@@ -1284,13 +1284,13 @@ export default function ReaderScreen() {
     }
   };
 
-  /** Shares selectedText verbatim — exactly what was highlighted, no
+  /** Shares selectedText verbatim â€” exactly what was highlighted, no
    * truncation or page-snippet substitution like handleShare above. */
   const handleShareSelectedText = async () => {
     if (!selectedText) return;
     try {
       await Share.share({
-        message: `"${selectedText}" — ${currentBook?.title || ''}`,
+        message: `"${selectedText}" â€” ${currentBook?.title || ''}`,
         title: currentBook?.title || 'Passage',
       });
       setShowHighlightColor(false);
@@ -1314,7 +1314,7 @@ export default function ReaderScreen() {
 
   /**
    * The column cap. The gutter lives INSIDE it, so the measure itself stays at
-   * MEASURE (~34em, 65–75 characters) whatever margin width the user picked —
+   * MEASURE (~34em, 65â€“75 characters) whatever margin width the user picked â€”
    * on a wide screen the margin setting widens the paper, not the line.
    */
   const columnCap = MEASURE + gutter * 2;
@@ -1385,8 +1385,8 @@ export default function ReaderScreen() {
               <ActivityIndicator color={colors.gold} style={{ marginBottom: space.md }} />
               <Text style={[styles.emptyBody, { color: colors.inkMuted }]}>
                 {currentBook.sourceUrl
-                  ? 'Fetching the full edition from the archive…'
-                  : 'Restoring the text from this device…'}
+                  ? 'Fetching the full edition from the archiveâ€¦'
+                  : 'Restoring the text from this deviceâ€¦'}
               </Text>
             </>
           ) : (
@@ -1396,15 +1396,15 @@ export default function ReaderScreen() {
                   ? textLoad.error
                   : /**
                      * Reaching here with no error means AppContext found no
-                     * source at all — by construction that is now only a
+                     * source at all â€” by construction that is now only a
                      * format we cannot extract (PDF/MOBI) or a catalogue
                      * entry with neither a remote edition nor stored local
-                     * text. The old copy ("hasn't been downloaded yet…
+                     * text. The old copy ("hasn't been downloaded yetâ€¦
                      * fetch the full edition") implied a retry would work;
                      * for these cases it never will, so say what is true.
                      */
                     currentBook.fileFormat === 'pdf' || currentBook.fileFormat === 'mobi'
-                    ? `Annotated cannot read ${currentBook.fileFormat === 'pdf' ? 'PDF' : 'MOBI/AZW'} text yet — this volume is shelved for reference only. Convert it to EPUB or plain text and import it again to read it here.`
+                    ? `Annotated cannot read ${currentBook.fileFormat === 'pdf' ? 'PDF' : 'MOBI/AZW'} text yet â€” this volume is shelved for reference only. Convert it to EPUB or plain text and import it again to read it here.`
                     : 'This volume has no readable edition yet. Add it again from the catalogue, or import a file with EPUB or plain-text content.'}
               </Text>
               {failedThisBook && (
@@ -1560,7 +1560,7 @@ export default function ReaderScreen() {
                   <ScaleTouchable
                     onPress={handlePreviousChapter}
                     disabled={currentChapterIndex === 0}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    style={styles.hitTarget}
                     accessibilityLabel="Previous chapter"
                   >
                     <ChevronLeftIcon
@@ -1571,7 +1571,7 @@ export default function ReaderScreen() {
                   </ScaleTouchable>
                   <ScaleTouchable
                     onPress={() => navigation.navigate('TableOfContents')}
-                    style={{ flex: 1 }}
+                    style={styles.hitTargetFlex}
                     accessibilityLabel="Open table of contents"
                   >
                     <Text style={[styles.overline, { color: palette.accentSoft }]} numberOfLines={1}>
@@ -1581,7 +1581,7 @@ export default function ReaderScreen() {
                   <ScaleTouchable
                     onPress={handleNextChapter}
                     disabled={currentChapterIndex >= chapterCount - 1}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    style={styles.hitTarget}
                     accessibilityLabel="Next chapter"
                   >
                     <ChevronRightIcon
@@ -1596,9 +1596,9 @@ export default function ReaderScreen() {
                 {currentBook.title}
               </Text>
               <Text style={[styles.meta, { color: palette.muted }]} numberOfLines={1}>
-                {currentBook.author ? `${currentBook.author}   ·   ` : ''}
+                {currentBook.author ? `${currentBook.author}   Â·   ` : ''}
                 {minutesLeft > 0 ? `${minutesLeft} min left` : 'Last page'}
-                {bookBookmarks > 0 ? `   ·   ${bookBookmarks} marked` : ''}
+                {bookBookmarks > 0 ? `   Â·   ${bookBookmarks} marked` : ''}
               </Text>
             </View>
 
@@ -1692,7 +1692,7 @@ export default function ReaderScreen() {
                   style={[styles.menuItem, i > 0 && { borderTopWidth: 1, borderTopColor: palette.rule }]}
                 >
                   <Text style={[styles.menuLabel, { color: palette.accent }]}>{item.label}</Text>
-                  <Text style={[styles.menuChevron, { color: palette.accentSoft }]}>›</Text>
+                  <Text style={[styles.menuChevron, { color: palette.accentSoft }]}>â€º</Text>
                 </ScaleTouchable>
               ))}
             </View>
@@ -1719,16 +1719,16 @@ export default function ReaderScreen() {
               <View style={styles.nowPlayingHeader}>
                 <Text style={[styles.nowPlayingVoice, { color: palette.accent }]} numberOfLines={1}>
                   {isLoadingAudio
-                    ? 'Preparing voice…'
+                    ? 'Preparing voiceâ€¦'
                     : `${KOKORO_VOICES.find((v) => v.id === resolveKokoroVoice(settings.ttsVoice))?.label ?? 'Read Aloud'}`}
                 </Text>
                 <ScaleTouchable
                   onPress={handleCycleRate}
                   accessibilityLabel="Change speaking rate"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.hitTarget}
                 >
                   <Text style={[styles.rateBadge, { color: palette.muted, borderColor: palette.border }]}>
-                    {settings.ttsVoiceRate.toFixed(1)}×
+                    {settings.ttsVoiceRate.toFixed(1)}Ã—
                   </Text>
                 </ScaleTouchable>
               </View>
@@ -1862,7 +1862,7 @@ export default function ReaderScreen() {
             <Text style={[styles.modalTitle, { color: palette.accent }]}>Add a bookmark</Text>
             <Text style={[styles.modalCaption, { color: palette.muted }]}>
               Page {safePage + 1} of {totalPages}
-              {chapterTitle ? ` · ${chapterTitle}` : ''}
+              {chapterTitle ? ` Â· ${chapterTitle}` : ''}
             </Text>
             <TextInput
               style={[
@@ -1934,7 +1934,7 @@ export default function ReaderScreen() {
                   setSelectedText('');
                   setShowHighlightColor(false);
                 }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.hitTarget}
               >
                 <Text style={[styles.modalCancelText, { color: palette.muted }]}>Cancel</Text>
               </ScaleTouchable>
@@ -2035,7 +2035,7 @@ export default function ReaderScreen() {
               <SearchIcon size={16} color={palette.muted} strokeWidth={1.8} />
               <TextInput
                 style={[styles.searchInput, { color: palette.text }]}
-                placeholder="Search this book…"
+                placeholder="Search this bookâ€¦"
                 placeholderTextColor={palette.muted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -2099,6 +2099,13 @@ const styles = StyleSheet.create({
   },
   chromeTitles: { flex: 1, minWidth: 0 },
   chapterNavRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  /** Small glyph/text controls -- the 13px chapter chevrons, the 10px overline
+   *  chapter title, the rate badge, the modal Cancel -- measured 13-18px tall.
+   *  They carried `hitSlop` instead, which react-native-web honours unreliably.
+   *  These give them a real 44px box while the glyph and the type inside stay
+   *  exactly the size they were. */
+  hitTarget: { minHeight: HIT_SLOP_MIN, justifyContent: 'center' },
+  hitTargetFlex: { flex: 1, minHeight: HIT_SLOP_MIN, justifyContent: 'center' },
   overline: {
     fontFamily: fonts.ui,
     fontSize: 10,

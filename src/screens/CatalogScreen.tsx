@@ -44,7 +44,7 @@ import BookCover from '../components/BookCover';
 import Shell, { useColumnWidth } from '../components/Shell';
 import Section from '../components/Section';
 import { SearchIcon, CloseIcon, CheckIcon, PlusIcon } from '../components/icons';
-import { colors, fonts, space, radius, type as t, elevation, layout } from '../theme';
+import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN } from '../theme';
 
 import { Alert } from '../components/Alert';
 type TierFilter = 'all' | 1 | 2;
@@ -395,6 +395,7 @@ export default function CatalogScreen() {
         {!!searchQuery && (
           <TouchableOpacity
             onPress={() => setSearchQuery('')}
+            style={styles.hitTarget}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel="Clear search"
@@ -506,6 +507,10 @@ export default function CatalogScreen() {
 const styles = StyleSheet.create({
   /** The page gutter lives on the column, not on Shell. */
   content: { paddingHorizontal: layout.gutter },
+
+  /** Real 44px box for a small glyph control; hitSlop alone is honoured
+   *  unreliably by react-native-web. The glyph inside keeps its own size. */
+  hitTarget: { minHeight: HIT_SLOP_MIN, minWidth: HIT_SLOP_MIN, alignItems: 'center', justifyContent: 'center' },
 
   /* masthead */
   masthead: { paddingTop: space.xl, marginBottom: space.lg },
