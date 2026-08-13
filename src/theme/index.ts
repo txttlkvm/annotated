@@ -91,6 +91,13 @@ export const colors = {
   lapisRaised: '#2b4179',
   /** Hairline that reads as inlay against lapis rather than as a border. */
   lapisRule: 'rgba(201, 169, 97, 0.5)',
+  /**
+   * Secondary ink for text ON the lapis field. `bronze` is tuned against the
+   * aubergine grounds and only manages 3.66:1 here — deep blue is a much
+   * darker ground than it was cut for. This is the same warm neutral opened
+   * up until it clears AA on lapis (5.23:1).
+   */
+  lapisInk: '#b8a181',
 
   /** Body copy in the reader — warm off-white, never pure #fff. */
   ink: '#ece4d8',

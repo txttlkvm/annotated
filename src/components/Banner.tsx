@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   ruleBottom: { position: 'absolute', bottom: 3, left: 0, right: 0, height: 1, backgroundColor: colors.lapisRule },
   fieldRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   titleBlock: { flex: 1, alignItems: 'center' },
-  eyebrow: { ...t.overline, fontSize: 8, letterSpacing: 2.4, color: colors.bronze, marginBottom: 3 },
+  eyebrow: { ...t.overline, fontSize: 8, letterSpacing: 2.4, color: colors.lapisInk, marginBottom: 3 },
   /** Widely tracked: an inscription is never set tight. */
   title: { ...t.display, fontSize: 22, letterSpacing: 3, color: colors.goldBright, textAlign: 'center' },
   endMark: { color: colors.gold, fontSize: 11 },
