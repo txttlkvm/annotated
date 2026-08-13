@@ -272,7 +272,10 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     text: '#c9c0b2',
     muted: '#867c6f',
     accent: '#ab9057',
-    accentSoft: '#736149',
+    // accentSoft carries the reader's chapter label, which is real 10px text,
+    // so it has to clear 4.5:1 and not just the 3:1 an icon would need. Was
+    // #736149 at 3.40/3.21/3.02 against bg/surface/raised; now 5.56/5.24/4.94.
+    accentSoft: '#97836b',
     rule: 'rgba(171, 144, 87, 0.14)',
     border: 'rgba(171, 144, 87, 0.22)',
   },
@@ -284,7 +287,8 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     text: '#231a10',
     muted: '#6d5c40',
     accent: '#7a4f18',
-    accentSoft: '#96794b',
+    /** See the note on night.accentSoft. Was #96794b at 3.22/2.93; now 5.45/4.97. */
+    accentSoft: '#6d5634',
     rule: 'rgba(35, 26, 16, 0.13)',
     border: 'rgba(35, 26, 16, 0.22)',
   },
@@ -297,7 +301,9 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     text: '#17120c',
     muted: '#6a5c48',
     accent: '#7c5a1f',
-    accentSoft: '#9b8558',
+    /** See the note on night.accentSoft. Was #9b8558 at 3.19/2.95 — the worst
+     *  in the app, and on the default reading ground. Now 5.47/5.05. */
+    accentSoft: '#71603b',
     rule: 'rgba(23, 18, 12, 0.11)',
     border: 'rgba(23, 18, 12, 0.19)',
   },
