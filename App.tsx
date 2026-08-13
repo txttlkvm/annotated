@@ -284,13 +284,39 @@ const isWeb = Platform.OS === 'web';
  * cream while every screen above it stayed aubergine. Only the READER changes
  * ground; the chrome does not.
  */
+/**
+ * The arcade.
+ *
+ * Every reference frontispiece stands its navigation in an arcade — a run of
+ * bays divided by columns, under a cornice. The app had five icons floating in
+ * a flat bar, which is the one piece of chrome that says "phone app" no matter
+ * what is drawn inside it.
+ *
+ * The columns are absolutely positioned over the real BottomTabBar rather than
+ * injected into it: react-navigation owns that row's layout, focus handling and
+ * accessibility, and none of that is worth reimplementing to draw four
+ * hairlines. `pointerEvents="none"` keeps them decorative so every tab keeps
+ * its full hit box.
+ */
 function AppTabBar(props: BottomTabBarProps) {
+  const bays = props.state.routes.length;
   return (
     <View style={styles.tabBarOuter}>
       {/* A gold rule over a darker one — the doubled fillet that runs under a
           cornice, rather than the single hairline every app bar has. This is
           the last piece of chrome the eye crosses, so it is worth the 2px. */}
       <View style={styles.tabBarFillet} />
+
+      <View style={styles.arcade} pointerEvents="none">
+        {Array.from({ length: bays - 1 }, (_, i) => (
+          <View key={i} style={[styles.pier, { left: `${((i + 1) / bays) * 100}%` }]}>
+            <View style={styles.pierCap} />
+            <View style={styles.pierShaft} />
+            <View style={styles.pierCap} />
+          </View>
+        ))}
+      </View>
+
       <BottomTabBar {...props} />
     </View>
   );
@@ -439,6 +465,28 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.rule,
   },
+
+  /* --- the arcade --------------------------------------------------------- */
+  /** Capped to the same column as the tab row so the piers land on the real
+   *  bay divisions rather than on the full-bleed chrome behind them. */
+  arcade: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '100%',
+    maxWidth: layout.maxWidth,
+    alignSelf: 'center',
+  },
+  pier: {
+    position: 'absolute',
+    top: space.sm,
+    bottom: space.sm,
+    width: 1,
+    alignItems: 'center',
+  },
+  /** Base and abacus: a column without them is just a line. */
+  pierCap: { width: 5, height: 1, backgroundColor: colors.gold, opacity: 0.55 },
+  pierShaft: { flex: 1, width: 1, backgroundColor: colors.rule },
 });
 
 export default function App() {

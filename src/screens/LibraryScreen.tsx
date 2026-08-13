@@ -54,6 +54,7 @@ import {
 import { colors, type as t, space, radius, elevation, layout, HIT_SLOP_MIN, arch } from '../theme';
 import LeafButton from '../components/LeafButton';
 import { OrnamentRule } from '../components/Ornament';
+import { Banner, BannerHeading } from '../components/Banner';
 
 /**
  * How many imported books get their full text restored automatically on
@@ -908,18 +909,14 @@ export default function LibraryScreen({ navigation }: any) {
   // every keystroke.
   const header = (
     <View>
-      {/* Masthead */}
-      <View style={styles.masthead}>
-        <View style={styles.mastheadText}>
-          <Text style={styles.overline}>ANNOTATED</Text>
-          <Text style={styles.screenTitle}>Library</Text>
-        </View>
-
-        {/* Two distinct actions, always visible regardless of shelf state.
-            "Add" browses the canon; "Import" picks a local file. The empty-
-            state CTA below is the same import action at a larger size for a
-            first-run shelf — once a book exists that CTA stops rendering, so
-            this pair is the only way in for anyone with an existing library. */}
+      {/* Masthead. A titling banner rather than a small overline over a word —
+          see Banner.tsx on why that device and not another. */}
+      <Banner title="Library" eyebrow="Annotated" style={styles.masthead} actions={
+        /* Two distinct actions, always visible regardless of shelf state.
+           "Add" browses the canon; "Import" picks a local file. The empty-
+           state CTA below is the same import action at a larger size for a
+           first-run shelf — once a book exists that CTA stops rendering, so
+           this pair is the only way in for anyone with an existing library. */
         <View style={styles.mastheadActions}>
           <ScaleTouchable
             style={styles.addButton}
@@ -949,7 +946,7 @@ export default function LibraryScreen({ navigation }: any) {
             )}
           </ScaleTouchable>
         </View>
-      </View>
+      } />
 
       {/* Search + controls. An empty shelf has nothing to search or sort, so
           they stay out of the way until there is something to find. */}

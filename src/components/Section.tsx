@@ -121,20 +121,27 @@ export default function Section({
   return (
     <View testID={testID} style={[!last && { marginBottom: spacing }, style]}>
       {hasHeader && (
-        <View style={[styles.header, !!children && { marginBottom: gap }, headerStyle]}>
-          <View style={styles.headings}>
-            {!!title && (
-              <Text style={[styles.title, titleStyle]} numberOfLines={1}>
-                {title}
-              </Text>
-            )}
-            {!!subtitle && (
-              <Text style={styles.subtitle} numberOfLines={2}>
-                {subtitle}
-              </Text>
-            )}
+        <View style={[!!children && { marginBottom: gap }, headerStyle]}>
+          <View style={styles.header}>
+            <View style={styles.headings}>
+              {!!title && (
+                <Text style={[styles.title, titleStyle]} numberOfLines={1}>
+                  {title.toUpperCase()}
+                </Text>
+              )}
+              {!!subtitle && (
+                <Text style={styles.subtitle} numberOfLines={2}>
+                  {subtitle}
+                </Text>
+              )}
+            </View>
+            {!!right && <View style={styles.right}>{right}</View>}
           </View>
-          {!!right && <View style={styles.right}>{right}</View>}
+          {/* A division is ruled off. Every reference frontispiece separates
+              its sections with a line rather than with whitespace alone, and
+              this is what stops a screen reading as a stack of cards with
+              labels on top. */}
+          {!!title && <View style={styles.headerRule} />}
         </View>
       )}
       {!!children && <View style={bodyStyle}>{children}</View>}
@@ -155,14 +162,24 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 0,
   },
+  /** Caps and widely tracked — a section title is an inscription, not a
+   *  sentence. Set smaller than the old sentence-case heading precisely
+   *  because caps at the same size would shout over the screen's banner. */
   title: {
     ...typeScale.heading,
-    color: colors.gold,
+    fontSize: 15,
+    letterSpacing: 2.4,
+    color: colors.goldBright,
   },
   subtitle: {
     ...typeScale.caption,
     color: colors.inkMuted,
     marginTop: 3,
+  },
+  headerRule: {
+    height: 1,
+    backgroundColor: colors.rule,
+    marginTop: space.sm,
   },
   right: {
     flexShrink: 0,

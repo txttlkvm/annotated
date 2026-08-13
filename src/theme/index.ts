@@ -70,9 +70,27 @@ export const colors = {
   rubric: '#c2453a',
   /** The same red at label weight, for small text on a raised ground. */
   rubricInk: '#d4695e',
-  /** Lapis — the costliest pigment on the medieval palette, so it is spent
-   *  as sparingly here: secondary ornament only. */
-  lapis: '#3f5a94',
+  // ---------------------------------------------------------------------
+  // LAPIS.
+  //
+  // Promoted from a sparing ornament tint to a STRUCTURAL ground, which is
+  // what the reference imagery is actually built on: the Della Robbia
+  // roundels, the inscription band under the Lateran apse, and the titling
+  // banner of every illuminated frontispiece are all gold-and-white held on
+  // deep blue. Aubergine reads as "dark mode with a warm accent"; lapis and
+  // gold read as a specific place. So the app's banners, titling fields and
+  // arcade are lapis, and the aubergine stays as the quiet page behind them.
+  //
+  // Ultramarine was ground from stone hauled out of Afghanistan and cost more
+  // than gold, which is exactly why it was reserved for what mattered most —
+  // so it is used here for titling and structure, never for a whole screen.
+  // ---------------------------------------------------------------------
+  /** The titling field. Banners, the arcade, inscription bands. */
+  lapis: '#1e2f5c',
+  /** A step up, for a band sitting on the lapis field itself. */
+  lapisRaised: '#2b4179',
+  /** Hairline that reads as inlay against lapis rather than as a border. */
+  lapisRule: 'rgba(201, 169, 97, 0.5)',
 
   /** Body copy in the reader — warm off-white, never pure #fff. */
   ink: '#ece4d8',
