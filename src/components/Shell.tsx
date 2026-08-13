@@ -334,9 +334,33 @@ function SacredGround() {
   );
 }
 
-/** Top-to-bottom opacity of the wash over the ground. Ends fully opaque so no
- *  band of running text ever sits on the mosaic. */
-const GROUND_WASH_STOPS = [0.18, 0.42, 0.66, 0.84, 0.95, 1];
+/**
+ * Top-to-bottom opacity of the wash over the ground.
+ *
+ * Two calibrations, both from looking at it on the deployed build:
+ *
+ * TOO FAINT at 0.13 image under a flat 0.55 wash — about 6% effective, and
+ * invisible. TOO LOUD at [0.18 … 1] over six bands — the mosaic dominated, the
+ * masthead was illegible against it, and six steps over a screen height read
+ * as visible banding rather than a falloff.
+ *
+ * So: it starts already mostly extinguished (0.62) and is fully opaque by the
+ * top third, which leaves an impression of gold and arches rather than a
+ * photograph of a building — atmosphere, not wallpaper. Fourteen bands put the
+ * step size below what the eye resolves against a photographic source.
+ */
+const GROUND_WASH_STOPS = (() => {
+  const BANDS = 14;
+  const START = 0.62;
+  /** Fraction of the screen over which the wash reaches full opacity. */
+  const EXTINGUISH_BY = 0.34;
+  return Array.from({ length: BANDS }, (_, i) => {
+    const t = i / (BANDS - 1);
+    if (t >= EXTINGUISH_BY) return 1;
+    const eased = t / EXTINGUISH_BY;
+    return +(START + (1 - START) * eased).toFixed(3);
+  });
+})();
 
 /** Hagia Sophia's gold ground — the same interior the empty state already
  *  credits, so the app has one architectural setting rather than a collage. */
