@@ -307,14 +307,16 @@ function AppTabBar(props: BottomTabBarProps) {
           the last piece of chrome the eye crosses, so it is worth the 2px. */}
       <View style={styles.tabBarFillet} />
 
-      <View style={styles.arcade} pointerEvents="none">
-        {Array.from({ length: bays - 1 }, (_, i) => (
-          <View key={i} style={[styles.pier, { left: `${((i + 1) / bays) * 100}%` }]}>
-            <View style={styles.pierCap} />
-            <View style={styles.pierShaft} />
-            <View style={styles.pierCap} />
-          </View>
-        ))}
+      <View style={styles.arcadeWrap} pointerEvents="none">
+        <View style={styles.arcade}>
+          {Array.from({ length: bays - 1 }, (_, i) => (
+            <View key={i} style={[styles.pier, { left: `${((i + 1) / bays) * 100}%` }]}>
+              <View style={styles.pierCap} />
+              <View style={styles.pierShaft} />
+              <View style={styles.pierCap} />
+            </View>
+          ))}
+        </View>
       </View>
 
       <BottomTabBar {...props} />
@@ -467,15 +469,29 @@ const styles = StyleSheet.create({
   },
 
   /* --- the arcade --------------------------------------------------------- */
-  /** Capped to the same column as the tab row so the piers land on the real
-   *  bay divisions rather than on the full-bleed chrome behind them. */
-  arcade: {
+  /**
+   * Centring wrapper. The arcade cannot centre itself: an absolutely
+   * positioned box carrying `alignSelf` collapsed to zero height at the
+   * vertical midpoint of the bar, so its piers had nothing to span and the
+   * whole arcade rendered invisible. Exactly the same failure as the page
+   * scrim in Shell.tsx — absolute positioning and `alignSelf` do not mix, and
+   * the fix is the same: a full-bleed absolute wrapper that centres a
+   * normally-laid-out child.
+   */
+  arcadeWrap: {
     position: 'absolute',
     top: 0,
     bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  /** Capped to the same column as the tab row so the piers land on the real
+   *  bay divisions rather than on the full-bleed chrome behind them. */
+  arcade: {
+    height: '100%',
     width: '100%',
     maxWidth: layout.maxWidth,
-    alignSelf: 'center',
   },
   pier: {
     position: 'absolute',
