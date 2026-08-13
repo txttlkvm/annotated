@@ -50,7 +50,8 @@ import Section from '../components/Section';
 import Carousel from '../components/Carousel';
 import { SearchIcon, CloseIcon, CheckIcon, ChevronRightIcon } from '../components/icons';
 import { coverFor } from '../data/gutenbergIds';
-import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN, stageInk } from '../theme';
+import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN, stageInk, arch } from '../theme';
+import { Banner } from '../components/Banner';
 
 import { Alert } from '../components/Alert';
 const categories = [
@@ -576,12 +577,10 @@ export default function CurriculumScreen({ navigation }: any) {
   return (
     // gutter={false} + an explicit gutter on the column: see the note on `col`.
     <Shell scroll gutter={false} contentContainerStyle={styles.content}>
-      {/* Masthead */}
+      {/* Masthead. Same titling banner as every other screen — see DESIGN.md
+          §1: lapis at the head, lapis at the foot, content between. */}
       <View style={styles.masthead}>
-        <View style={styles.mastheadText}>
-          <Text style={styles.overline}>CLASSICAL CHRISTIAN EDUCATION</Text>
-          <Text style={styles.screenTitle}>Curriculum</Text>
-        </View>
+        <Banner title="Curriculum" eyebrow="Classical Christian Education" />
         <View style={styles.count}>
           <Text style={styles.countNumber}>{items.length}</Text>
           <Text style={styles.countLabel}>{items.length === 1 ? 'text' : 'texts'}</Text>
@@ -735,23 +734,14 @@ const styles = StyleSheet.create({
   hitTarget: { minHeight: HIT_SLOP_MIN, minWidth: HIT_SLOP_MIN, alignItems: 'center', justifyContent: 'center' },
   hitTargetWide: { minHeight: HIT_SLOP_MIN, justifyContent: 'center' },
 
-  /* masthead */
+  /* masthead. Spacing only — a `flexDirection: 'row'` here would override
+   *  Banner's own column layout and collapse it (DESIGN.md §6). */
   masthead: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
     paddingTop: space.xl,
     marginBottom: space.lg,
+    gap: space.md,
   },
-  mastheadText: { flexShrink: 1, minWidth: 0 },
-  overline: {
-    ...t.overline,
-    color: colors.bronze,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  screenTitle: { ...t.display, color: colors.gold },
-  count: { alignItems: 'flex-end', flexShrink: 0, marginLeft: space.md, paddingBottom: 2 },
+  count: { alignItems: 'center', flexDirection: 'row', gap: 6, justifyContent: 'center' },
   countNumber: { ...t.heading, color: colors.goldBright },
   countLabel: { ...t.overline, color: colors.bronze, textTransform: 'uppercase' },
 
@@ -763,7 +753,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    ...arch.round,
     paddingHorizontal: space.lg,
     height: 44,
   },
@@ -813,7 +803,7 @@ const styles = StyleSheet.create({
     // NEVER `flex: 1` — that is what stretched controls to ~640px on desktop.
     paddingHorizontal: space.lg,
     minHeight: HIT_SLOP_MIN,
-    borderRadius: radius.pill,
+    ...arch.round,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,

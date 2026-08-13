@@ -44,7 +44,8 @@ import BookCover from '../components/BookCover';
 import Shell, { useColumnWidth } from '../components/Shell';
 import Section from '../components/Section';
 import { SearchIcon, CloseIcon, CheckIcon, PlusIcon } from '../components/icons';
-import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN, stageInk } from '../theme';
+import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN, stageInk, arch } from '../theme';
+import { Banner } from '../components/Banner';
 
 import { Alert } from '../components/Alert';
 type TierFilter = 'all' | 1 | 2;
@@ -368,11 +369,10 @@ export default function CatalogScreen() {
     // gutter={false} + an explicit gutter on the column, so the scroller's clip
     // box stays the full window and no card shadow is sheared at the edge.
     <Shell scroll gutter={false} contentContainerStyle={styles.content}>
-      {/* Masthead */}
+      {/* Masthead. Same titling banner as every other screen — see DESIGN.md
+          §1: lapis at the head, lapis at the foot, content between. */}
       <View style={styles.masthead}>
-        <Text style={styles.overline}>THE GREAT BOOKS</Text>
-        <Text style={styles.screenTitle}>Classical Catalog</Text>
-        <View style={styles.titleRule} />
+        <Banner title="Classical Catalog" eyebrow="The Great Books" />
         <Text style={styles.subtitle}>Texts not yet on your shelf</Text>
       </View>
 
@@ -509,22 +509,7 @@ const styles = StyleSheet.create({
   hitTarget: { minHeight: HIT_SLOP_MIN, minWidth: HIT_SLOP_MIN, alignItems: 'center', justifyContent: 'center' },
 
   /* masthead */
-  masthead: { paddingTop: space.xl, marginBottom: space.lg },
-  overline: {
-    ...t.overline,
-    color: colors.bronze,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  screenTitle: { ...t.display, color: colors.gold },
-  titleRule: {
-    height: 1,
-    width: 56,
-    backgroundColor: colors.gold,
-    opacity: 0.55,
-    marginTop: space.md,
-    marginBottom: space.md,
-  },
+  masthead: { paddingTop: space.xl, marginBottom: space.lg, gap: space.md },
   subtitle: { ...t.body, color: colors.inkMuted },
 
   /* search */
@@ -535,7 +520,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    ...arch.round,
     paddingHorizontal: space.lg,
     height: 44,
   },
@@ -578,7 +563,7 @@ const styles = StyleSheet.create({
     // NEVER `flex: 1` — that is what stretched controls to ~640px on desktop.
     paddingHorizontal: space.lg,
     minHeight: HIT_SLOP_MIN,
-    borderRadius: radius.pill,
+    ...arch.round,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
@@ -661,7 +646,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: space.lg,
     minHeight: HIT_SLOP_MIN,
-    borderRadius: radius.pill,
+    // The screen's one action, so it wears the leaf and the arch (DESIGN.md §2).
+    ...arch.round,
     backgroundColor: colors.action,
   },
   addButtonText: {

@@ -375,8 +375,10 @@ function MainApp() {
                 ? { height: 74, paddingTop: space.sm, paddingBottom: space.md }
                 : null),
             },
-            tabBarActiveTintColor: colors.gold,
-            tabBarInactiveTintColor: colors.bronze,
+            tabBarActiveTintColor: colors.goldBright,
+            // bronze is cut for the aubergine grounds and only makes 3.66:1 on
+            // lapis. lapisInk is the same warm neutral opened up for this one.
+            tabBarInactiveTintColor: colors.lapisInk,
             tabBarLabelStyle: {
               // type.caption already carries fonts.ui + letterSpacing. Five tabs
               // instead of nine means the label can go back to a readable 12.
@@ -450,11 +452,20 @@ function MainApp() {
 }
 
 const styles = StyleSheet.create({
-  /** Full-bleed chrome behind the capped tab row. */
+  /**
+   * Full-bleed chrome behind the capped tab row.
+   *
+   * Lapis, matching the titling banner at the head of every screen. This is
+   * what makes the blue read as the app's ARCHITECTURE rather than as one
+   * stray band: the page is bounded above and below by the same precious
+   * ground, with the quiet aubergine field and its content held between them.
+   * It is the Lateran section exactly — gold and lapis at the vault and the
+   * inscription course, plainer stone in between.
+   */
   tabBarOuter: {
     width: '100%',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.lapis,
     borderTopWidth: 1,
     borderTopColor: colors.gold,
   },
