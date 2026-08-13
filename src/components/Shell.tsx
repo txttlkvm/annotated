@@ -285,7 +285,9 @@ export default function Shell({
             touches, and only drawn when this Shell paints a background at all
             — the reader passes `transparent` because its own page IS the
             surface and a mosaic under running text would be unreadable. */}
-        {!!background && background !== 'transparent' && <SacredGround />}
+        {!!background && background !== 'transparent' && (
+          <SacredGround columnWidth={metrics.maxWidth} pageColor={background} />
+        )}
         {body}
       </View>
     </ColumnContext.Provider>
@@ -305,7 +307,7 @@ export default function Shell({
  * The vignette over it keeps the centre of the column quiet and lets the
  * corners fall away, the way a dome does.
  */
-function SacredGround() {
+function SacredGround({ columnWidth, pageColor }: { columnWidth: number; pageColor: string }) {
   return (
     <View style={styles.ground} pointerEvents="none">
       <Image
@@ -316,20 +318,24 @@ function SacredGround() {
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       />
-      {/* Descending wash. A dome is bright at the vault and falls to dark at
-          the floor, so the mosaic is allowed to show at the top of the screen
-          — where the masthead sits and no body copy runs — and is fully
-          extinguished by the time it reaches the content. This also happens to
-          put the contrast budget exactly where it is needed: text lives in the
-          lower bands, and the lower bands are opaque.
 
-          Six stacked flex:1 Views rather than a gradient because
-          expo-linear-gradient is not installed (see icons.tsx on the same
-          constraint); at six steps over a screen height the banding is not
-          detectable against a photographic source. */}
+      {/* A light descending wash over the whole room — see GROUND_WASH_STOPS. */}
       {GROUND_WASH_STOPS.map((alpha, i) => (
         <View key={i} style={[styles.groundBand, { backgroundColor: `rgba(15, 10, 26, ${alpha})` }]} />
       ))}
+
+      {/* THE COLUMN IS THE PAGE; THE ROOM AROUND IT IS THE CATHEDRAL.
+          An earlier pass let the mosaic show at the top of the screen and
+          extinguished it below — which put the brightest part of the ground
+          directly behind the masthead, the one place text always lands. This
+          inverts it: the centred column is laid down as solid page, and the
+          mosaic survives only in the margins beside it, where nothing is ever
+          set. Every screen becomes a clean leaf held up in a lit room.
+
+          On a phone the column fills the viewport, so the margins vanish and
+          what remains is just the faint wash above — which is the correct
+          behaviour, not a degraded one. */}
+      <View style={[styles.groundPage, { maxWidth: columnWidth, backgroundColor: pageColor }]} />
     </View>
   );
 }
@@ -351,9 +357,14 @@ function SacredGround() {
  */
 const GROUND_WASH_STOPS = (() => {
   const BANDS = 14;
-  const START = 0.62;
-  /** Fraction of the screen over which the wash reaches full opacity. */
-  const EXTINGUISH_BY = 0.34;
+  /** The room may be genuinely lit now that the page column protects every
+   *  line of text from it — this was 0.62 while the wash alone had to carry
+   *  the contrast budget. */
+  const START = 0.34;
+  /** Fraction of the screen over which the wash reaches full opacity. Runs
+   *  nearly to the floor, so the room darkens the way a nave does rather than
+   *  cutting off at a visible edge a third of the way down. */
+  const EXTINGUISH_BY = 0.92;
   return Array.from({ length: BANDS }, (_, i) => {
     const t = i / (BANDS - 1);
     if (t >= EXTINGUISH_BY) return 1;
@@ -383,8 +394,18 @@ const styles = StyleSheet.create({
   /** The image runs at full strength; the descending wash is what governs how
    *  much of it survives, and it is opaque wherever text lands. */
   groundImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  /** One stop of the descending wash. Six of these fill the screen. */
+  /** One stop of the descending wash. Fourteen of these fill the screen. */
   groundBand: { flex: 1 },
+  /** The page itself: a solid centred column the mosaic never reaches. */
+  groundPage: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    alignSelf: 'center',
+  },
 
   /** The capped column. `width:'100%'` + `maxWidth` + centring is the whole trick. */
   column: {
