@@ -51,7 +51,9 @@ import {
   ChevronRightIcon,
   DownloadIcon,
 } from '../components/icons';
-import { colors, type as t, space, radius, elevation, layout, HIT_SLOP_MIN } from '../theme';
+import { colors, type as t, space, radius, elevation, layout, HIT_SLOP_MIN, arch } from '../theme';
+import LeafButton from '../components/LeafButton';
+import { OrnamentRule } from '../components/Ornament';
 
 /**
  * How many imported books get their full text restored automatically on
@@ -679,23 +681,19 @@ export default function LibraryScreen({ navigation }: any) {
         </ScaleTouchable>
 
         {/* The single accent on this screen. Nothing else may be this colour. */}
-        <ScaleTouchable
-          style={[styles.cta, isBusy && styles.ctaBusy]}
-          activeOpacity={0.9}
+        <LeafButton
+          label={started ? 'Continue Reading' : 'Begin Reading'}
           onPress={() => handleContinue(book)}
           disabled={isBusy}
-          accessibilityRole="button"
+          style={styles.cta}
           accessibilityLabel={started ? `Continue reading ${book.title}` : `Begin ${book.title}`}
         >
           {opening ? (
             <ActivityIndicator size="small" color={colors.actionInk} />
           ) : (
-            <>
-              <PlayIcon size={15} color={colors.actionInk} />
-              <Text style={styles.ctaLabel}>{started ? 'Continue Reading' : 'Begin Reading'}</Text>
-            </>
+            <PlayIcon size={14} color={colors.actionInk} />
           )}
-        </ScaleTouchable>
+        </LeafButton>
       </View>
     );
   };
@@ -861,6 +859,12 @@ export default function LibraryScreen({ navigation }: any) {
           ))}
         </View>
 
+        <OrnamentRule
+          mark="fleuron"
+          color={colors.rule}
+          markColor={colors.rubric}
+          style={styles.emptyRule}
+        />
         <Text style={styles.emptyTitle}>Your Library Awaits</Text>
         <Text style={styles.emptyBody}>
           Bring a manuscript in from this device, or add one from the classical catalogue.
@@ -869,23 +873,19 @@ export default function LibraryScreen({ navigation }: any) {
 
         {/* With no book in progress there is no hero, so THIS is the screen's
             single action and it carries the accent. */}
-        <ScaleTouchable
-          style={[styles.cta, styles.emptyCta, isBusy && styles.ctaBusy]}
+        <LeafButton
+          label="Import a file"
           onPress={handleUploadBook}
           disabled={isBusy}
-          activeOpacity={0.9}
-          accessibilityRole="button"
+          style={[styles.cta, styles.emptyCta]}
           accessibilityLabel="Import a book from this device"
         >
           {isBusy ? (
             <ActivityIndicator size="small" color={colors.actionInk} />
           ) : (
-            <>
-              <PlusIcon size={15} color={colors.actionInk} strokeWidth={2.2} />
-              <Text style={styles.ctaLabel}>Import a file</Text>
-            </>
+            <PlusIcon size={14} color={colors.actionInk} strokeWidth={2.2} />
           )}
-        </ScaleTouchable>
+        </LeafButton>
 
         <Text style={styles.emptyFootnote}>
           EPUB and TXT are read in full. PDF and MOBI can be shelved, but their text cannot be
@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
     // back on-grid without changing how the button looks.
     paddingVertical: space.sm,
     justifyContent: 'center',
-    borderRadius: radius.pill,
+    ...arch.round,
     borderWidth: 1,
     borderColor: colors.border,
     minHeight: HIT_SLOP_MIN,
@@ -1119,7 +1119,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    ...arch.round,
     paddingHorizontal: space.lg,
     height: 44,
     marginBottom: space.md,
@@ -1148,13 +1148,15 @@ const styles = StyleSheet.create({
   chip: {
     // NO flex. This is the line that used to be `flex: 1`.
     paddingHorizontal: space.lg,
-    // minHeight, not taller padding: the pill keeps its visual weight and only
+    // minHeight, not taller padding: the chip keeps its visual weight and only
     // its touch box grows to the 44px floor. Measured at 34px before this.
     minHeight: HIT_SLOP_MIN,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    // Arched head, squared foot — see `arch` in the theme. A row of stadiums
+    // is the single most modern silhouette in the app.
+    ...arch.round,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -1168,7 +1170,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    ...arch.round,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -1214,7 +1216,9 @@ const styles = StyleSheet.create({
   heroWrap: { marginBottom: space.section },
   hero: {
     backgroundColor: colors.surface,
-    borderRadius: radius.hero,
+    // The screen's one panel, so it gets the sprung arch rather than the
+    // uniform 28px round of a content card.
+    ...arch.panel,
     borderWidth: 1,
     borderColor: colors.border,
     padding: space.lg,
@@ -1222,7 +1226,10 @@ const styles = StyleSheet.create({
   },
   heroRow: { flexDirection: 'row', alignItems: 'stretch' },
   heroBody: { flex: 1, minWidth: 0, marginLeft: space.lg, justifyContent: 'flex-start' },
-  heroKicker: { ...t.overline, color: colors.action, marginBottom: 6 },
+  /** Rubricated. In a manuscript the red ink is what announces a division —
+   *  and `action` is now gold, which would have collided with the gold title
+   *  directly beneath it. */
+  heroKicker: { ...t.overline, color: colors.rubricInk, marginBottom: 6 },
   heroTitle: { ...t.display, fontSize: 22, lineHeight: 27, color: colors.goldBright },
   heroAuthor: { ...t.caption, color: colors.bronze, fontStyle: 'italic', marginTop: 4 },
   heroFoot: { marginTop: 'auto', paddingTop: space.md },
@@ -1236,24 +1243,8 @@ const styles = StyleSheet.create({
   heroMeta: { ...t.overline, color: colors.inkMuted, marginTop: 7, textTransform: 'uppercase' },
 
   /* THE action. One per screen. */
-  cta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.sm,
-    marginTop: space.lg,
-    minHeight: 46,
-    borderRadius: radius.pill,
-    backgroundColor: colors.action,
-  },
-  ctaBusy: { opacity: 0.7 },
-  ctaLabel: {
-    ...t.caption,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.7,
-    color: colors.actionInk,
-  },
+  /** Geometry and fill now come from <LeafButton>; this only places it. */
+  cta: { marginTop: space.lg },
 
   /* cover cells, shared by the carousel and the grid */
   cellTitle: { ...t.title, fontSize: 13, lineHeight: 17, color: colors.gold, marginTop: space.sm },
@@ -1320,6 +1311,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   emptySpine: { marginHorizontal: -4 },
+  emptyRule: { marginTop: space.xl, maxWidth: 220, alignSelf: 'center' },
   emptyTitle: { ...t.display, fontSize: 23, color: colors.gold, marginTop: space.md, textAlign: 'center' },
   emptyBody: {
     ...t.body,

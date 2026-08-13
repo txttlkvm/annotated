@@ -36,19 +36,43 @@ export const colors = {
   // ---------------------------------------------------------------------
   // THE action accent. Exactly one saturated colour per screen, reserved for
   // the single next action (Continue Reading, Add to Library, Start Lesson).
-  // Ember orange: hue ~25° against gold's ~41°, and far more saturated
-  // (78% vs 52%), so it reads as a different *role* rather than more gold.
-  // Nothing decorative may use it — the moment two things on a screen are
-  // action-coloured, neither is the action.
+  //
+  // This was ember orange (#e57c33) — a modern consumer-app CTA colour, and
+  // the single loudest reason the app read as a SaaS product rather than a
+  // book of hours. In the illuminated tradition the precious material IS the
+  // action: a manuscript spends its gold on the initial that opens the text.
+  // So the CTA is now burnished gold leaf carrying dark ink, exactly as a
+  // Byzantine ground carries its figures, and `leafHi`/`leafLo` give it the
+  // bright top edge and shadowed foot that make metal read as metal rather
+  // than as a flat yellow rectangle.
   // ---------------------------------------------------------------------
-  /** Primary CTA fill. */
-  action: '#e57c33',
-  /** Label/icon colour to sit ON an `action` fill (6.6:1 — never use gold or white here). */
-  actionInk: '#1a0c03',
+  /** Primary CTA fill — burnished gold. */
+  action: '#c9a961',
+  /** Struck highlight along a leafed edge. */
+  leafHi: '#e8d19a',
+  /** Shadowed foot of a leafed edge. */
+  leafLo: '#9c7c3f',
+  /** Label/icon colour to sit ON an `action` fill (9.4:1 — never gold or white). */
+  actionInk: '#1a1206',
   /** Tinted wash for the CTA's halo, selected pills, progress fills. */
-  actionSoft: 'rgba(229, 124, 51, 0.16)',
+  actionSoft: 'rgba(201, 169, 97, 0.16)',
   /** Hairline for an outlined variant of the CTA. */
-  actionBorder: 'rgba(229, 124, 51, 0.45)',
+  actionBorder: 'rgba(201, 169, 97, 0.45)',
+
+  // ---------------------------------------------------------------------
+  // RUBRICATION. "Rubric" is literally "in red" — the ink a scribe switched
+  // to for the parts that were not the text itself: the initial, the chapter
+  // number, the liturgical instruction. It is an ORNAMENT ink, never a CTA,
+  // and it never competes with `action` because it never sits on anything
+  // you are meant to press.
+  // ---------------------------------------------------------------------
+  /** Vermilion, as ground cinnabar. Drop caps, chapter numerals, fleurons. */
+  rubric: '#c2453a',
+  /** The same red at label weight, for small text on a raised ground. */
+  rubricInk: '#d4695e',
+  /** Lapis — the costliest pigment on the medieval palette, so it is spent
+   *  as sparingly here: secondary ornament only. */
+  lapis: '#3f5a94',
 
   /** Body copy in the reader — warm off-white, never pure #fff. */
   ink: '#ece4d8',
@@ -138,6 +162,67 @@ export const radius = {
 };
 
 /**
+ * ARCHES.
+ *
+ * The stadium pill is the most modern shape there is — it is the shape of a
+ * toggle, a tag input, a consumer CTA — and the app was built out of them:
+ * pill search field, pill filter chips, pill buttons. No amount of gold on a
+ * row of pills will read as sacred, because the SILHOUETTE is doing the
+ * talking and the silhouette says "app".
+ *
+ * Sacred architecture has one governing form instead: the arch. So the
+ * shapes that carry weight get an arched head and a square foot — round
+ * (Romanesque) for buttons and small controls, a taller sprung arch for
+ * panels. Applied as corner radii rather than a mask so it costs nothing and
+ * degrades safely on native.
+ *
+ * `radius.pill` is deliberately left in place: things that genuinely are
+ * incidental tags still want to be tags. The arch is for what you press and
+ * what frames content.
+ */
+export const arch = {
+  /** Round-headed arch on a squared foot. Buttons, chips, the search field. */
+  round: {
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+    borderBottomLeftRadius: radius.sm,
+    borderBottomRightRadius: radius.sm,
+  } as ViewStyle,
+  /** Sprung arch for panels and cards — taller shoulder, squarer foot. */
+  panel: {
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.md,
+  } as ViewStyle,
+  /** A niche: the frame around a cover or an illuminated block. */
+  niche: {
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+  } as ViewStyle,
+};
+
+/**
+ * Ornament glyphs. Unicode rather than drawn shapes because these are
+ * genuinely typographic marks — a scribe's marks — and they inherit colour
+ * and optical weight from the type around them.
+ */
+export const ornament = {
+  /** Aldus leaf. Section breaks, the mark on an empty state. */
+  fleuron: '❦',
+  /** Rotated fleuron, for a paired terminal. */
+  leaf: '❧',
+  /** Four-pointed star. The quieter mark, for dense rows. */
+  star: '✦',
+  /** Lozenge, for the centre of a rule. */
+  lozenge: '◆',
+  /** Greek cross — high-church, used only at a true terminal. */
+  cross: '✠',
+};
+
+/**
  * The phone column. THE fix for the worst desktop defect: with no cap, a
  * 1365px viewport stretched two sort buttons to ~640px each. Every reference
  * is a single narrow column that simply centres itself on a wide screen.
@@ -193,13 +278,34 @@ export const type = {
   heading: { fontFamily: fonts.display, fontSize: 19, lineHeight: 25, letterSpacing: 0.3 },
   /** Card titles. */
   title: { fontFamily: fonts.display, fontSize: 16, lineHeight: 21, letterSpacing: 0.2 },
-  /** Body / descriptions. */
+  /** Body / descriptions. Stays in the UI sans: a paragraph of running
+   *  description is the one place where legibility beats register. */
   body: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 21 },
-  /** Metadata, tags, captions. */
-  caption: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17, letterSpacing: 0.3 },
-  /** Smallest label, usually uppercased. */
-  overline: { fontFamily: fonts.ui, fontSize: 10, lineHeight: 14, letterSpacing: 1.2 },
+  /**
+   * Metadata, tags, captions — and every label in the chrome.
+   *
+   * These moved from the UI sans to the book serif, which is the single
+   * cheapest change that stops the app reading as an app. "Recent / Title /
+   * Author", the tab labels, "Add", "Import" and every card's metadata are
+   * all this token, and in a system sans they were indistinguishable from
+   * any settings screen ever shipped. Set in the same face as the text they
+   * describe, with the letterspacing a scribe gives a small hand, they read
+   * as part of the same document.
+   */
+  caption: { fontFamily: fonts.display, fontSize: 12, lineHeight: 17, letterSpacing: 0.5 },
+  /** Smallest label, usually uppercased. Widely tracked, as small caps want. */
+  overline: { fontFamily: fonts.display, fontSize: 10, lineHeight: 14, letterSpacing: 1.6 },
+  /**
+   * The illuminated initial. A manuscript opens its text with a letter two or
+   * three lines deep, in the rubricator's red — the reader's eye is meant to
+   * land there before it lands on a word. Used by the reader at a chapter
+   * opening; see `versalLines` for the drop depth.
+   */
+  versal: { fontFamily: fonts.display, fontSize: 56, lineHeight: 52 },
 };
+
+/** How many body lines the versal drops beside. */
+export const versalLines = 3;
 
 /**
  * Minimum hit target. iOS HIG asks for 44pt, Material for 48dp, WCAG 2.5.5 for
