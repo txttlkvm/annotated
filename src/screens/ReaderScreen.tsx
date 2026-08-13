@@ -2104,7 +2104,15 @@ const styles = StyleSheet.create({
    *  They carried `hitSlop` instead, which react-native-web honours unreliably.
    *  These give them a real 44px box while the glyph and the type inside stay
    *  exactly the size they were. */
-  hitTarget: { minHeight: HIT_SLOP_MIN, justifyContent: 'center' },
+  hitTarget: {
+    minHeight: HIT_SLOP_MIN,
+    // Width floor too: the chapter chevrons are 13px glyphs, so height alone
+    // left them a 13px-wide strip to hit.
+    minWidth: HIT_SLOP_MIN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /** The chapter title fills the row, so it needs the vertical floor only. */
   hitTargetFlex: { flex: 1, minHeight: HIT_SLOP_MIN, justifyContent: 'center' },
   overline: {
     fontFamily: fonts.ui,
