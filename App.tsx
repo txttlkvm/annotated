@@ -287,6 +287,10 @@ const isWeb = Platform.OS === 'web';
 function AppTabBar(props: BottomTabBarProps) {
   return (
     <View style={styles.tabBarOuter}>
+      {/* A gold rule over a darker one — the doubled fillet that runs under a
+          cornice, rather than the single hairline every app bar has. This is
+          the last piece of chrome the eye crosses, so it is worth the 2px. */}
+      <View style={styles.tabBarFillet} />
       <BottomTabBar {...props} />
     </View>
   );
@@ -424,7 +428,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.gold,
+  },
+  /** The second member of the fillet, immediately under the gold rule. */
+  tabBarFillet: {
+    position: 'absolute',
+    top: 2,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: colors.rule,
   },
 });
 

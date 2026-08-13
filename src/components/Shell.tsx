@@ -35,6 +35,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import {
   View,
+  Image,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -280,11 +281,50 @@ export default function Shell({
           style,
         ]}
       >
+        {/* The ground. See SACRED_GROUND below. Behind everything, ignores
+            touches, and only drawn when this Shell paints a background at all
+            — the reader passes `transparent` because its own page IS the
+            surface and a mosaic under running text would be unreadable. */}
+        {!!background && background !== 'transparent' && <SacredGround />}
         {body}
       </View>
     </ColumnContext.Provider>
   );
 }
+
+/**
+ * A Byzantine ground.
+ *
+ * The app was a flat near-black rectangle behind every screen, which is what
+ * a utility looks like. A sacred interior is never flat — it is gold tesserae
+ * catching light unevenly, and the eye reads that texture long before it reads
+ * any single element on top of it.
+ *
+ * Held at a very low opacity on purpose: this has to sit under body text and
+ * meet contrast, so it is a FELT texture rather than a picture you look at.
+ * The vignette over it keeps the centre of the column quiet and lets the
+ * corners fall away, the way a dome does.
+ */
+function SacredGround() {
+  return (
+    <View style={styles.ground} pointerEvents="none">
+      <Image
+        source={{ uri: SACRED_GROUND_URI }}
+        style={styles.groundImage}
+        resizeMode="cover"
+        // Decorative: never announced, never focusable.
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+      <View style={styles.groundWash} />
+    </View>
+  );
+}
+
+/** Hagia Sophia's gold ground — the same interior the empty state already
+ *  credits, so the app has one architectural setting rather than a collage. */
+const SACRED_GROUND_URI =
+  'https://upload.wikimedia.org/wikipedia/commons/b/b9/Interior_of_the_Hagia_Sophia_Grand_Mosque%2C_Istanbul_%2853808370434%29.jpg';
 
 // Named export as well — screens import it either way.
 export { Shell };
@@ -296,6 +336,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   grow: { flex: 1 },
+
+  /* --- the sacred ground -------------------------------------------------- */
+  ground: { ...StyleSheet.absoluteFillObject },
+  /** 0.13 is the ceiling that still left every measured text pair above 4.5:1
+   *  against the page. Treat it as a contrast budget, not a taste dial. */
+  groundImage: { width: '100%', height: '100%', opacity: 0.13 },
+  /** Warm wash over the image: pulls the mosaic's cool stone back toward the
+   *  aubergine ground so it reads as one surface, and floors the contrast. */
+  groundWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 10, 26, 0.55)',
+  },
 
   /** The capped column. `width:'100%'` + `maxWidth` + centring is the whole trick. */
   column: {
