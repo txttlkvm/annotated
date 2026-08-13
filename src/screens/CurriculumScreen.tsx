@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
     gap: 5,
     // NEVER `flex: 1` — that is what stretched controls to ~640px on desktop.
     paddingHorizontal: space.lg,
-    minHeight: 34,
+    minHeight: HIT_SLOP_MIN,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
