@@ -44,7 +44,7 @@ import BookCover from '../components/BookCover';
 import Shell, { useColumnWidth } from '../components/Shell';
 import Section from '../components/Section';
 import { SearchIcon, CloseIcon, CheckIcon, PlusIcon } from '../components/icons';
-import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN } from '../theme';
+import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN, stageInk } from '../theme';
 
 import { Alert } from '../components/Alert';
 type TierFilter = 'all' | 1 | 2;
@@ -70,11 +70,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 /** Rubrication: one ink per stage of the trivium, same family as Curriculum. */
-const STAGE_INK: Record<string, string> = {
-  grammar: colors.success,
-  logic: colors.gold,
-  rhetoric: colors.danger,
-};
+const STAGE_INK: Record<string, string> = stageInk;
 
 const ROMAN: Record<number, string> = { 1: 'I', 2: 'II' };
 

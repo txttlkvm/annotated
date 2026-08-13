@@ -50,7 +50,7 @@ import Section from '../components/Section';
 import Carousel from '../components/Carousel';
 import { SearchIcon, CloseIcon, CheckIcon, ChevronRightIcon } from '../components/icons';
 import { coverFor } from '../data/gutenbergIds';
-import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN } from '../theme';
+import { colors, fonts, space, radius, type as t, elevation, layout, HIT_SLOP_MIN, stageInk } from '../theme';
 
 import { Alert } from '../components/Alert';
 const categories = [
@@ -106,11 +106,7 @@ const BAND_BLURB: Record<string, string> = {
  * gold for logic, rubric red for rhetoric — all drawn from the theme so the
  * badges read as one family rather than three stray colours.
  */
-const STAGE_INK: Record<string, string> = {
-  grammar: colors.success,
-  logic: colors.gold,
-  rhetoric: colors.danger,
-};
+const STAGE_INK: Record<string, string> = stageInk;
 
 const TYPE_LABEL: Record<string, string> = {
   music: 'Music',

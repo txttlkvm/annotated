@@ -65,6 +65,24 @@ export const colors = {
 };
 
 /**
+ * Rubrication for the three stages of the trivium — the coloured dot and label
+ * on a Catalog or Curriculum card.
+ *
+ * Declared here rather than in each screen because it was duplicated verbatim
+ * in both, and because the semantic `colors.danger` it used to borrow for
+ * rhetoric is tuned for a destructive BUTTON, not for 11px label text: it
+ * measured 3.46:1 on the raised surface these labels sit on, under the 4.5:1
+ * that size owes. These are the same three hues, cut to read at label size.
+ */
+export const stageInk = {
+  /** colors.success, which already clears AA on every ground it lands on. */
+  grammar: '#7fa96b',
+  logic: '#c9a961',
+  /** colors.danger lifted from #b4574d (3.46:1) to 5.16:1 on surfaceRaised. */
+  rhetoric: '#cc7a6f',
+} as const;
+
+/**
  * Serif stacks chosen to need no font downloads. Palatino and Iowan Old Style
  * are genuinely beautiful book faces and ship on macOS/iOS/Windows; Georgia is
  * the universal fallback.
