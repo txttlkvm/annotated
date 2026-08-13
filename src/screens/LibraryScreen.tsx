@@ -1088,7 +1088,7 @@ const styles = StyleSheet.create({
   mastheadText: { flexShrink: 1, minWidth: 0 },
   overline: { ...t.overline, color: colors.bronze, textTransform: 'uppercase', marginBottom: 4 },
   screenTitle: { ...t.display, color: colors.gold },
-  mastheadActions: { flexDirection: 'row', gap: space.sm },
+  mastheadActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
   addButtonBusy: { opacity: 0.6 },
   addButton: {
     flexDirection: 'row',

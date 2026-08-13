@@ -33,6 +33,12 @@ export interface BannerProps {
 export function Banner({ title, eyebrow, actions, style }: BannerProps) {
   return (
     <View style={[styles.wrap, style]}>
+      {/* The field takes its own full-width row and the actions sit beneath
+          it. They were beside it, which put a flex:1 lapis field next to two
+          44px-floor buttons — on a narrow viewport the buttons won and the
+          banner collapsed to a vertical sliver of stacked letters. It is also
+          simply what the reference frontispieces do: the titling band spans
+          the full measure and nothing shares its line. */}
       <View style={styles.field}>
         {/* Gold rules, inlaid rather than bordered — a border would box the
             field; these read as the metal strip a banner is fixed under. */}
@@ -79,11 +85,11 @@ export function BannerHeading({
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  wrap: { alignSelf: 'stretch', gap: space.md },
 
   /* --- screen banner ------------------------------------------------------ */
   field: {
-    flex: 1,
+    alignSelf: 'stretch',
     backgroundColor: colors.lapis,
     paddingVertical: space.md,
     paddingHorizontal: space.lg,
@@ -98,7 +104,8 @@ const styles = StyleSheet.create({
   /** Widely tracked: an inscription is never set tight. */
   title: { ...t.display, fontSize: 22, letterSpacing: 3, color: colors.goldBright, textAlign: 'center' },
   endMark: { color: colors.gold, fontSize: 11 },
-  actions: { flexDirection: 'row', gap: space.sm },
+  /** Centred under the band, and allowed to wrap rather than to crush. */
+  actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
 
   /* --- section heading ---------------------------------------------------- */
   headingField: {
