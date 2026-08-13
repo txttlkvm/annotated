@@ -365,8 +365,8 @@ export default function ReaderScreen() {
   const settings = useMemo(() => withReaderDefaults(storedSettings), [storedSettings]);
 
   const [currentPage, setCurrentPage] = useState(0);
-  /** True once we've applied the one-time page restore for a resumed book — after that, a real book switch should reset to page 0 as before. */
-  const restoredInitialPageRef = useRef(false);
+  /** Tracks which book's position has been restored, so each book restores once. */
+  const restoredInitialPageRef = useRef<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
@@ -627,34 +627,37 @@ export default function ReaderScreen() {
 
   // Reset to the opening page whenever a different book is put on the desk
   // -- EXCEPT the very first time, when AppContext has just resumed
-  // whatever book was on the desk last session: that one restores its
+  // whenever book was on the desk, that one restores its
   // saved reading position instead of snapping back to page 1.
   // Explicitly stops audio here too, not just via the safePage-keyed effect
   // below: if the previous book happened to also be sitting on page 0,
   // setCurrentPage(0) wouldn't actually change safePage's value, and that
-  // effect wouldn't re-fire.
+  // effect wouldn't re-fire. Uses restoredInitialPageRef to track which
+  // book's position was restored, so a new book always gets position
+  // restored (once per book).
   useEffect(() => {
+    if (!currentBook) {
+      readAloudCancelRef.current = true;
+      readAloudActiveRef.current = false;
+      AudioService.stop().catch(() => {});
+      setCurrentPage(0);
+      setIsPlaying(false);
+      setChromeVisible(true);
+      return;
+    }
+
+    if (restoredInitialPageRef.current === currentBook.id) {
+      return;
+    }
+
     readAloudCancelRef.current = true;
     readAloudActiveRef.current = false;
     AudioService.stop().catch(() => {});
-    if (!restoredInitialPageRef.current && currentBook) {
-      // currentProgress is persisted (unlike the in-memory bookProgress
-      // map) via the unmount effect below, and is 1-indexed (endPage + 1).
-      // Not clamped against totalPages here: the text -- and therefore the
-      // real page count -- usually hasn't finished loading yet at this
-      // point; `safePage` downstream already clamps against the live
-      // totalPages on every render, so this only needs to seed a
-      // reasonable starting value.
-      const saved = (currentBook.currentProgress || 1) - 1;
-      setCurrentPage(Math.max(0, saved));
-    } else {
-      setCurrentPage(0);
-    }
-    restoredInitialPageRef.current = true;
+
+    const saved = (currentBook.currentProgress || 1) - 1;
+    setCurrentPage(Math.max(0, saved));
+    restoredInitialPageRef.current = currentBook.id;
     setIsPlaying(false);
-    // Visible by default -- the Read Aloud play button lives in this same
-    // chrome, and a reader has no way to discover the tap-to-reveal gesture
-    // that used to gate it. Confirmed live as a real point of confusion.
     setChromeVisible(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBook?.id]);
@@ -1130,8 +1133,11 @@ export default function ReaderScreen() {
   // showed "Page 0" and 0% no matter how far the session actually went.
   const sessionRef = useRef({ bookId: '', page: 0, totalPages: 1 });
   useEffect(() => {
+    // Same guard as the debounced write below: leaving the reader before the
+    // text loaded must not persist the placeholder page 1 / 1 total.
+    if (!pages.length) return;
     sessionRef.current = { bookId: currentBook?.id || '', page: safePage, totalPages };
-  }, [currentBook?.id, safePage, totalPages]);
+  }, [currentBook?.id, safePage, totalPages, pages.length]);
   // Persist the stopping point on every page turn, debounced, rather than
   // only in the unmount cleanup below. The unmount write is async and has
   // no guarantee of completing before a hard browser reload actually tears
@@ -1140,7 +1146,11 @@ export default function ReaderScreen() {
   // and the Library grid showing stale progress for the entire duration of
   // an active reading session, since they only ever saw the unmount write.
   useEffect(() => {
-    if (!currentBook?.id || !restoredInitialPageRef.current) return;
+    // `pages.length` is 0 until the text finishes downloading, during which
+    // safePage clamps to 0 against the placeholder totalPages of 1. Writing
+    // then would persist "page 1" over the reader's real saved position
+    // before the restore above has anything to restore against.
+    if (!currentBook?.id || !restoredInitialPageRef.current || !pages.length) return;
     const timer = setTimeout(() => {
       updateBook(currentBook.id, {
         currentProgress: safePage + 1,
@@ -1149,7 +1159,7 @@ export default function ReaderScreen() {
       }).catch(() => {});
     }, 800);
     return () => clearTimeout(timer);
-  }, [currentBook?.id, safePage, totalPages]);
+  }, [currentBook?.id, safePage, totalPages, pages.length]);
   useEffect(() => {
     return () => {
       const { bookId, page: endPage, totalPages: endTotal } = sessionRef.current;
