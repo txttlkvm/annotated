@@ -335,7 +335,9 @@ function SacredGround({ columnWidth, pageColor }: { columnWidth: number; pageCol
           On a phone the column fills the viewport, so the margins vanish and
           what remains is just the faint wash above — which is the correct
           behaviour, not a degraded one. */}
-      <View style={[styles.groundPage, { maxWidth: columnWidth, backgroundColor: pageColor }]} />
+      <View style={styles.groundPageWrap}>
+        <View style={[styles.groundPage, { maxWidth: columnWidth, backgroundColor: pageColor }]} />
+      </View>
     </View>
   );
 }
@@ -396,16 +398,18 @@ const styles = StyleSheet.create({
   groundImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   /** One stop of the descending wash. Fourteen of these fill the screen. */
   groundBand: { flex: 1 },
-  /** The page itself: a solid centred column the mosaic never reaches. */
-  groundPage: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    width: '100%',
-    alignSelf: 'center',
+  /**
+   * Centring wrapper for the page scrim. The scrim cannot centre itself: an
+   * absolutely-positioned box with both `left: 0` and `right: 0` resolves
+   * against those offsets and ignores `alignSelf`, so it pinned to the left
+   * edge and left the masthead sitting on bare mosaic.
+   */
+  groundPageWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
   },
+  /** The page itself: a solid centred column the mosaic never reaches. */
+  groundPage: { flex: 1, width: '100%' },
 
   /** The capped column. `width:'100%'` + `maxWidth` + centring is the whole trick. */
   column: {
