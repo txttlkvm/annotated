@@ -344,6 +344,46 @@ function renderParagraphContent(
   });
 }
 
+/**
+ * The illuminated initial, for the paragraph that opens a chapter.
+ *
+ * A RAISED versal rather than a dropped one. A true drop cap needs the
+ * following lines to wrap around it, which React Native's text layout cannot
+ * express at all (there is no float, and no way to indent only the first N
+ * lines of a Text). A raised initial — one that sits on the baseline and rises
+ * above the line — is not a workaround for that: it is its own long-standing
+ * manuscript convention, used throughout the Insular and Carolingian books,
+ * and it is what nested <Text> renders faithfully.
+ *
+ * Set in the rubricator's red, because that is the whole point of the gesture:
+ * the reader's eye is meant to land on the initial before it lands on a word.
+ *
+ * Composes with the Read-Aloud word highlight by shifting its range back over
+ * the character the versal consumed, so the two never desync.
+ */
+function renderWithVersal(
+  text: string,
+  highlight: { start: number; end: number } | null,
+  highlightColor: string,
+  versalColor: string
+): React.ReactNode[] {
+  const initial = text.slice(0, 1);
+  const rest = text.slice(1);
+  if (!initial) return renderParagraphContent(text, highlight, highlightColor);
+
+  // The versal is no longer part of `rest`, so every offset moves back one.
+  const shifted = highlight
+    ? { start: Math.max(0, highlight.start - 1), end: Math.max(0, highlight.end - 1) }
+    : null;
+
+  return [
+    <Text key="versal" style={[styles.versal, { color: versalColor }]}>
+      {initial}
+    </Text>,
+    ...renderParagraphContent(rest, shifted, highlightColor),
+  ];
+}
+
 export default function ReaderScreen() {
   const {
     currentBook,
@@ -1446,7 +1486,10 @@ export default function ReaderScreen() {
               <Text
                 style={[
                   styles.chapterTitle,
-                  { color: palette.text, fontSize: chapterSize, lineHeight: Math.round(chapterSize * 1.25) },
+                  // Rubricated. A chapter heading is the original thing the red
+                  // pen was FOR — it is not body text and should not be set in
+                  // the body's ink.
+                  { color: palette.rubric, fontSize: chapterSize, lineHeight: Math.round(chapterSize * 1.25) },
                 ]}
               >
                 {chapterTitle}
@@ -1461,6 +1504,9 @@ export default function ReaderScreen() {
 
           {page?.paragraphs.map((paragraph, i) => {
             const wordHighlight = activeHighlight?.paragraphIndex === i ? activeHighlight : null;
+            // Only the first paragraph of a chapter opening is illuminated —
+            // an initial on every paragraph would be decoration, not hierarchy.
+            const illuminated = i === 0 && !!page?.startsChapter;
             return (
               <Text
                 key={paragraph.index}
@@ -1474,7 +1520,14 @@ export default function ReaderScreen() {
                   { marginBottom: i === (page?.paragraphs.length ?? 0) - 1 ? 0 : paragraphGap },
                 ]}
               >
-                {renderParagraphContent(paragraph.text, wordHighlight, palette.accentSoft)}
+                {illuminated
+                  ? renderWithVersal(
+                      paragraph.text,
+                      wordHighlight,
+                      palette.accentSoft,
+                      palette.rubric
+                    )
+                  : renderParagraphContent(paragraph.text, wordHighlight, palette.accentSoft)}
               </Text>
             );
           })}
@@ -2098,6 +2151,13 @@ const styles = StyleSheet.create({
     paddingBottom: space.md,
   },
   chromeTitles: { flex: 1, minWidth: 0 },
+  /** The illuminated initial. Sized against the body, not fixed, so it stays
+   *  proportional when the reader changes text size. */
+  versal: {
+    fontFamily: fonts.display,
+    fontSize: 40,
+    lineHeight: 40,
+  },
   chapterNavRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   /** Small glyph/text controls -- the 13px chapter chevrons, the 10px overline
    *  chapter title, the rate badge, the modal Cancel -- measured 13-18px tall.

@@ -361,6 +361,13 @@ export type ReaderPalette = {
   accentSoft: string;
   rule: string;
   border: string;
+  /**
+   * The rubricator's ink — the illuminated initial that opens a chapter, and
+   * the chapter heading itself. Per-palette rather than one global red because
+   * a vermilion that sings on cream is muddy on black and vice versa, and this
+   * is the one colour on the reading surface that is allowed to be loud.
+   */
+  rubric: string;
 };
 
 /**
@@ -388,6 +395,8 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     accentSoft: colors.bronze,
     rule: colors.rule,
     border: colors.border,
+    /** Lifted off the base vermilion so it carries on a near-black ground. */
+    rubric: '#d4695e',
   },
   night: {
     bg: '#080510',
@@ -402,6 +411,8 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     accentSoft: '#97836b',
     rule: 'rgba(171, 144, 87, 0.14)',
     border: 'rgba(171, 144, 87, 0.22)',
+    /** Night is the dimmest ground, so its red is damped to match. */
+    rubric: '#b0574e',
   },
   /** Aged paper — tea-stained, the warmest ground. Text at 13:1. */
   sepia: {
@@ -415,6 +426,8 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     accentSoft: '#6d5634',
     rule: 'rgba(35, 26, 16, 0.13)',
     border: 'rgba(35, 26, 16, 0.22)',
+    /** True cinnabar on aged paper — the manuscript case. */
+    rubric: '#9e2b20',
   },
   /** Cream book paper — the default reading ground. Warm ivory, never #fff;
    *  near-black warm ink rather than the old grey-on-grey. */
@@ -430,6 +443,8 @@ export const readerPalettes: Record<string, ReaderPalette> = {
     accentSoft: '#71603b',
     rule: 'rgba(23, 18, 12, 0.11)',
     border: 'rgba(23, 18, 12, 0.19)',
+    /** The default reading ground, so this is the rubric most readers see. */
+    rubric: '#a32e21',
   },
 };
 
