@@ -316,10 +316,27 @@ function SacredGround() {
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       />
-      <View style={styles.groundWash} />
+      {/* Descending wash. A dome is bright at the vault and falls to dark at
+          the floor, so the mosaic is allowed to show at the top of the screen
+          — where the masthead sits and no body copy runs — and is fully
+          extinguished by the time it reaches the content. This also happens to
+          put the contrast budget exactly where it is needed: text lives in the
+          lower bands, and the lower bands are opaque.
+
+          Six stacked flex:1 Views rather than a gradient because
+          expo-linear-gradient is not installed (see icons.tsx on the same
+          constraint); at six steps over a screen height the banding is not
+          detectable against a photographic source. */}
+      {GROUND_WASH_STOPS.map((alpha, i) => (
+        <View key={i} style={[styles.groundBand, { backgroundColor: `rgba(15, 10, 26, ${alpha})` }]} />
+      ))}
     </View>
   );
 }
+
+/** Top-to-bottom opacity of the wash over the ground. Ends fully opaque so no
+ *  band of running text ever sits on the mosaic. */
+const GROUND_WASH_STOPS = [0.18, 0.42, 0.66, 0.84, 0.95, 1];
 
 /** Hagia Sophia's gold ground — the same interior the empty state already
  *  credits, so the app has one architectural setting rather than a collage. */
@@ -339,15 +356,11 @@ const styles = StyleSheet.create({
 
   /* --- the sacred ground -------------------------------------------------- */
   ground: { ...StyleSheet.absoluteFillObject },
-  /** 0.13 is the ceiling that still left every measured text pair above 4.5:1
-   *  against the page. Treat it as a contrast budget, not a taste dial. */
-  groundImage: { width: '100%', height: '100%', opacity: 0.13 },
-  /** Warm wash over the image: pulls the mosaic's cool stone back toward the
-   *  aubergine ground so it reads as one surface, and floors the contrast. */
-  groundWash: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 10, 26, 0.55)',
-  },
+  /** The image runs at full strength; the descending wash is what governs how
+   *  much of it survives, and it is opaque wherever text lands. */
+  groundImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  /** One stop of the descending wash. Six of these fill the screen. */
+  groundBand: { flex: 1 },
 
   /** The capped column. `width:'100%'` + `maxWidth` + centring is the whole trick. */
   column: {
