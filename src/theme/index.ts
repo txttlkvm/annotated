@@ -26,8 +26,12 @@ export const colors = {
   gold: '#c9a961',
   /** Brighter gold for emphasis and active state. */
   goldBright: '#e3c887',
-  /** Muted bronze. Secondary text, borders, metadata. */
-  bronze: '#8b7355',
+  /** Muted bronze. Secondary text, borders, metadata.
+   *  Lifted from #8b7355, which measured 4.34/4.01/3.67:1 against the page,
+   *  surface and raised grounds — under the 4.5:1 AA floor on all three, and
+   *  it carries real content (author names, the inactive tab labels, sort
+   *  pills). This clears AA everywhere: 5.48 / 5.06 / 4.63. */
+  bronze: '#9d8463',
 
   // ---------------------------------------------------------------------
   // THE action accent. Exactly one saturated colour per screen, reserved for
@@ -155,22 +159,38 @@ export const layout = {
   },
 };
 
+/**
+ * Every token carries an explicit lineHeight. Only `body` did before, so the
+ * rest fell back to the browser's `normal` (~1.15–1.2) — which is why a title
+ * or caption that wrapped to two lines sat noticeably tighter than the same
+ * text in the reader. Display faces are set near 1.25 (large type wants less
+ * leading), UI text near 1.4.
+ */
 export const type = {
   /** Hero titles — the Continue Reading card, a book detail masthead. */
-  hero: { fontFamily: fonts.display, fontSize: 32, letterSpacing: 0.2 },
+  hero: { fontFamily: fonts.display, fontSize: 32, lineHeight: 39, letterSpacing: 0.2 },
   /** Screen titles. */
-  display: { fontFamily: fonts.display, fontSize: 26, letterSpacing: 0.4 },
+  display: { fontFamily: fonts.display, fontSize: 26, lineHeight: 33, letterSpacing: 0.4 },
   /** Section headings. */
-  heading: { fontFamily: fonts.display, fontSize: 19, letterSpacing: 0.3 },
+  heading: { fontFamily: fonts.display, fontSize: 19, lineHeight: 25, letterSpacing: 0.3 },
   /** Card titles. */
-  title: { fontFamily: fonts.display, fontSize: 16, letterSpacing: 0.2 },
+  title: { fontFamily: fonts.display, fontSize: 16, lineHeight: 21, letterSpacing: 0.2 },
   /** Body / descriptions. */
   body: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 21 },
   /** Metadata, tags, captions. */
-  caption: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 0.3 },
+  caption: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17, letterSpacing: 0.3 },
   /** Smallest label, usually uppercased. */
-  overline: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.2 },
+  overline: { fontFamily: fonts.ui, fontSize: 10, lineHeight: 14, letterSpacing: 1.2 },
 };
+
+/**
+ * Minimum hit target. iOS HIG asks for 44pt, Material for 48dp, WCAG 2.5.5 for
+ * 44px — the app's pills and icon buttons measured 34–38px, which is the one
+ * thing that genuinely reads as cheap under a thumb. Apply as `minHeight` (and
+ * `minWidth` on icon-only controls) rather than by inflating padding, so the
+ * visual weight of a pill is unchanged and only its touchable box grows.
+ */
+export const HIT_SLOP_MIN = 44;
 
 /**
  * Elevation. React Native Web maps these to box-shadow; the soft shadow is

@@ -32,7 +32,7 @@ import {
   SearchIcon,
   CloseIcon,
 } from '../components/icons';
-import { colors, fonts, space, radius, elevation, layout, readerPalettes } from '../theme';
+import { colors, fonts, space, radius, elevation, layout, readerPalettes, HIT_SLOP_MIN } from '../theme';
 import { DEFAULT_READER_SETTINGS } from '../types';
 import type { ReaderSettings } from '../types';
 
@@ -2113,8 +2113,8 @@ const styles = StyleSheet.create({
   },
   meta: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 0.3 },
   iconButton: {
-    width: 38,
-    height: 38,
+    width: HIT_SLOP_MIN,
+    height: HIT_SLOP_MIN,
     borderRadius: radius.pill,
     borderWidth: 1,
     alignItems: 'center',

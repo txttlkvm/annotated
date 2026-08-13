@@ -51,7 +51,7 @@ import {
   ChevronRightIcon,
   DownloadIcon,
 } from '../components/icons';
-import { colors, type as t, space, radius, elevation, layout } from '../theme';
+import { colors, type as t, space, radius, elevation, layout, HIT_SLOP_MIN } from '../theme';
 
 /**
  * How many imported books get their full text restored automatically on
@@ -1098,11 +1098,15 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: colors.surfaceRaised,
     paddingHorizontal: space.lg,
-    paddingVertical: space.sm + 1,
+    // Was `space.sm + 1` (9px, the one value in the app off the 4pt grid) with
+    // minHeight 36. The floor now governs the height, so the padding can go
+    // back on-grid without changing how the button looks.
+    paddingVertical: space.sm,
+    justifyContent: 'center',
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 36,
+    minHeight: HIT_SLOP_MIN,
   },
   addButtonText: { ...t.caption, letterSpacing: 0.8, color: colors.gold, fontWeight: '600' },
 
@@ -1140,7 +1144,11 @@ const styles = StyleSheet.create({
   chip: {
     // NO flex. This is the line that used to be `flex: 1`.
     paddingHorizontal: space.lg,
-    paddingVertical: space.sm,
+    // minHeight, not taller padding: the pill keeps its visual weight and only
+    // its touch box grows to the 44px floor. Measured at 34px before this.
+    minHeight: HIT_SLOP_MIN,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.surface,
     borderRadius: radius.pill,
     borderWidth: 1,
@@ -1151,8 +1159,8 @@ const styles = StyleSheet.create({
   chipTextActive: { color: colors.goldBright, fontWeight: '600' },
   controlsSpacer: { flex: 1 },
   viewButton: {
-    width: 38,
-    height: 34,
+    width: HIT_SLOP_MIN,
+    height: HIT_SLOP_MIN,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,

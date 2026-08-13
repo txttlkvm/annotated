@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
-import { colors, fonts, space, radius, type, elevation } from '../theme';
+import { colors, fonts, space, radius, type, elevation, HIT_SLOP_MIN } from '../theme';
 import Shell from '../components/Shell';
 import type { Highlight, Bookmark } from '../types';
 
@@ -423,8 +423,10 @@ const styles = StyleSheet.create({
   allPillText: { ...type.caption, fontSize: 11, color: colors.bronze },
   allPillTextActive: { color: colors.goldBright },
   swatchRing: {
-    width: 32,
-    height: 32,
+    // The ring is the touch target; `swatch` below is the visible 20px dot, so
+    // growing this to the 44px floor does not enlarge the colour itself.
+    width: HIT_SLOP_MIN,
+    height: HIT_SLOP_MIN,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: 'transparent',

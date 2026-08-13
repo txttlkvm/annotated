@@ -42,7 +42,7 @@ import BookCover from '../components/BookCover';
 import Shell, { useColumnWidth } from '../components/Shell';
 import Section from '../components/Section';
 import { ChevronLeftIcon, PlayIcon, CheckIcon } from '../components/icons';
-import { colors, space, radius, type as t, elevation, COVER_RATIO } from '../theme';
+import { colors, space, radius, type as t, elevation, COVER_RATIO, HIT_SLOP_MIN } from '../theme';
 import type { Book } from '../types';
 
 /** Padding between the niche's inner wall and the first/last volume. */
@@ -470,8 +470,8 @@ const styles = StyleSheet.create({
     marginBottom: space.lg,
   },
   back: {
-    width: 36,
-    height: 36,
+    width: HIT_SLOP_MIN,
+    height: HIT_SLOP_MIN,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,

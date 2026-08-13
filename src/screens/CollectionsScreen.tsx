@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import BookCover from '../components/BookCover';
-import { colors, fonts, space, radius, type, elevation } from '../theme';
+import { colors, fonts, space, radius, type, elevation, HIT_SLOP_MIN } from '../theme';
 import Shell from '../components/Shell';
 import type { Book, Collection } from '../types';
 
@@ -677,8 +677,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   backButton: {
-    width: 38,
-    height: 38,
+    width: HIT_SLOP_MIN,
+    height: HIT_SLOP_MIN,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
