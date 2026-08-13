@@ -30,6 +30,21 @@ export interface BannerProps {
   style?: StyleProp<ViewStyle>;
 }
 
+/**
+ * Step the title down for longer names.
+ *
+ * `adjustsFontSizeToFit` is a no-op on react-native-web, so a long title did
+ * not shrink — it clipped, and "Classical Catalog" rendered as "CLASSICAL
+ * CATA…". Caps at 3pt of tracking eat width fast, so the tracking comes down
+ * with the size rather than staying fixed.
+ */
+function titleSizeFor(title: string) {
+  const n = title.length;
+  if (n <= 10) return { fontSize: 22, letterSpacing: 3 };
+  if (n <= 15) return { fontSize: 19, letterSpacing: 2.2 };
+  return { fontSize: 16, letterSpacing: 1.4 };
+}
+
 export function Banner({ title, eyebrow, actions, style }: BannerProps) {
   return (
     <View style={[styles.wrap, style]}>
@@ -49,7 +64,7 @@ export function Banner({ title, eyebrow, actions, style }: BannerProps) {
           <Text style={styles.endMark}>{ornament.lozenge}</Text>
           <View style={styles.titleBlock}>
             {!!eyebrow && <Text style={styles.eyebrow}>{eyebrow.toUpperCase()}</Text>}
-            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.title, titleSizeFor(title)]} numberOfLines={1}>
               {title.toUpperCase()}
             </Text>
           </View>
