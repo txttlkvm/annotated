@@ -1078,10 +1078,14 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: layout.gutter, paddingBottom: space.xxxl },
 
   /* masthead */
+  /**
+   * Spacing only. This used to carry `flexDirection: 'row'` from when the
+   * masthead was a text block beside its buttons — and because <Banner>
+   * merges as `[styles.wrap, style]`, that row survived the switch and
+   * silently overrode the banner's own column layout, which is why the field
+   * kept sharing its line and clipping "Import" off the right edge.
+   */
   masthead: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
     paddingTop: space.xl,
     marginBottom: space.lg,
   },

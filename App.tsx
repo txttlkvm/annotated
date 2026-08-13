@@ -481,12 +481,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: space.sm,
     bottom: space.sm,
-    width: 1,
+    // Wide enough to hold the caps; the shaft inside is still 1px. At width:1
+    // the caps overflowed their own container and the pier read as two loose
+    // ticks with nothing joining them.
+    width: 7,
+    marginLeft: -3.5,
     alignItems: 'center',
   },
   /** Base and abacus: a column without them is just a line. */
-  pierCap: { width: 5, height: 1, backgroundColor: colors.gold, opacity: 0.55 },
-  pierShaft: { flex: 1, width: 1, backgroundColor: colors.rule },
+  pierCap: { width: 7, height: 1, backgroundColor: colors.gold, opacity: 0.6 },
+  /** `colors.rule` at 0.18 alpha was too faint to join the caps — the shaft
+   *  has to actually be visible or the arcade reads as scattered marks. */
+  pierShaft: { flex: 1, width: 1, backgroundColor: colors.gold, opacity: 0.28 },
 });
 
 export default function App() {
