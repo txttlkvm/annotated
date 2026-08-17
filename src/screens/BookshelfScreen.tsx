@@ -43,6 +43,7 @@ import Shell, { useColumnWidth } from '../components/Shell';
 import Section from '../components/Section';
 import { ChevronLeftIcon, PlayIcon, CheckIcon } from '../components/icons';
 import { colors, space, radius, type as t, elevation, COVER_RATIO, HIT_SLOP_MIN } from '../theme';
+import { Banner } from '../components/Banner';
 import type { Book } from '../types';
 
 /** Padding between the niche's inner wall and the first/last volume. */
@@ -340,25 +341,24 @@ export default function BookshelfScreen() {
   return (
     <Shell scroll testID="bookshelf-screen">
       {/* Masthead */}
-      <View style={styles.masthead}>
-        {canGoBack && (
-          <TouchableOpacity
-            style={styles.back}
-            onPress={goBack}
-            activeOpacity={0.75}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            testID="bookshelf-back"
-          >
-            <ChevronLeftIcon size={16} color={colors.gold} strokeWidth={2.2} />
-          </TouchableOpacity>
-        )}
-        <View style={styles.mastheadText}>
-          <Text style={styles.overline}>ANNOTATED</Text>
-          <Text style={styles.screenTitle}>Bookshelf</Text>
-        </View>
-      </View>
+      <Banner
+        title="Bookshelf"
+        eyebrow="Annotated"
+        actions={
+          canGoBack && (
+            <TouchableOpacity
+              onPress={goBack}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              testID="bookshelf-back"
+              style={styles.backButton}
+            >
+              <ChevronLeftIcon size={16} color={colors.goldBright} strokeWidth={2.2} />
+            </TouchableOpacity>
+          )
+        }
+      />
 
       {books.length > 0 && (
         <View style={styles.stats}>
@@ -461,15 +461,7 @@ export { BookshelfScreen };
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  /* masthead ------------------------------------------------------------- */
-  masthead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.md,
-    paddingTop: space.xl,
-    marginBottom: space.lg,
-  },
-  back: {
+  backButton: {
     width: HIT_SLOP_MIN,
     height: HIT_SLOP_MIN,
     borderRadius: radius.pill,
@@ -479,14 +471,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mastheadText: { flexShrink: 1, minWidth: 0 },
-  overline: {
-    ...t.overline,
-    color: colors.bronze,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  screenTitle: { ...t.display, color: colors.gold },
 
   /* stat strip ----------------------------------------------------------- */
   stats: {

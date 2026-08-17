@@ -5,6 +5,7 @@ import BookCover from '../components/BookCover';
 import { colors, fonts, space, radius, type, elevation } from '../theme';
 
 import Shell from '../components/Shell';
+import { Banner } from '../components/Banner';
 /* ------------------------------------------------------------------ *
  * Building blocks
  * ------------------------------------------------------------------ */
@@ -105,14 +106,10 @@ export default function StatsScreen() {
 
   return (
     <Shell scroll gutter={false} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Your reading</Text>
-        <Text style={styles.title}>Reading Wisdom</Text>
-        <Text style={styles.subtitle}>
-          What you have read, and what still waits on the shelf.
-        </Text>
-        <View style={styles.headerRule} />
-      </View>
+      <Banner title="Reading Wisdom" eyebrow="Your reading" />
+      <Text style={styles.subtitle}>
+        What you have read, and what still waits on the shelf.
+      </Text>
 
       {/* Figures */}
       <View style={styles.statsGrid}>
@@ -221,16 +218,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xxxl },
 
-  header: { marginTop: space.sm, marginBottom: space.xl },
-  eyebrow: {
-    ...type.overline,
-    color: colors.bronze,
-    textTransform: 'uppercase',
-    marginBottom: space.xs,
-  },
-  title: { ...type.display, color: colors.gold },
-  subtitle: { ...type.body, color: colors.inkMuted, marginTop: space.sm },
-  headerRule: { height: 1, backgroundColor: colors.rule, marginTop: space.lg },
+  subtitle: { ...type.body, color: colors.inkMuted, marginBottom: space.lg },
 
   /* Figures */
   statsGrid: {

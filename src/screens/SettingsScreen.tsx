@@ -17,6 +17,7 @@ import { READER_THEMES } from '../types';
 import { colors, fonts, space, radius, type, elevation, readerPalettes } from '../theme';
 
 import Shell from '../components/Shell';
+import { Banner } from '../components/Banner';
 import { Alert } from '../components/Alert';
 /* ------------------------------------------------------------------ *
  * Building blocks
@@ -213,11 +214,7 @@ export default function SettingsScreen() {
 
   return (
     <Shell scroll gutter={false} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Annotated</Text>
-        <Text style={styles.title}>Settings</Text>
-        <View style={styles.headerRule} />
-      </View>
+      <Banner title="Settings" eyebrow="Annotated" />
 
       {/* ---------------------------------------------------------- Reading */}
       <Section title="Reading" caption="How the page is set beneath your eye.">
@@ -495,20 +492,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xxxl },
-
-  header: { marginBottom: space.xl, marginTop: space.sm },
-  eyebrow: {
-    ...type.overline,
-    color: colors.bronze,
-    textTransform: 'uppercase',
-    marginBottom: space.xs,
-  },
-  title: { ...type.display, color: colors.gold },
-  headerRule: {
-    height: 1,
-    backgroundColor: colors.rule,
-    marginTop: space.lg,
-  },
 
   section: { marginBottom: space.xxl },
   sectionTitle: {

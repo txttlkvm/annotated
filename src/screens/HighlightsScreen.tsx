@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { colors, fonts, space, radius, type, elevation, HIT_SLOP_MIN } from '../theme';
 import Shell from '../components/Shell';
+import { Banner } from '../components/Banner';
 import type { Highlight, Bookmark } from '../types';
 
 import { Alert } from '../components/Alert';
@@ -135,16 +136,13 @@ export default function HighlightsScreen() {
 
   return (
     <Shell gutter={false} contentContainerStyle={styles.container}>
+      <Banner title="Sacred Passages" eyebrow="Marginalia" />
 
-      {/* Header */}
+      {/* Subtitle and count */}
       <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.eyebrow}>MARGINALIA</Text>
-          <Text style={styles.title}>Sacred Passages</Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {currentBook.title}
-          </Text>
-        </View>
+        <Text style={styles.subtitle} numberOfLines={1}>
+          {currentBook?.title}
+        </Text>
         <View style={styles.countBadge}>
           <Text style={styles.countNumber}>{mode === 'highlights' ? highlights.length : bookmarks.length}</Text>
           <Text style={styles.countLabel}>
@@ -344,15 +342,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: space.lg,
     paddingHorizontal: space.xl,
-    paddingTop: space.xl,
+    paddingTop: space.lg,
     paddingBottom: space.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.rule,
     backgroundColor: colors.surface,
   },
-  headerText: { flex: 1 },
-  eyebrow: { ...type.overline, color: colors.bronze, marginBottom: space.xs },
-  title: { ...type.display, color: colors.goldBright, marginBottom: space.sm },
   subtitle: { ...type.body, color: colors.inkMuted, fontStyle: 'italic' },
   countBadge: {
     minWidth: 54,

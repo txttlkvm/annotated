@@ -29,6 +29,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Shell from '../components/Shell';
 import Section from '../components/Section';
+import { Banner } from '../components/Banner';
 import { Icon, ChevronRightIcon, type IconName } from '../components/icons';
 import { colors, space, radius, type as typeScale, elevation } from '../theme';
 import { useApp } from '../context/AppContext';
@@ -185,11 +186,7 @@ export default function MoreScreen() {
 
   return (
     <Shell scroll testID="more-screen">
-      <View style={styles.masthead}>
-        <Text style={styles.overline}>ANNOTATED</Text>
-        <Text style={styles.title}>More</Text>
-        <Text style={styles.blurb}>Your shelves, your marginalia, and how the page reads.</Text>
-      </View>
+      <Banner title="More" eyebrow="Annotated" />
 
       {groups.map((group, groupIndex) => (
         <Section
@@ -233,26 +230,6 @@ const TILE = 40;
 const TILE_GAP = space.md;
 
 const styles = StyleSheet.create({
-  masthead: {
-    paddingTop: space.xl,
-    marginBottom: space.xl,
-  },
-  overline: {
-    ...typeScale.overline,
-    color: colors.bronze,
-    textTransform: 'uppercase',
-    marginBottom: space.sm,
-  },
-  title: {
-    ...typeScale.display,
-    color: colors.gold,
-  },
-  blurb: {
-    ...typeScale.body,
-    color: colors.inkMuted,
-    marginTop: space.sm,
-  },
-
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

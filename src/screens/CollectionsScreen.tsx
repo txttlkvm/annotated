@@ -13,6 +13,7 @@ import { useApp } from '../context/AppContext';
 import BookCover from '../components/BookCover';
 import { colors, fonts, space, radius, type, elevation, HIT_SLOP_MIN } from '../theme';
 import Shell from '../components/Shell';
+import { Banner } from '../components/Banner';
 import type { Book, Collection } from '../types';
 
 import { Alert } from '../components/Alert';
@@ -241,15 +242,12 @@ export default function CollectionsScreen() {
     <Shell gutter={false} contentContainerStyle={styles.container}>
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>THE LIBRARY</Text>
-        <Text style={styles.title}>Collections</Text>
-        <Text style={styles.subtitle}>
-          {collections.length === 0
-            ? 'Gather your books into shelves of your own making'
-            : `${collections.length} shelf${collections.length === 1 ? '' : 'ves'} · ${totalShelved} volume${totalShelved === 1 ? '' : 's'} gathered`}
-        </Text>
-      </View>
+      <Banner title="Collections" eyebrow="The Library" />
+      <Text style={styles.subtitle}>
+        {collections.length === 0
+          ? 'Gather your books into shelves of your own making'
+          : `${collections.length} shelf${collections.length === 1 ? '' : 'ves'} · ${totalShelved} volume${totalShelved === 1 ? '' : 's'} gathered`}
+      </Text>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TouchableOpacity
@@ -426,18 +424,7 @@ export default function CollectionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
 
-  /* Header */
-  header: {
-    paddingHorizontal: space.xl,
-    paddingTop: space.xl,
-    paddingBottom: space.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.rule,
-    backgroundColor: colors.surface,
-  },
-  eyebrow: { ...type.overline, color: colors.bronze, marginBottom: space.xs },
-  title: { ...type.display, color: colors.goldBright, marginBottom: space.sm },
-  subtitle: { ...type.body, color: colors.inkMuted },
+  subtitle: { ...type.body, color: colors.inkMuted, paddingHorizontal: space.xl, paddingBottom: space.lg },
 
   content: {
     paddingHorizontal: space.lg,
